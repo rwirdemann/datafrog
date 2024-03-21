@@ -4,15 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/rwirdemann/texttools/config"
+	matcher2 "github.com/rwirdemann/texttools/matcher"
 	"io"
 	"log"
 	"os"
 	"strings"
 	"time"
-)
-
-var (
-	patterns = []string{"insert into job", "update job"}
 )
 
 var expectations []string
@@ -42,6 +39,7 @@ func main() {
 
 	go checkExit()
 
+	matcher := matcher2.NewSimpleMatcher(config)
 	reader := bufio.NewReader(readFile)
 	for {
 		line, err := reader.ReadString('\n')
@@ -55,10 +53,9 @@ func main() {
 		}
 		ts, validTimestamp := containsValidTimestamp(line)
 		if validTimestamp && matchesRecordingPeriod(ts, listeningStartedAt) {
-			pattern, matches := matchesPattern(line)
-			if matches {
+			if matcher.MatchesAny(line) {
 				fmt.Printf("Expectation met: %s", line)
-				expectations = remove(expectations, pattern)
+				expectations = remove(expectations, matcher.MatchingPattern(line))
 			}
 		}
 	}
@@ -103,13 +100,4 @@ func containsValidTimestamp(line string) (time.Time, bool) {
 	}
 	return d, true
 
-}
-
-func matchesPattern(line string) (string, bool) {
-	for _, pattern := range patterns {
-		if strings.Contains(line, pattern) {
-			return pattern, true
-		}
-	}
-	return "", false
 }

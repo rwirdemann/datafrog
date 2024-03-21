@@ -1,7 +1,7 @@
 {
   "filename": "/usr/local/var/mysql/MBP-von-Ralf.log",
   "include": [
-    "insert into jobs",
-    "update jobs"
+    "insert into job",
+    "update job"
   ]
 }

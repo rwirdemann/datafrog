@@ -9,6 +9,15 @@ type SimpleMatcher struct {
 	config config.Config
 }
 
+func (m SimpleMatcher) MatchingPattern(s string) string {
+	for _, pattern := range m.config.Include {
+		if strings.Contains(s, pattern) {
+			return pattern
+		}
+	}
+	return ""
+}
+
 func NewSimpleMatcher(config config.Config) Matcher {
 	return SimpleMatcher{config: config}
 }
