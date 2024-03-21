@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/rwirdemann/texttools/config"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -27,6 +28,19 @@ func main() {
 	defer readFile.Close()
 
 	go checkExit()
+
+	out, err := os.Create(os.Args[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(out *os.File) {
+		err := out.Close()
+		if err != nil {
+
+		}
+	}(out)
+	outWriter := bufio.NewWriter(out)
+
 	reader := bufio.NewReader(readFile)
 	for {
 		line, err := reader.ReadString('\n')
@@ -41,6 +55,14 @@ func main() {
 		ts, validTimestamp := containsValidTimestamp(line)
 		if validTimestamp && matchesRecordingPeriod(ts, recordingStartedAt) && matchesPattern(line) {
 			fmt.Print(line)
+			_, err := outWriter.WriteString(line)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = outWriter.Flush()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
