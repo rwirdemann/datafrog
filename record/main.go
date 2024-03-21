@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/rwirdemann/texttools/config"
 	"io"
 	"os"
 	"strings"
@@ -14,14 +15,15 @@ var (
 )
 
 func main() {
+	config := config.NewConfig()
+	println(config.Filename)
 	fmt.Print("Press Enter to start recording...")
 	_, _ = fmt.Scanln()
 
 	recordingStartedAt := time.Now()
 	fmt.Printf("Recording started at  %v. Press Enter to stop recording...\n", recordingStartedAt)
 
-	filePath := os.Args[1]
-	readFile, _ := os.Open(filePath)
+	readFile, _ := os.Open(config.Filename)
 	defer readFile.Close()
 
 	go checkExit()
@@ -38,7 +40,7 @@ func main() {
 		}
 		ts, validTimestamp := containsValidTimestamp(line)
 		if validTimestamp && matchesRecordingPeriod(ts, recordingStartedAt) && matchesPattern(line) {
-			fmt.Println(line)
+			fmt.Print(line)
 		}
 	}
 }
