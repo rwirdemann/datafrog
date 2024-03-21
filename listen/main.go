@@ -18,7 +18,7 @@ var (
 var expectations []string
 
 func main() {
-	config := config.NewConfig()
+	config := config.NewConfig("config.json")
 	println(config.Filename)
 	fmt.Print("Press Enter to start listening...")
 	_, _ = fmt.Scanln()

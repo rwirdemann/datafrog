@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Filename string `json:"filename"`
+	Filename string   `json:"filename"`
+	Include  []string `json:"include"`
 }
 
-func NewConfig() Config {
-	configfile, err := os.Open("config.json")
+func NewConfig(filename string) Config {
+	configfile, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -16,7 +16,7 @@ var (
 )
 
 func main() {
-	config := config.NewConfig()
+	config := config.NewConfig("config.json")
 	println(config.Filename)
 	fmt.Print("Press Enter to start recording...")
 	_, _ = fmt.Scanln()
