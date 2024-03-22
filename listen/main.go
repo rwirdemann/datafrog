@@ -15,8 +15,8 @@ import (
 var expectations []string
 
 func main() {
-	config := config.NewConfig("config.json")
-	println(config.Filename)
+	c := config.NewConfig("config.json")
+	println(c.Filename)
 	fmt.Print("Press Enter to start listening...")
 	_, _ = fmt.Scanln()
 
@@ -34,12 +34,17 @@ func main() {
 		}
 	}
 
-	readFile, _ := os.Open(config.Filename)
-	defer readFile.Close()
+	readFile, _ := os.Open(c.Filename)
+	defer func(readFile *os.File) {
+		err := readFile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(readFile)
 
 	go checkExit()
 
-	matcher := matcher2.NewPatternMatcher(config)
+	matcher := matcher2.NewPatternMatcher(c)
 	reader := bufio.NewReader(readFile)
 	for {
 		line, err := reader.ReadString('\n')

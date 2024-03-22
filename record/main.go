@@ -12,21 +12,22 @@ import (
 	"time"
 )
 
-var (
-	patterns = []string{"insert into job", "update job"}
-)
-
 func main() {
-	config := config.NewConfig("config.json")
-	println(config.Filename)
+	c := config.NewConfig("config.json")
 	fmt.Print("Press Enter to start recording...")
 	_, _ = fmt.Scanln()
 
 	recordingStartedAt := time.Now()
 	fmt.Printf("Recording started at  %v. Press Enter to stop recording...\n", recordingStartedAt)
 
-	readFile, _ := os.Open(config.Filename)
-	defer readFile.Close()
+	readFile, _ := os.Open(c.Filename)
+	defer func(readFile *os.File) {
+		err := readFile.Close()
+		if err != nil {
+			log.Fatal(err)
+
+		}
+	}(readFile)
 
 	go checkExit()
 
@@ -42,7 +43,7 @@ func main() {
 	}(out)
 	outWriter := bufio.NewWriter(out)
 
-	matcher := matcher2.NewPatternMatcher(config)
+	matcher := matcher2.NewPatternMatcher(c)
 	reader := bufio.NewReader(readFile)
 	for {
 		line, err := reader.ReadString('\n')
