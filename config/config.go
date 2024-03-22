@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Filename string   `json:"filename"`
-	Include  []string `json:"include"`
+	Patterns []string `json:"patterns"`
 }
 
 func NewConfig(filename string) Config {

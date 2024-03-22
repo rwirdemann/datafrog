@@ -10,7 +10,7 @@ type SimpleMatcher struct {
 }
 
 func (m SimpleMatcher) MatchingPattern(s string) string {
-	for _, pattern := range m.config.Include {
+	for _, pattern := range m.config.Patterns {
 		if strings.Contains(s, pattern) {
 			return pattern
 		}
@@ -18,13 +18,14 @@ func (m SimpleMatcher) MatchingPattern(s string) string {
 	return ""
 }
 
-func NewSimpleMatcher(config config.Config) Matcher {
+func NewPatternMatcher(config config.Config) Matcher {
 	return SimpleMatcher{config: config}
 }
 
 func (m SimpleMatcher) MatchesAny(s string) bool {
-	for _, pattern := range m.config.Include {
-		if strings.Contains(s, pattern) {
+	for _, p := range m.config.Patterns {
+		p := NewPattern(p)
+		if p.MatchesInclude(s) && !p.MatchesExclude(s) {
 			return true
 		}
 	}

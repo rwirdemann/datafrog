@@ -1,7 +1,8 @@
 {
   "filename": "/usr/local/var/mysql/MBP-von-Ralf.log",
-  "include": [
+  "patterns": [
     "insert into job",
-    "update job"
+    "update job",
+    "select!publish_trials<1"
   ]
 }

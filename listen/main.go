@@ -39,7 +39,7 @@ func main() {
 
 	go checkExit()
 
-	matcher := matcher2.NewSimpleMatcher(config)
+	matcher := matcher2.NewPatternMatcher(config)
 	reader := bufio.NewReader(readFile)
 	for {
 		line, err := reader.ReadString('\n')
