@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/rwirdemann/texttools/config"
 	matcher2 "github.com/rwirdemann/texttools/matcher"
+	"github.com/rwirdemann/texttools/validation"
 	"io"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 	"time"
 )
 
-var expectations []string
+var validator validation.Validator
 
 func main() {
 	c := config.NewConfig("config.json")
@@ -27,25 +28,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	split := strings.Split(string(validationFile), "\n")
-	for _, s := range split {
-		if len(strings.Trim(s, " ")) > 0 {
-			expectations = append(expectations, s)
-		}
-	}
+	validator = validation.NewUnorderedRemovalValidator(strings.Split(string(validationFile), "\n"))
 
-	readFile, _ := os.Open(c.Filename)
+	logFile, _ := os.Open(c.Filename)
 	defer func(readFile *os.File) {
 		err := readFile.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
-	}(readFile)
+	}(logFile)
 
 	go checkExit()
 
 	matcher := matcher2.NewPatternMatcher(c)
-	reader := bufio.NewReader(readFile)
+	reader := bufio.NewReader(logFile)
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -60,32 +56,18 @@ func main() {
 		if validTimestamp && matchesRecordingPeriod(ts, listeningStartedAt) {
 			if matcher.MatchesAny(line) {
 				fmt.Printf("Expectation met: %s", line)
-				expectations = remove(expectations, matcher.MatchingPattern(line))
+				pattern := matcher.MatchingPattern(line)
+				validator.RemoveFirstMatchingExpectation(pattern)
 			}
 		}
 	}
-}
-
-func remove(expectations []string, pattern string) []string {
-	var result []string
-	for i, expectation := range expectations {
-		if strings.Contains(expectation, pattern) {
-			result = append(expectations[:i], expectations[i+1:]...)
-			return result
-		}
-	}
-	return expectations
 }
 
 func checkExit() {
 	var b = make([]byte, 1)
 	l, _ := os.Stdin.Read(b)
 	if l > 0 {
-		if len(expectations) == 0 {
-			fmt.Printf("All expectations met!")
-		} else {
-			fmt.Printf("Failed due to unmet expectations! Missing: %d", len(expectations))
-		}
+		validator.PrintResults()
 		os.Exit(0)
 	}
 }

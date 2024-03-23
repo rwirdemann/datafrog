@@ -2,7 +2,7 @@ package matcher
 
 import (
 	"github.com/rwirdemann/texttools/config"
-	"strings"
+	"log"
 )
 
 type SimpleMatcher struct {
@@ -11,10 +11,12 @@ type SimpleMatcher struct {
 
 func (m SimpleMatcher) MatchingPattern(s string) string {
 	for _, pattern := range m.config.Patterns {
-		if strings.Contains(s, pattern) {
+		p := NewPattern(pattern)
+		if p.MatchesInclude(s) && !p.MatchesExclude(s) {
 			return pattern
 		}
 	}
+	log.Fatalf("Matching pattern not found in '%s'", s)
 	return ""
 }
 
