@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/rwirdemann/texttools/config"
-	matcher2 "github.com/rwirdemann/texttools/matcher"
+	"github.com/rwirdemann/texttools/matcher"
 	"io"
 	"log"
 	"os"
@@ -43,7 +43,7 @@ func main() {
 	}(out)
 	outWriter := bufio.NewWriter(out)
 
-	matcher := matcher2.NewPatternMatcher(c)
+	m := matcher.NewPatternMatcher(c)
 	reader := bufio.NewReader(readFile)
 	for {
 		line, err := reader.ReadString('\n')
@@ -56,7 +56,7 @@ func main() {
 			break
 		}
 		ts, validTimestamp := containsValidTimestamp(line)
-		if validTimestamp && matchesRecordingPeriod(ts, recordingStartedAt) && matcher.MatchesAny(line) {
+		if validTimestamp && matchesRecordingPeriod(ts, recordingStartedAt) && m.MatchesAny(line) {
 			fmt.Print(line)
 			_, err := outWriter.WriteString(line)
 			if err != nil {

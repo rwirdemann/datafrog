@@ -11,8 +11,7 @@ type SimpleMatcher struct {
 
 func (m SimpleMatcher) MatchingPattern(s string) string {
 	for _, pattern := range m.config.Patterns {
-		p := NewPattern(pattern)
-		if p.MatchesInclude(s) && !p.MatchesExclude(s) {
+		if NewPattern(pattern).MatchesAllConditions(s) {
 			return pattern
 		}
 	}
@@ -26,8 +25,7 @@ func NewPatternMatcher(config config.Config) Matcher {
 
 func (m SimpleMatcher) MatchesAny(s string) bool {
 	for _, p := range m.config.Patterns {
-		p := NewPattern(p)
-		if p.MatchesInclude(s) && !p.MatchesExclude(s) {
+		if NewPattern(p).MatchesAllConditions(s) {
 			return true
 		}
 	}

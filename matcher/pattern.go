@@ -28,3 +28,7 @@ func (p Pattern) MatchesInclude(s string) bool {
 func (p Pattern) MatchesExclude(s string) bool {
 	return len(p.Exclude) > 0 && strings.Contains(s, p.Exclude)
 }
+
+func (p Pattern) MatchesAllConditions(s string) bool {
+	return p.MatchesInclude(s) && !p.MatchesExclude(s)
+}

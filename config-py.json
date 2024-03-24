@@ -1,0 +1,8 @@
+{
+  "filename": "/usr/local/var/mysql/MBP-von-Ralf.log",
+  "patterns": [
+    "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('hello', '<DATE_STR>', 0, null, '', 'World', <ID>)",
+    "update job set description='hello', publish_at='<DATE_STR>', publish_trials=1, published_timestamp='<DATE_STR>', tags='', title='world' where id=<ID>,",
+    "select job!publish_trials<1"
+  ]
+}

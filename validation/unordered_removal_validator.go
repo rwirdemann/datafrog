@@ -22,9 +22,9 @@ func NewUnorderedRemovalValidator(expectations []string) Validator {
 
 func (u *UnorderedRemovalValidator) RemoveFirstMatchingExpectation(pattern string) {
 	for i, expectation := range u.expectations {
-		p := matcher.NewPattern(pattern)
-		if p.MatchesInclude(expectation) && !p.MatchesExclude(expectation) {
+		if matcher.NewPattern(pattern).MatchesAllConditions(expectation) {
 			u.expectations = append(u.expectations[:i], u.expectations[i+1:]...)
+			break
 		}
 	}
 }
