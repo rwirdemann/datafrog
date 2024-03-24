@@ -6,7 +6,7 @@ import (
 )
 
 func TestMatchesAny(t *testing.T) {
-	c := config.NewConfig("test_config.json")
+	c := config.NewConfig("simple_config.json")
 
 	m := NewPatternMatcher(c)
 	tests := []struct {
