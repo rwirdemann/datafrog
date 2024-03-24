@@ -3,6 +3,7 @@ package matcher
 import "testing"
 
 func TestGompyPattern_MatchesAllConditions(t *testing.T) {
+	pattern := "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('Hello', '<DATE_STR>', 0, null, '', 'World', <ID>)"
 	tests := []struct {
 		name    string
 		actual  string
@@ -10,9 +11,9 @@ func TestGompyPattern_MatchesAllConditions(t *testing.T) {
 		want    bool
 	}{
 		{
-			name:    "matches",
-			actual:  "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title) values ('Hello', '2024-03-24 11:46:46', 0, null, '', 'World')",
-			pattern: "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title) values ('Hello', '<DATE_STR>', 0, null, '', 'World')",
+			name:    "m3",
+			actual:  "2024-03-24T10:46:52.226470Z 821 Query insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('Hello', '2024-03-24 11:46:46', 0, null, '', 'World', 14)",
+			pattern: pattern,
 			want:    true,
 		},
 	}

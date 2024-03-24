@@ -36,6 +36,7 @@ func (p GompyPattern) MatchesAllConditions(s string) bool {
 	regex := strings.ReplaceAll(p.Include, "(", "\\(")
 	regex = strings.ReplaceAll(regex, ")", "\\)")
 	regex = strings.ReplaceAll(regex, "<DATE_STR>", "([0-9\\-]+ [0-9\\:]+)")
+	regex = strings.ReplaceAll(regex, "<ID>", "([0-9]+)")
 	r, _ := regexp.Compile(regex)
 	return r.MatchString(s)
 }
