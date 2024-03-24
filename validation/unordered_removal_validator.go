@@ -3,7 +3,6 @@ package validation
 import (
 	"fmt"
 	"github.com/rwirdemann/texttools/matcher"
-	"log"
 	"strings"
 )
 
@@ -26,10 +25,8 @@ func (u *UnorderedRemovalValidator) RemoveFirstMatchingExpectation(pattern strin
 		p := matcher.NewPattern(pattern)
 		if p.MatchesInclude(expectation) && !p.MatchesExclude(expectation) {
 			u.expectations = append(u.expectations[:i], u.expectations[i+1:]...)
-			return
 		}
 	}
-	log.Fatalf("Could not remove expectation. Pattern not found: %s", pattern)
 }
 
 func (u *UnorderedRemovalValidator) PrintResults() {
