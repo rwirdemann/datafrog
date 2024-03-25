@@ -3,12 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/rwirdemann/texttools/adapter"
 	"github.com/rwirdemann/texttools/config"
 	"github.com/rwirdemann/texttools/matcher"
-	"io"
 	"log"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -20,43 +19,28 @@ func main() {
 	recordingStartedAt := time.Now()
 	fmt.Printf("Recording started at  %v. Press Enter to stop recording...\n", recordingStartedAt)
 
-	readFile, _ := os.Open(c.Filename)
-	defer func(readFile *os.File) {
-		err := readFile.Close()
-		if err != nil {
-			log.Fatal(err)
-
-		}
-	}(readFile)
+	logPort := adapter.NewMYSQLLog(c.Filename)
+	defer logPort.Close()
 
 	go checkExit()
 
 	out, err := os.Create(os.Args[1])
+	defer out.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func(out *os.File) {
-		err := out.Close()
-		if err != nil {
-
-		}
-	}(out)
+	defer out.Close()
 	outWriter := bufio.NewWriter(out)
 
 	m := matcher.NewPatternMatcher(c)
-	reader := bufio.NewReader(readFile)
 	for {
-		line, err := reader.ReadString('\n')
+		line, err := logPort.NextLine()
 		if err != nil {
-			if err == io.EOF {
-				time.Sleep(500 * time.Millisecond)
-				continue
-			}
-
-			break
+			log.Fatal(err)
 		}
-		ts, validTimestamp := containsValidTimestamp(line)
-		if validTimestamp && matchesRecordingPeriod(ts, recordingStartedAt) && m.MatchesAny(line) {
+
+		ts, err := logPort.Timestamp(line)
+		if err == nil && matchesRecordingPeriod(ts, recordingStartedAt) && m.MatchesAny(line) {
 			fmt.Print(line)
 			_, err := outWriter.WriteString(line)
 			if err != nil {
@@ -79,18 +63,4 @@ func checkExit() {
 }
 func matchesRecordingPeriod(ts time.Time, startDate time.Time) bool {
 	return ts.Equal(startDate) || ts.After(startDate)
-}
-
-func containsValidTimestamp(line string) (time.Time, bool) {
-	split := strings.Split(line, "\t")
-	if len(split) == 0 {
-		return time.Time{}, false
-	}
-
-	d, err := time.Parse(time.RFC3339Nano, split[0])
-	if err != nil {
-		return time.Time{}, false
-	}
-	return d, true
-
 }
