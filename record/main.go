@@ -6,6 +6,7 @@ import (
 	"github.com/rwirdemann/texttools/adapter"
 	"github.com/rwirdemann/texttools/config"
 	"github.com/rwirdemann/texttools/matcher"
+	"github.com/rwirdemann/texttools/ticker"
 	"log"
 	"os"
 	"time"
@@ -16,8 +17,9 @@ func main() {
 	fmt.Print("Press Enter to start recording...")
 	_, _ = fmt.Scanln()
 
-	recordingStartedAt := time.Now()
-	fmt.Printf("Recording started at  %v. Press Enter to stop recording...\n", recordingStartedAt)
+	t := ticker.Ticker{}
+	t.Start()
+	fmt.Printf("Recording started at  %v. Press Enter to stop recording...\n", t.GetStart())
 
 	logPort := adapter.NewMYSQLLog(c.Filename)
 	defer logPort.Close()
@@ -40,7 +42,10 @@ func main() {
 		}
 
 		ts, err := logPort.Timestamp(line)
-		if err == nil && matchesRecordingPeriod(ts, recordingStartedAt) && m.MatchesAny(line) {
+		if err != nil {
+			continue
+		}
+		if t.MatchesRecordingPeriod(ts) && m.MatchesAny(line) {
 			fmt.Print(line)
 			_, err := outWriter.WriteString(line)
 			if err != nil {

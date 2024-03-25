@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/rwirdemann/texttools/adapter"
 	"github.com/rwirdemann/texttools/config"
-	matcher2 "github.com/rwirdemann/texttools/matcher"
+	"github.com/rwirdemann/texttools/matcher"
+	"github.com/rwirdemann/texttools/ticker"
 	"github.com/rwirdemann/texttools/validation"
 	"log"
 	"os"
@@ -20,8 +21,9 @@ func main() {
 	fmt.Print("Press Enter to start listening...")
 	_, _ = fmt.Scanln()
 
-	listeningStartedAt := time.Now()
-	fmt.Printf("Listening started at  %v. Press Enter to stop recording...\n", listeningStartedAt)
+	t := ticker.Ticker{}
+	t.Start()
+	fmt.Printf("Listening started at  %v. Press Enter to stop recording...\n", t.GetStart())
 
 	validationFile, err := os.ReadFile(os.Args[1])
 	if err != nil {
@@ -34,19 +36,20 @@ func main() {
 
 	go checkExit()
 
-	matcher := matcher2.NewPatternMatcher(c)
+	m := matcher.NewPatternMatcher(c)
 	for {
 		line, err := logPort.NextLine()
 		if err != nil {
 			log.Fatal(err)
 		}
 		ts, err := logPort.Timestamp(line)
-		if err == nil && matchesRecordingPeriod(ts, listeningStartedAt) {
-			if matcher.MatchesAny(line) {
-				fmt.Printf("Expectation met: %s", line)
-				pattern := matcher.MatchingPattern(line)
-				validator.RemoveFirstMatchingExpectation(pattern)
-			}
+		if err != nil {
+			continue
+		}
+		if t.MatchesRecordingPeriod(ts) && m.MatchesAny(line) {
+			fmt.Printf("Expectation met: %s", line)
+			pattern := m.MatchingPattern(line)
+			validator.RemoveFirstMatchingExpectation(pattern)
 		}
 	}
 }
