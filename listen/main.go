@@ -1,12 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"github.com/rwirdemann/texttools/adapter"
 	"github.com/rwirdemann/texttools/config"
 	matcher2 "github.com/rwirdemann/texttools/matcher"
 	"github.com/rwirdemann/texttools/validation"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -30,30 +29,19 @@ func main() {
 	}
 	validator = validation.NewUnorderedRemovalValidator(strings.Split(string(validationFile), "\n"))
 
-	logFile, _ := os.Open(c.Filename)
-	defer func(readFile *os.File) {
-		err := readFile.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(logFile)
+	logPort := adapter.NewMYSQLLog(c.Filename)
+	defer logPort.Close()
 
 	go checkExit()
 
 	matcher := matcher2.NewPatternMatcher(c)
-	reader := bufio.NewReader(logFile)
 	for {
-		line, err := reader.ReadString('\n')
+		line, err := logPort.NextLine()
 		if err != nil {
-			if err == io.EOF {
-				time.Sleep(500 * time.Millisecond)
-				continue
-			}
-
-			break
+			log.Fatal(err)
 		}
-		ts, validTimestamp := containsValidTimestamp(line)
-		if validTimestamp && matchesRecordingPeriod(ts, listeningStartedAt) {
+		ts, err := logPort.Timestamp(line)
+		if err == nil && matchesRecordingPeriod(ts, listeningStartedAt) {
 			if matcher.MatchesAny(line) {
 				fmt.Printf("Expectation met: %s", line)
 				pattern := matcher.MatchingPattern(line)
@@ -73,18 +61,4 @@ func checkExit() {
 }
 func matchesRecordingPeriod(ts time.Time, startDate time.Time) bool {
 	return ts.Equal(startDate) || ts.After(startDate)
-}
-
-func containsValidTimestamp(line string) (time.Time, bool) {
-	split := strings.Split(line, "\t")
-	if len(split) == 0 {
-		return time.Time{}, false
-	}
-
-	d, err := time.Parse(time.RFC3339Nano, split[0])
-	if err != nil {
-		return time.Time{}, false
-	}
-	return d, true
-
 }
