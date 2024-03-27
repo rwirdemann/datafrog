@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"net/http"
+
+	"github.com/google/uuid"
 
 	"github.com/gorilla/mux"
 )
@@ -12,8 +13,8 @@ import (
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/tests", CreateTest()).Methods("POST")
-	router.HandleFunc("/tests/reset", ResetTest()).Methods("POST")
-	router.HandleFunc("/tests/validate", ValidateTest()).Methods("POST")
+	router.HandleFunc("/tests/{test-id}/runs", ResetTest()).Methods("POST")
+	router.HandleFunc("/tests/{test-id}/runs", ValidateTest()).Methods("GET")
 	log.Printf("starting http service on port %d...", 3000)
 	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		tpl, _ := route.GetPathTemplate()
@@ -34,24 +35,27 @@ func main() {
 func CreateTest() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
-		writer.Header().Set("Location", uuid.New().String())
+		testID := uuid.New().String()
+		writer.Header().Set("Location", testID)
 		writer.WriteHeader(http.StatusCreated)
-		log.Println("POST CreateTest")
+		log.Printf("POST CreateTest: %s\n", testID)
 	}
 }
 
 func ResetTest() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		testID := mux.Vars(request)["test-id"]
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		writer.WriteHeader(http.StatusOK)
-		log.Println("POST ResetTest")
+		log.Printf("POST ResetTest: %s\n", testID)
 	}
 }
 
 func ValidateTest() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		testID := mux.Vars(request)["test-id"]
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		writer.WriteHeader(http.StatusOK)
-		log.Println("POST ValidateTest")
+		log.Printf("POST ValidateTest: %s\n", testID)
 	}
 }
