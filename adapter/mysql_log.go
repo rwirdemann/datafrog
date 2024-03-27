@@ -3,7 +3,7 @@ package adapter
 import (
 	"bufio"
 	"errors"
-	"github.com/rwirdemann/texttools/ports"
+	"github.com/rwirdemann/databasedragon/ports"
 	"io"
 	"log"
 	"os"

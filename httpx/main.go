@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"log"
 	"net/http"
 
@@ -33,7 +34,8 @@ func main() {
 func CreateTest() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
-		writer.WriteHeader(http.StatusOK)
+		writer.Header().Set("Location", uuid.New().String())
+		writer.WriteHeader(http.StatusCreated)
 		log.Println("POST CreateTest")
 	}
 }

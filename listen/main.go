@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/rwirdemann/texttools/adapter"
-	"github.com/rwirdemann/texttools/config"
-	"github.com/rwirdemann/texttools/matcher"
-	"github.com/rwirdemann/texttools/ticker"
-	"github.com/rwirdemann/texttools/validation"
+	"github.com/rwirdemann/databasedragon/adapter"
+	"github.com/rwirdemann/databasedragon/config"
+	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/databasedragon/ticker"
+	"github.com/rwirdemann/databasedragon/validation"
 	"log"
 	"os"
 	"strings"

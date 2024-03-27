@@ -1,7 +1,7 @@
 package matcher
 
 import (
-	"github.com/rwirdemann/texttools/config"
+	"github.com/rwirdemann/databasedragon/config"
 	"testing"
 )
 

@@ -1,8 +1,13 @@
 {
-  "filename": "/usr/local/var/mysql/MBP-von-Ralf.log",
+  "filename": "/usr/local/var/mysql/MacBook-Pro-von-Ralf.log",
   "patterns": [
     "insert into job",
     "update job",
     "select job!publish_trials<1"
+  ],
+  "tables": [
+    "job": {
+      "igorne_columns": time_stamp, id
+    }
   ]
 }

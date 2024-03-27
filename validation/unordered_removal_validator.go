@@ -2,7 +2,7 @@ package validation
 
 import (
 	"fmt"
-	"github.com/rwirdemann/texttools/matcher"
+	"github.com/rwirdemann/databasedragon/matcher"
 	"strings"
 )
 
