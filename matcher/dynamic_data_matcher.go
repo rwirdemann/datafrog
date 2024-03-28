@@ -41,10 +41,24 @@ func (m DynamicDataMatcher) MatchesExactly(s1 string, s2 string) bool {
 	s2 = cutPrefix(s2, m.config.Patterns)
 	s2 = strings.TrimSuffix(s2, "\n")
 
-	r := regexp.MustCompile(`([0-9\\-]+ [0-9\\:]+)`)
+	r := regexp.MustCompile(`([A-Za-z0-9]+(-[A-Za-z0-9]+)+) ([A-Za-z0-9]+(:[A-Za-z0-9]+)+)(\.[0-9]+)?`)
 	s1 = r.ReplaceAllString(s1, "<DATE_STR>")
 	s2 = r.ReplaceAllString(s2, "<DATE_STR>")
+
+	r2 := regexp.MustCompile(`(, [0-9]+)`)
+	s1 = r2.ReplaceAllString(s1, "<ID>")
+	s2 = r2.ReplaceAllString(s2, "<ID>")
+
+	r3 := regexp.MustCompile(`(=[0-9]+)`)
+	s1 = r3.ReplaceAllString(s1, "<ID>")
+	s2 = r3.ReplaceAllString(s2, "<ID>")
+
 	return s1 == s2
+}
+
+func useRegex(s string) bool {
+	re := regexp.MustCompile("([A-Za-z0-9]+(-[A-Za-z0-9]+)+) ([A-Za-z0-9]+(:[A-Za-z0-9]+)+)")
+	return re.MatchString(s)
 }
 
 func cutPrefix(s string, patterns []string) string {

@@ -19,7 +19,7 @@ func main() {
 	c := config.NewConfig("config.json")
 	println(c.Filename)
 	fmt.Print("Press Enter to start listening...")
-	//	_, _ = fmt.Scanln()
+	_, _ = fmt.Scanln()
 
 	t := ticker.Ticker{}
 	t.Start()
@@ -47,13 +47,20 @@ func main() {
 			continue
 		}
 		if t.MatchesRecordingPeriod(ts) {
-			for _, e := range validator.GetExpectations() {
-				if m.MatchesAny(line) {
+			matches := false
+			matchingExpectations := ""
+			if m.MatchesAny(line) {
+				for _, e := range validator.GetExpectations() {
 					if m.MatchesExactly(line, e) {
 						fmt.Printf("Expectation met: %s", line)
-						validator.Remove(e)
+						matches = true
+						matchingExpectations = e
+						break
 					}
 				}
+			}
+			if matches {
+				validator.Remove(matchingExpectations)
 			}
 		}
 	}
