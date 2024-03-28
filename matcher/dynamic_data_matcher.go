@@ -3,6 +3,7 @@ package matcher
 import (
 	"log"
 	"regexp"
+	"strings"
 
 	"github.com/rwirdemann/databasedragon/config"
 )
@@ -35,8 +36,21 @@ func (m DynamicDataMatcher) MatchesAny(s string) bool {
 }
 
 func (m DynamicDataMatcher) MatchesExactly(s1 string, s2 string) bool {
+	s1 = cutPrefix(s1, m.config.Patterns)
+	s2 = cutPrefix(s2, m.config.Patterns)
+
 	r := regexp.MustCompile(`([0-9\\-]+ [0-9\\:]+)`)
 	s1 = r.ReplaceAllString(s1, "<DATE_STR>")
 	s2 = r.ReplaceAllString(s2, "<DATE_STR>")
 	return s1 == s2
+}
+
+func cutPrefix(s string, patterns []string) string {
+	for _, p := range patterns {
+		idx := strings.Index(s, NewPattern(p).Include)
+		if idx > -1 {
+			return s[idx:]
+		}
+	}
+	return s
 }
