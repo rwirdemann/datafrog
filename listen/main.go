@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strings"
+
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
 	"github.com/rwirdemann/databasedragon/ticker"
 	"github.com/rwirdemann/databasedragon/validation"
-	"log"
-	"os"
-	"strings"
-	"time"
 )
 
 var validator validation.Validator
@@ -19,7 +19,7 @@ func main() {
 	c := config.NewConfig("config.json")
 	println(c.Filename)
 	fmt.Print("Press Enter to start listening...")
-	_, _ = fmt.Scanln()
+	//	_, _ = fmt.Scanln()
 
 	t := ticker.Ticker{}
 	t.Start()
@@ -36,7 +36,7 @@ func main() {
 
 	go checkExit()
 
-	m := matcher.NewPatternMatcher(c)
+	m := matcher.NewDynamicDataMatcher(c)
 	for {
 		line, err := logPort.NextLine()
 		if err != nil {
@@ -46,10 +46,15 @@ func main() {
 		if err != nil {
 			continue
 		}
-		if t.MatchesRecordingPeriod(ts) && m.MatchesAny(line) {
-			fmt.Printf("Expectation met: %s", line)
-			pattern := m.MatchingPattern(line)
-			validator.RemoveFirstMatchingExpectation(pattern)
+		if t.MatchesRecordingPeriod(ts) {
+			for _, e := range validator.GetExpectations() {
+				if m.MatchesAny(line) {
+					if m.MatchesExactly(line, e) {
+						fmt.Printf("Expectation met: %s", line)
+						validator.Remove(e)
+					}
+				}
+			}
 		}
 	}
 }
@@ -61,7 +66,4 @@ func checkExit() {
 		validator.PrintResults()
 		os.Exit(0)
 	}
-}
-func matchesRecordingPeriod(ts time.Time, startDate time.Time) bool {
-	return ts.Equal(startDate) || ts.After(startDate)
 }

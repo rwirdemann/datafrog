@@ -37,7 +37,9 @@ func (m DynamicDataMatcher) MatchesAny(s string) bool {
 
 func (m DynamicDataMatcher) MatchesExactly(s1 string, s2 string) bool {
 	s1 = cutPrefix(s1, m.config.Patterns)
+	s1 = strings.TrimSuffix(s1, "\n")
 	s2 = cutPrefix(s2, m.config.Patterns)
+	s2 = strings.TrimSuffix(s2, "\n")
 
 	r := regexp.MustCompile(`([0-9\\-]+ [0-9\\:]+)`)
 	s1 = r.ReplaceAllString(s1, "<DATE_STR>")

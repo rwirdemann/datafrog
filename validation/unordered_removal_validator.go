@@ -2,8 +2,9 @@ package validation
 
 import (
 	"fmt"
-	"github.com/rwirdemann/databasedragon/matcher"
 	"strings"
+
+	"github.com/rwirdemann/databasedragon/matcher"
 )
 
 type UnorderedRemovalValidator struct {
@@ -34,5 +35,18 @@ func (u *UnorderedRemovalValidator) PrintResults() {
 		fmt.Printf("All expectations met!")
 	} else {
 		fmt.Printf("Failed due to unmet expectations! Missing: %d", len(u.expectations))
+	}
+}
+
+func (u *UnorderedRemovalValidator) GetExpectations() []string {
+	return u.expectations
+}
+
+func (u *UnorderedRemovalValidator) Remove(expectation string) {
+	for i, e := range u.expectations {
+		if expectation == e {
+			u.expectations = append(u.expectations[:i], u.expectations[i+1:]...)
+			break
+		}
 	}
 }
