@@ -3,13 +3,14 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
 	"github.com/rwirdemann/databasedragon/ticker"
-	"log"
-	"os"
-	"time"
 )
 
 func main() {
@@ -27,14 +28,13 @@ func main() {
 	go checkExit()
 
 	out, err := os.Create(os.Args[1])
-	defer out.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer out.Close()
 	outWriter := bufio.NewWriter(out)
 
-	m := matcher.NewPatternMatcher(c)
+	m := matcher.NewDynamicDataMatcher(c)
 	for {
 		line, err := logPort.NextLine()
 		if err != nil {

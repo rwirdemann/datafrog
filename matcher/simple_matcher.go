@@ -1,8 +1,9 @@
 package matcher
 
 import (
-	"github.com/rwirdemann/databasedragon/config"
 	"log"
+
+	"github.com/rwirdemann/databasedragon/config"
 )
 
 type SimpleMatcher struct {
@@ -29,5 +30,9 @@ func (m SimpleMatcher) MatchesAny(s string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+func (p SimpleMatcher) MatchesExactly(s1 string, s2 string) bool {
 	return false
 }

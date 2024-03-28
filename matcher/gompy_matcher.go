@@ -1,8 +1,9 @@
 package matcher
 
 import (
-	"github.com/rwirdemann/databasedragon/config"
 	"log"
+
+	"github.com/rwirdemann/databasedragon/config"
 )
 
 type GompyMatcher struct {
@@ -29,5 +30,9 @@ func (m GompyMatcher) MatchesAny(s string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+func (p GompyMatcher) MatchesExactly(s1 string, s2 string) bool {
 	return false
 }
