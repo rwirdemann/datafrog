@@ -7,7 +7,7 @@ type Ticker struct {
 }
 
 func (t *Ticker) Start() {
-	t.start = time.Now()
+	t.start = time.Now().UTC()
 }
 
 func (t *Ticker) GetStart() time.Time {
