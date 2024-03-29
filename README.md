@@ -1,32 +1,25 @@
 # Database Dragon
 
+A simple command line tool to record and validate database statements.
+
+The current version was tested with MySQL on MacOS.
+
 ## Development
 
-Run `make` to create the two binaries `rt-record` and `rt-listen` in `$GOPATH/bin`.
+Run `make` to create the `dbd`binary.
 
 ```
 $ make 
 ```
 
-## Recording
+## Configuration.
 
-Start recorder in a shell. Expects a `config.json` file in the current directory and writes matching
-staments to the file passed as first command line argument.
+Expects a `config.json` file in the current directory.
 
-```
-$ rt-record create-job.rt
-```
+## Running
 
-## Listening
-
-Start listener in a shell. Expects a `config.json` file in the current directory and reads recorded
-staments from the file passed as first command line argument.
+See help to see recording and validation options.
 
 ```
-$ rt-listen create-job.rt
+$ dbd --help
 ```
-
-
-
-
-
