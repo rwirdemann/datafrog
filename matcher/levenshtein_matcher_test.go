@@ -5,18 +5,12 @@ import (
 	"testing"
 
 	"github.com/rwirdemann/databasedragon/config"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestUseRegex(t *testing.T) {
-	assert.True(t, useRegex("2024-03-28 10:57:27"))
-	assert.True(t, useRegex("2024-03-28 10:57:27.261562"))
-}
-
 func TestMatchesExactly(t *testing.T) {
-	c := config.NewConfig("simple_config.json")
+	c := config.NewConfig("config.json")
 
-	m := NewDynamicDataMatcher(c)
+	m := NewLevenshteinMatcher(c)
 	tests := []struct {
 		s1   string
 		s2   string

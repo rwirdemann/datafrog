@@ -49,7 +49,7 @@ func (l *Listener) Start() {
 	logPort := adapter.NewMYSQLLog(l.config.Filename)
 	defer logPort.Close()
 
-	m := matcher.NewDynamicDataMatcher(l.config)
+	m := matcher.NewLevenshteinMatcher(l.config)
 	for {
 		line, err := logPort.NextLine()
 		if err != nil {
@@ -62,10 +62,9 @@ func (l *Listener) Start() {
 		if t.MatchesRecordingPeriod(ts) {
 			matches := false
 			matchingExpectation := ""
-			if m.MatchesAny(line) {
+			if m.MatchesPattern(line) {
 				for _, e := range l.validator.GetExpectations() {
 					if m.MatchesExactly(line, e) {
-						log.Printf("Expectation met...: %s", line[:60])
 						matches = true
 						matchingExpectation = e
 						break
@@ -74,6 +73,7 @@ func (l *Listener) Start() {
 			}
 			if matches {
 				l.validator.Remove(matchingExpectation)
+				log.Printf("Remaining Exceptions: %d", len(l.validator.GetExpectations()))
 			}
 		}
 	}

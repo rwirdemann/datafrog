@@ -1,7 +1,6 @@
 package matcher
 
 type Matcher interface {
-	MatchesAny(s string) bool
-	MatchingPattern(s string) string
+	MatchesPattern(s string) bool
 	MatchesExactly(s1 string, s2 string) bool
 }
