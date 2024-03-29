@@ -17,7 +17,7 @@ func init() {
 
 var recorder *Recorder
 var recordCmd = &cobra.Command{
-	Use:   "dbd",
+	Use:   "record",
 	Short: "Starts recording",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		out, _ := cmd.Flags().GetString("out")
