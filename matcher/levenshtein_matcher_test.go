@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/rwirdemann/databasedragon/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMatchesExactly(t *testing.T) {
@@ -48,5 +49,29 @@ func TestMatchesExactly(t *testing.T) {
 				t.Errorf("MatchesExactly() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_normalize(t *testing.T) {
+	tests := []struct {
+		actual   string
+		expected string
+	}{
+		{
+			actual:   "2024-03-29T11:15:00.509261Z	  879 Query	select job0_.id",
+			expected: "select job0_.id",
+		},
+		{
+			actual:   "2024-03-29T11:15:00.509261Z	  879 Query	select job0_.id\n",
+			expected: "select job0_.id",
+		},
+		{
+			actual:   "2024-03-29T11:15:08.238360Z	  879 Query	update job set description='w', publish_at='2024-03-29 12:15:01'",
+			expected: "update job set description='w', publish_at='<DATE_STR>'",
+		},
+	}
+
+	for _, tc := range tests {
+		assert.Equal(t, tc.expected, normalize(tc.actual, []string{"select", "update"}))
 	}
 }

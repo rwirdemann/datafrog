@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Filename string   `json:"filename"`
-	Patterns []string `json:"patterns"`
+	Filename               string   `json:"filename"`
+	MaxLevenshteinDistance int      `json:"maxLevenshteinDistance"`
+	Patterns               []string `json:"patterns"`
 }
 
 func NewConfig(filename string) Config {

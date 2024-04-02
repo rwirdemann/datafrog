@@ -61,7 +61,8 @@ func (r *Recorder) Start() {
 		if err != nil {
 			continue
 		}
-		if t.MatchesRecordingPeriod(ts) && m.MatchesPattern(line) {
+		matches, _ := m.MatchesPattern(line)
+		if t.MatchesRecordingPeriod(ts) && matches {
 			log.Println(line)
 			_, err := outWriter.WriteString(line)
 			if err != nil {

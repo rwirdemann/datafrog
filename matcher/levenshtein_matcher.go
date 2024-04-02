@@ -30,47 +30,40 @@ func (m LevenshteinMatcher) MatchingPattern(s string) string {
 	return ""
 }
 
-func (m LevenshteinMatcher) MatchesPattern(s string) bool {
+func (m LevenshteinMatcher) MatchesPattern(s string) (bool, Pattern) {
 	for _, p := range m.config.Patterns {
 		if NewPattern(p).MatchesAllConditions(s) {
-			return true
+			return true, NewPattern(p)
 		}
 	}
-	return false
+	return false, Pattern{}
 }
 
 func (m LevenshteinMatcher) MatchesExactly(recorded string, expecation string) bool {
 
-	// Quickcheck: Does the recorded line contain one of the recording patterns?
-	if !m.MatchesPattern(recorded) {
-		return false
-	}
+	// Remove dynamic and other noisy data
+	recorded = normalize(recorded, m.config.Patterns)
+	expecation = normalize(expecation, m.config.Patterns)
 
-	recorded = cutPrefix(recorded, m.config.Patterns)
-	recorded = strings.TrimSuffix(recorded, "\n")
-	expecation = cutPrefix(expecation, m.config.Patterns)
-	expecation = strings.TrimSuffix(expecation, "\n")
+	distance := levenshtein.ComputeDistance(recorded, expecation)
 
-	r := regexp.MustCompile(`([A-Za-z0-9]+(-[A-Za-z0-9]+)+) ([A-Za-z0-9]+(:[A-Za-z0-9]+)+)(\.[0-9]+)?`)
-	recorded = r.ReplaceAllString(recorded, "<DATE_STR>")
-	expecation = r.ReplaceAllString(expecation, "<DATE_STR>")
-
-	distance := float64(levenshtein.ComputeDistance(recorded, expecation))
-	sum := float64(len(recorded)) + float64(len(expecation))
-
-	ratio := (sum - distance) / sum
-
-	log.Printf("EXPECTATION: %s\n", expecation)
-	log.Printf("RECORDED   : %s\n", recorded)
-
-	match := ratio > minLevenshteinTresholdRatio
+	log.Println(recorded)
+	match := distance <= m.config.MaxLevenshteinDistance
 	if match {
-		log.Printf("LEVEN RATIO: %f => Expectation met", ratio)
+		log.Printf("Levenshtein Distance: %d => Expectation met", distance)
 	} else {
-		log.Printf("LEVEN RATIO: %f => Expectation failed", ratio)
+		log.Printf("Levenshtein Distance: %d => Expectation failed", distance)
 	}
-	log.Println("---------------------------------------------------------------------------------")
 	return match
+}
+
+func normalize(s string, patterns []string) string {
+	result := cutPrefix(s, patterns)
+	result = strings.TrimSuffix(result, "\n")
+	timeRegex := regexp.MustCompile(`([A-Za-z0-9]+(-[A-Za-z0-9]+)+) ([A-Za-z0-9]+(:[A-Za-z0-9]+)+)(\.[0-9]+)?`)
+	result = timeRegex.ReplaceAllString(result, "<DATE_STR>")
+
+	return result
 }
 
 func cutPrefix(s string, patterns []string) string {

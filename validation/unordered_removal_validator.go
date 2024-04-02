@@ -11,7 +11,7 @@ type UnorderedRemovalValidator struct {
 	expectations []string
 }
 
-func NewUnorderedRemovalValidator(expectations []string) Validator {
+func NewUnorderedRemovalValidator(expectations []string) *UnorderedRemovalValidator {
 	v := UnorderedRemovalValidator{}
 	for _, e := range expectations {
 		if len(strings.Trim(e, " ")) > 0 {

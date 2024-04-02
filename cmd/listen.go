@@ -45,6 +45,7 @@ func (l *Listener) Start() {
 		log.Fatal(err)
 	}
 	l.validator = validation.NewUnorderedRemovalValidator(strings.Split(string(expecations), "\n"))
+	initialExpectationCount := len(l.validator.GetExpectations())
 
 	logPort := adapter.NewMYSQLLog(l.config.Filename)
 	defer logPort.Close()
@@ -62,9 +63,11 @@ func (l *Listener) Start() {
 		if t.MatchesRecordingPeriod(ts) {
 			matches := false
 			matchingExpectation := ""
-			if m.MatchesPattern(line) {
+
+			matchesPattern, pattern := m.MatchesPattern(line)
+			if matchesPattern {
 				for _, e := range l.validator.GetExpectations() {
-					if m.MatchesExactly(line, e) {
+					if pattern.MatchesAllConditions(e) && m.MatchesExactly(line, e) {
 						matches = true
 						matchingExpectation = e
 						break
@@ -73,7 +76,7 @@ func (l *Listener) Start() {
 			}
 			if matches {
 				l.validator.Remove(matchingExpectation)
-				log.Printf("Remaining Exceptions: %d", len(l.validator.GetExpectations()))
+				log.Printf("Remaining Exceptions: %d / %d", len(l.validator.GetExpectations()), initialExpectationCount)
 			}
 		}
 	}
