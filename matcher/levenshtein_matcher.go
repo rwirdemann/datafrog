@@ -9,9 +9,8 @@ import (
 	"github.com/rwirdemann/databasedragon/config"
 )
 
-// Min ratio to consider two strings as equal according to levenshtein string comparison.
-const minLevenshteinTresholdRatio = 0.99
-
+// The LevenshteinMatcher fulfills the Matcher interface and uses the Levenshtein algorithms for
+// comparing SQL statements.
 type LevenshteinMatcher struct {
 	config config.Config
 }
@@ -47,12 +46,13 @@ func (m LevenshteinMatcher) MatchesExactly(recorded string, expecation string) b
 
 	distance := levenshtein.ComputeDistance(recorded, expecation)
 
-	log.Println(recorded)
+	var Green = "\033[32m"
+	var Red = "\033[31m"
 	match := distance <= m.config.MaxLevenshteinDistance
 	if match {
-		log.Printf("Levenshtein Distance: %d => Expectation met", distance)
+		log.Printf(Green+"Levenshtein Distance: %d => Expectation met", distance)
 	} else {
-		log.Printf("Levenshtein Distance: %d => Expectation failed", distance)
+		log.Printf(Red+"Levenshtein Distance: %d => Expectation failed", distance)
 	}
 	return match
 }

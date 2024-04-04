@@ -60,23 +60,27 @@ func (l *Listener) Start() {
 		if err != nil {
 			continue
 		}
-		if t.MatchesRecordingPeriod(ts) {
-			matches := false
-			matchingExpectation := ""
+		if !t.MatchesRecordingPeriod(ts) {
+			continue
+		}
 
-			matchesPattern, pattern := m.MatchesPattern(line)
-			if matchesPattern {
-				for _, e := range l.validator.GetExpectations() {
-					if pattern.MatchesAllConditions(e) && m.MatchesExactly(line, e) {
-						matches = true
-						matchingExpectation = e
+		var Green = "\033[32m"
+		var Yellow = "\033[33m"
+		var White = "\033[97m"
+		log.SetFlags(0)
+		matchesPattern, pattern := m.MatchesPattern(line)
+		if matchesPattern {
+			log.Printf(Green+"PATTERN: %v", pattern)
+			log.Printf(Green+"IN: %s", line)
+			for i, e := range l.validator.GetExpectations() {
+				if pattern.MatchesAllConditions(e) {
+					log.Printf(Yellow+"E%d: %s", i+1, e)
+					if m.MatchesExactly(line, e) {
+						l.validator.Remove(e)
+						log.Printf(White+"Remaining Exceptions: %d / %d\n", len(l.validator.GetExpectations()), initialExpectationCount)
 						break
 					}
 				}
-			}
-			if matches {
-				l.validator.Remove(matchingExpectation)
-				log.Printf("Remaining Exceptions: %d / %d", len(l.validator.GetExpectations()), initialExpectationCount)
 			}
 		}
 	}
