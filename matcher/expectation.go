@@ -1,8 +1,7 @@
-package main
+package matcher
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Expectation struct {
@@ -32,17 +31,6 @@ func (e Expectation) Equal(actual string) bool {
 	return equal
 }
 
-func main() {
-	e := "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-02 08:37:37', 0, null, '', 'Hello', 39)"
-	v := "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-02 08:37:38', 0, null, '', 'Hello', 40)"
-
-	expectation := NewExpectation(e, v)
-	a1 := "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-02 08:37:39', 0, null, '', 'Hello', 41)"
-	a2 := "update job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-02 08:37:39', 0, null, '', 'Hello', 41)"
-	expectation.Equal(a1)
-	expectation.Equal(a2)
-}
-
 func contains(values []int, value int) bool {
 	for _, v := range values {
 		if v == value {
@@ -50,6 +38,34 @@ func contains(values []int, value int) bool {
 		}
 	}
 	return false
+}
+
+func tokenize(s string) []string {
+	tokens := []string{}
+	t := ""
+	quoted := false
+	for i := 0; i < len(s); i++ {
+		if string(s[i]) == "'" {
+			quoted = !quoted
+		}
+
+		if string(s[i]) != " " {
+			t = fmt.Sprintf("%s%s", t, string(s[i]))
+			continue
+		}
+
+		if string(s[i]) == " " && quoted {
+			t = fmt.Sprintf("%s%s", t, string(s[i]))
+			continue
+		}
+
+		if string(s[i]) == " " {
+			tokens = append(tokens, t)
+			t = ""
+		}
+	}
+	tokens = append(tokens, t)
+	return tokens
 }
 
 func buildDiff(expectation, verification string) []int {
@@ -62,14 +78,4 @@ func buildDiff(expectation, verification string) []int {
 		}
 	}
 	return diffs
-}
-
-func tokenize(s string) []string {
-	split := strings.Split(s, ",")
-	var tokens = []string{}
-	for _, v := range split {
-		tokens = append(tokens, strings.Trim(v, " )"))
-	}
-
-	return tokens
 }
