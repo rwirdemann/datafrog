@@ -9,7 +9,6 @@ import (
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
 	"github.com/rwirdemann/databasedragon/ports"
-	"github.com/rwirdemann/databasedragon/ticker"
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +20,7 @@ func init() {
 
 type Listener struct {
 	config             config.Config
+	timer              ports.Timer
 	running            bool
 	matcher            matcher.TokenMatcher
 	databaseLog        ports.Log
@@ -28,10 +28,11 @@ type Listener struct {
 	verificationSource ports.ExpectationSource
 }
 
-func NewListener(c config.Config, databseLog ports.Log, expectationSource ports.ExpectationSource,
+func NewListener(c config.Config, timer ports.Timer, databseLog ports.Log, expectationSource ports.ExpectationSource,
 	verificationSource ports.ExpectationSource) *Listener {
 	return &Listener{
 		config:             c,
+		timer:              timer,
 		databaseLog:        databseLog,
 		expectationSource:  expectationSource,
 		verificationSource: expectationSource,
@@ -44,9 +45,8 @@ func NewListener(c config.Config, databseLog ports.Log, expectationSource ports.
 // Listener.Stop().
 func (l *Listener) Start() {
 	l.running = true
-	t := ticker.Ticker{}
-	t.Start()
-	log.Printf("Listening started at %v. Press Enter to stop listening...\n", t.GetStart())
+	l.timer.Start()
+	log.Printf("Listening started at %v. Press Enter to stop listening...\n", l.timer.GetStart())
 	expectations := l.expectationSource.GetAll()
 	verifications := l.expectationSource.GetAll()
 	l.matcher = matcher.NewTokenMatcher(l.config, expectations, verifications)
@@ -56,11 +56,15 @@ func (l *Listener) Start() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if actual == "STOP" {
+			break
+		}
+
 		ts, err := l.databaseLog.Timestamp(actual)
 		if err != nil {
 			continue
 		}
-		if !t.MatchesRecordingPeriod(ts) {
+		if !l.timer.MatchesRecordingPeriod(ts) {
 			continue
 		}
 
@@ -76,6 +80,10 @@ func (l *Listener) Stop() {
 	l.matcher.PrintResults()
 }
 
+func (l *Listener) GetResults() []matcher.Expectation {
+	return l.matcher.GetResults()
+}
+
 var listener *Listener
 var listenCmd = &cobra.Command{
 	Use:   "listen",
@@ -87,12 +95,13 @@ var listenCmd = &cobra.Command{
 		_, _ = fmt.Scanln()
 		go checkStopListening()
 
+		t := &adapter.UTCTimer{}
 		expectationSource := adapter.NewFileExpectationSource(expectations)
 		verificationSource := adapter.NewFileExpectationSource(fmt.Sprintf("%s.verify", expectations))
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		defer databaseLog.Close()
 
-		listener = NewListener(c, databaseLog, expectationSource, verificationSource)
+		listener = NewListener(c, t, databaseLog, expectationSource, verificationSource)
 		listener.Start()
 
 		return nil

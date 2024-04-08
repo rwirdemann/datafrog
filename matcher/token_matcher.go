@@ -45,6 +45,10 @@ func (t *TokenMatcher) PrintResults() {
 	}
 }
 
+func (t *TokenMatcher) GetResults() []Expectation {
+	return t.expectations
+}
+
 func normalize(s string, patterns []string) string {
 	result := cutPrefix(s, patterns)
 	result = strings.TrimSuffix(result, "\n")

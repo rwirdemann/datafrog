@@ -9,7 +9,6 @@ import (
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
-	"github.com/rwirdemann/databasedragon/ticker"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +33,7 @@ func NewRecorder(c config.Config, outFilename string) *Recorder {
 // recording period are considered. The caller should stop the recording by calling Recorder.Stop().
 func (r *Recorder) Start() {
 	r.running = true
-	t := ticker.Ticker{}
+	t := adapter.UTCTimer{}
 	t.Start()
 	log.Printf("Recording started at %v. Press Enter to stop recording...", t.GetStart())
 	logPort := adapter.NewMYSQLLog(r.config.Filename)

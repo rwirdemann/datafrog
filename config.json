@@ -1,6 +1,5 @@
 {
   "filename": "/usr/local/var/mysql/MacBook-Pro-von-Ralf.log",
-  "maxLevenshteinDistance": 2,
   "patterns": [
     "insert into job",
     "update job",
