@@ -22,12 +22,13 @@ func init() {
 type Recorder struct {
 	config       config.Config
 	databsaseLog ports.Log
+	timer        ports.Timer
 	outFilename  string
 	running      bool
 }
 
-func NewRecorder(c config.Config, databsaseLog ports.Log, outFilename string) *Recorder {
-	return &Recorder{config: c, databsaseLog: databsaseLog, outFilename: outFilename, running: false}
+func NewRecorder(c config.Config, databsaseLog ports.Log, timer ports.Timer, outFilename string) *Recorder {
+	return &Recorder{config: c, databsaseLog: databsaseLog, timer: timer, outFilename: outFilename, running: false}
 }
 
 // Start starts the recording process as endless loop. Every log entry that matches one of the
@@ -36,8 +37,7 @@ func NewRecorder(c config.Config, databsaseLog ports.Log, outFilename string) *R
 // Recorder.Stop().
 func (r *Recorder) Start() {
 	r.running = true
-	t := adapter.UTCTimer{}
-	t.Start()
+	r.timer.Start()
 	log.Printf("Recording started at %v. Press Enter to stop recording...", t.GetStart())
 
 	out, err := os.Create(r.outFilename)
@@ -60,7 +60,7 @@ func (r *Recorder) Start() {
 		if err != nil {
 			continue
 		}
-		if t.MatchesRecordingPeriod(ts) && matcher.MatchesPattern(r.config, line) {
+		if r.timer.MatchesRecordingPeriod(ts) && matcher.MatchesPattern(r.config, line) {
 			log.Println(line)
 			_, err := outWriter.WriteString(line)
 			if err != nil {
@@ -94,7 +94,9 @@ var recordCmd = &cobra.Command{
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		defer databaseLog.Close()
 
-		recorder = NewRecorder(c, databaseLog, out)
+		t := &adapter.UTCTimer{}
+
+		recorder = NewRecorder(c, databaseLog, t, out)
 		recorder.Start()
 
 		return nil
