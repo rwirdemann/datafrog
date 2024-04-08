@@ -35,7 +35,7 @@ func NewListener(c config.Config, timer ports.Timer, databseLog ports.Log, expec
 		timer:              timer,
 		databaseLog:        databseLog,
 		expectationSource:  expectationSource,
-		verificationSource: expectationSource,
+		verificationSource: verificationSource,
 		running:            false}
 }
 
@@ -48,7 +48,7 @@ func (l *Listener) Start() {
 	l.timer.Start()
 	log.Printf("Listening started at %v. Press Enter to stop listening...\n", l.timer.GetStart())
 	expectations := l.expectationSource.GetAll()
-	verifications := l.expectationSource.GetAll()
+	verifications := l.verificationSource.GetAll()
 	l.matcher = matcher.NewTokenMatcher(l.config, expectations, verifications)
 
 	for {

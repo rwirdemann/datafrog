@@ -44,3 +44,13 @@ func TestTokenize(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildDiff(t *testing.T) {
+	e := "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-08 14:48:15', 0, null, '', 'Hello', 2)"
+	v := "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-08 14:48:16', 0, null, '', 'Hello', 3)"
+
+	diff := buildDiff(e, v)
+	assert.Len(t, diff, 2)
+	assert.Equal(t, 12, diff[0])
+	assert.Equal(t, 17, diff[1])
+}

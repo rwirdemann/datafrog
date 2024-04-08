@@ -12,7 +12,8 @@ type Expectation struct {
 }
 
 func NewExpectation(expectation string, verification string) Expectation {
-	e := Expectation{tokens: tokenize(expectation), ignoreDiffs: buildDiff(expectation, verification)}
+	diffs := buildDiff(expectation, verification)
+	e := Expectation{tokens: tokenize(expectation), ignoreDiffs: diffs}
 	return e
 }
 
@@ -71,6 +72,7 @@ func tokenize(s string) []string {
 		}
 	}
 	tokens = append(tokens, t)
+	log.Debug(tokens)
 	return tokens
 }
 
