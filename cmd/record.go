@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -20,15 +19,15 @@ func init() {
 }
 
 type Recorder struct {
-	config       config.Config
-	databsaseLog ports.Log
-	timer        ports.Timer
-	outFilename  string
-	running      bool
+	config        config.Config
+	databsaseLog  ports.Log
+	recordingSink ports.RecordingSink
+	timer         ports.Timer
+	running       bool
 }
 
-func NewRecorder(c config.Config, databsaseLog ports.Log, timer ports.Timer, outFilename string) *Recorder {
-	return &Recorder{config: c, databsaseLog: databsaseLog, timer: timer, outFilename: outFilename, running: false}
+func NewRecorder(c config.Config, databsaseLog ports.Log, recordingSink ports.RecordingSink, timer ports.Timer) *Recorder {
+	return &Recorder{config: c, databsaseLog: databsaseLog, recordingSink: recordingSink, timer: timer, running: false}
 }
 
 // Start starts the recording process as endless loop. Every log entry that matches one of the
@@ -38,14 +37,7 @@ func NewRecorder(c config.Config, databsaseLog ports.Log, timer ports.Timer, out
 func (r *Recorder) Start() {
 	r.running = true
 	r.timer.Start()
-	log.Printf("Recording started at %v. Press Enter to stop recording...", t.GetStart())
-
-	out, err := os.Create(r.outFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer out.Close()
-	outWriter := bufio.NewWriter(out)
+	log.Printf("Recording started at %v. Press Enter to stop recording...", r.timer.GetStart())
 
 	for {
 		if !r.running {
@@ -62,11 +54,11 @@ func (r *Recorder) Start() {
 		}
 		if r.timer.MatchesRecordingPeriod(ts) && matcher.MatchesPattern(r.config, line) {
 			log.Println(line)
-			_, err := outWriter.WriteString(line)
+			_, err := r.recordingSink.WriteString(line)
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = outWriter.Flush()
+			err = r.recordingSink.Flush()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -91,12 +83,15 @@ var recordCmd = &cobra.Command{
 		_, _ = fmt.Scanln()
 		go checkExit()
 
+		recordingSink := adapter.NewFileRecordingSink(out)
+		defer recordingSink.Close()
+
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		defer databaseLog.Close()
 
 		t := &adapter.UTCTimer{}
 
-		recorder = NewRecorder(c, databaseLog, t, out)
+		recorder = NewRecorder(c, databaseLog, recordingSink, t)
 		recorder.Start()
 
 		return nil
