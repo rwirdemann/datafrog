@@ -47,6 +47,9 @@ func (r *Recorder) Start() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if line == "STOP" {
+			break
+		}
 
 		ts, err := r.databsaseLog.Timestamp(line)
 		if err != nil {
