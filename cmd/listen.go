@@ -10,7 +10,6 @@ import (
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
 	"github.com/rwirdemann/databasedragon/ticker"
-	"github.com/rwirdemann/databasedragon/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +23,7 @@ type Listener struct {
 	config              config.Config
 	expectationFilename string
 	running             bool
-	validator           validation.Validator
+	matcher             matcher.TokenMatcher
 }
 
 func NewListener(c config.Config, expectationFilename string) *Listener {
@@ -44,19 +43,25 @@ func (l *Listener) Start() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	l.validator = validation.NewUnorderedRemovalValidator(strings.Split(string(expecations), "\n"))
-	initialExpectationCount := len(l.validator.GetExpectations())
+	verfications, err := os.ReadFile(fmt.Sprintf("%s.verify", l.expectationFilename))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	l.matcher = matcher.NewTokenMatcher(
+		l.config,
+		strings.Split(string(expecations), "\n"),
+		strings.Split(string(verfications), "\n"))
 
 	logPort := adapter.NewMYSQLLog(l.config.Filename)
 	defer logPort.Close()
 
-	m := matcher.NewLevenshteinMatcher(l.config)
 	for {
-		line, err := logPort.NextLine()
+		actual, err := logPort.NextLine()
 		if err != nil {
 			log.Fatal(err)
 		}
-		ts, err := logPort.Timestamp(line)
+		ts, err := logPort.Timestamp(actual)
 		if err != nil {
 			continue
 		}
@@ -64,24 +69,8 @@ func (l *Listener) Start() {
 			continue
 		}
 
-		var Green = "\033[32m"
-		var Yellow = "\033[33m"
-		var White = "\033[97m"
-		log.SetFlags(0)
-		matchesPattern, pattern := m.MatchesPattern(line)
-		if matchesPattern {
-			log.Printf(Green+"PATTERN: %v", pattern)
-			log.Printf(Green+"IN: %s", line)
-			for i, e := range l.validator.GetExpectations() {
-				if pattern.MatchesAllConditions(e) {
-					log.Printf(Yellow+"E%d: %s", i+1, e)
-					if m.MatchesExactly(line, e) {
-						l.validator.Remove(e)
-						log.Printf(White+"Remaining Exceptions: %d / %d\n", len(l.validator.GetExpectations()), initialExpectationCount)
-						break
-					}
-				}
-			}
+		if matchIndex := l.matcher.Matches(actual); matchIndex > -1 {
+			l.matcher.RemoveExpectation(matchIndex)
 		}
 	}
 }
@@ -89,7 +78,7 @@ func (l *Listener) Start() {
 // Stop stops the listening and validation loop.
 func (l *Listener) Stop() {
 	log.Println("Listening stoped")
-	l.validator.PrintResults()
+	l.matcher.PrintResults()
 }
 
 var listener *Listener

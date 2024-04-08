@@ -47,7 +47,6 @@ func (r *Recorder) Start() {
 	defer out.Close()
 	outWriter := bufio.NewWriter(out)
 
-	m := matcher.NewLevenshteinMatcher(r.config)
 	for {
 		if !r.running {
 			break
@@ -61,8 +60,7 @@ func (r *Recorder) Start() {
 		if err != nil {
 			continue
 		}
-		matches, _ := m.MatchesPattern(line)
-		if t.MatchesRecordingPeriod(ts) && matches {
+		if t.MatchesRecordingPeriod(ts) && matcher.MatchesPattern(r.config, line) {
 			log.Println(line)
 			_, err := outWriter.WriteString(line)
 			if err != nil {

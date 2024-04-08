@@ -1,6 +1,10 @@
 package matcher
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/rwirdemann/databasedragon/config"
+)
 
 type Pattern struct {
 	Include string
@@ -31,4 +35,13 @@ func (p Pattern) MatchesExclude(s string) bool {
 
 func (p Pattern) MatchesAllConditions(s string) bool {
 	return p.MatchesInclude(s) && !p.MatchesExclude(s)
+}
+
+func MatchesPattern(c config.Config, s string) bool {
+	for _, p := range c.Patterns {
+		if NewPattern(p).MatchesAllConditions(s) {
+			return true
+		}
+	}
+	return false
 }
