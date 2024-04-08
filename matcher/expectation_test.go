@@ -28,6 +28,11 @@ func TestTokenize(t *testing.T) {
 			s:     "update job set description='World, X' where id=39",
 			count: 6,
 		},
+		{
+			desc:  "",
+			s:     "insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World, Huhu', '2024-04-02 08:37:37', 0, null, '', 'Hello', 39)",
+			count: 18,
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {

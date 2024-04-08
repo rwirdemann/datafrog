@@ -2,6 +2,8 @@ package matcher
 
 import (
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Expectation struct {
@@ -17,27 +19,30 @@ func NewExpectation(expectation string, verification string) Expectation {
 func (e Expectation) Equal(actual string) bool {
 	equal := true
 	actualTokens := tokenize(actual)
+	if len(actualTokens) != len(e.tokens) {
+		return false
+	}
 	for i, v := range e.tokens {
 		if v != actualTokens[i] {
-			fmt.Printf("Token %d differs: %s / %s...", i, v, actualTokens[i])
 			if contains(e.ignoreDiffs, i) {
-				fmt.Printf("thats OK\n")
+				log.WithFields(log.Fields{
+					"index":    i,
+					"expected": v,
+					"actual":   actualTokens[i],
+					"allowed":  true,
+				}).Debug("deviate")
 			} else {
-				fmt.Printf("thats NOT OK\n")
+				log.WithFields(log.Fields{
+					"index":    i,
+					"expected": v,
+					"actual":   actualTokens[i],
+					"allowed":  false,
+				}).Debug("deviate")
 				equal = false
 			}
 		}
 	}
 	return equal
-}
-
-func contains(values []int, value int) bool {
-	for _, v := range values {
-		if v == value {
-			return true
-		}
-	}
-	return false
 }
 
 func tokenize(s string) []string {
@@ -47,6 +52,7 @@ func tokenize(s string) []string {
 	for i := 0; i < len(s); i++ {
 		if string(s[i]) == "'" {
 			quoted = !quoted
+			continue
 		}
 
 		if string(s[i]) != " " {

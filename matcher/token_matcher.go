@@ -18,12 +18,16 @@ func NewTokenMatcher(c config.Config, expecations, verifications []string) Token
 	return tm
 }
 
-func (t TokenMatcher) Matches(actual string) bool {
+func (t *TokenMatcher) Matches(actual string) int {
 	normalized := normalize(actual, t.config.Patterns)
-	for _, v := range t.expectations {
+	for i, v := range t.expectations {
 		if v.Equal(normalized) {
-			return true
+			return i
 		}
 	}
-	return false
+	return -1
+}
+
+func (t *TokenMatcher) RemoveExpectation(i int) {
+	t.expectations = append(t.expectations[:i], t.expectations[i+1:]...)
 }
