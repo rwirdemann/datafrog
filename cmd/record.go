@@ -9,6 +9,7 @@ import (
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/databasedragon/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -19,25 +20,25 @@ func init() {
 }
 
 type Recorder struct {
-	config      config.Config
-	outFilename string
-	running     bool
+	config       config.Config
+	databsaseLog ports.Log
+	outFilename  string
+	running      bool
 }
 
-func NewRecorder(c config.Config, outFilename string) *Recorder {
-	return &Recorder{config: c, outFilename: outFilename, running: false}
+func NewRecorder(c config.Config, databsaseLog ports.Log, outFilename string) *Recorder {
+	return &Recorder{config: c, databsaseLog: databsaseLog, outFilename: outFilename, running: false}
 }
 
 // Start starts the recording process as endless loop. Every log entry that matches one of the
-// patterns specified in config is written to the out file. Only log entries that fall in the actual
-// recording period are considered. The caller should stop the recording by calling Recorder.Stop().
+// patterns specified in config is written to t he out file. Only log entries that fall in the
+// actual recording period are considered. The caller should stop the recording by calling
+// Recorder.Stop().
 func (r *Recorder) Start() {
 	r.running = true
 	t := adapter.UTCTimer{}
 	t.Start()
 	log.Printf("Recording started at %v. Press Enter to stop recording...", t.GetStart())
-	logPort := adapter.NewMYSQLLog(r.config.Filename)
-	defer logPort.Close()
 
 	out, err := os.Create(r.outFilename)
 	if err != nil {
@@ -50,12 +51,12 @@ func (r *Recorder) Start() {
 		if !r.running {
 			break
 		}
-		line, err := logPort.NextLine()
+		line, err := r.databsaseLog.NextLine()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		ts, err := logPort.Timestamp(line)
+		ts, err := r.databsaseLog.Timestamp(line)
 		if err != nil {
 			continue
 		}
@@ -90,7 +91,10 @@ var recordCmd = &cobra.Command{
 		_, _ = fmt.Scanln()
 		go checkExit()
 
-		recorder = NewRecorder(c, out)
+		databaseLog := adapter.NewMYSQLLog(c.Filename)
+		defer databaseLog.Close()
+
+		recorder = NewRecorder(c, databaseLog, out)
 		recorder.Start()
 
 		return nil
