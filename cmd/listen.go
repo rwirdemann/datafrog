@@ -23,13 +23,16 @@ type Listener struct {
 	config             config.Config
 	running            bool
 	matcher            matcher.TokenMatcher
+	databaseLog        ports.Log
 	expectationSource  ports.ExpectationSource
 	verificationSource ports.ExpectationSource
 }
 
-func NewListener(c config.Config, expectationSource ports.ExpectationSource, verificationSource ports.ExpectationSource) *Listener {
+func NewListener(c config.Config, databseLog ports.Log, expectationSource ports.ExpectationSource,
+	verificationSource ports.ExpectationSource) *Listener {
 	return &Listener{
 		config:             c,
+		databaseLog:        databseLog,
 		expectationSource:  expectationSource,
 		verificationSource: expectationSource,
 		running:            false}
@@ -47,15 +50,13 @@ func (l *Listener) Start() {
 	expectations := l.expectationSource.GetAll()
 	verifications := l.expectationSource.GetAll()
 	l.matcher = matcher.NewTokenMatcher(l.config, expectations, verifications)
-	logPort := adapter.NewMYSQLLog(l.config.Filename)
-	defer logPort.Close()
 
 	for {
-		actual, err := logPort.NextLine()
+		actual, err := l.databaseLog.NextLine()
 		if err != nil {
 			log.Fatal(err)
 		}
-		ts, err := logPort.Timestamp(actual)
+		ts, err := l.databaseLog.Timestamp(actual)
 		if err != nil {
 			continue
 		}
@@ -88,7 +89,10 @@ var listenCmd = &cobra.Command{
 
 		expectationSource := adapter.NewFileExpectationSource(expectations)
 		verificationSource := adapter.NewFileExpectationSource(fmt.Sprintf("%s.verify", expectations))
-		listener = NewListener(c, expectationSource, verificationSource)
+		databaseLog := adapter.NewMYSQLLog(c.Filename)
+		defer databaseLog.Close()
+
+		listener = NewListener(c, databaseLog, expectationSource, verificationSource)
 		listener.Start()
 
 		return nil
