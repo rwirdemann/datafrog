@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/databasedragon/ports"
 	"github.com/rwirdemann/databasedragon/ticker"
 	"github.com/spf13/cobra"
 )
@@ -20,14 +20,19 @@ func init() {
 }
 
 type Listener struct {
-	config              config.Config
-	expectationFilename string
-	running             bool
-	matcher             matcher.TokenMatcher
+	config             config.Config
+	running            bool
+	matcher            matcher.TokenMatcher
+	expectationSource  ports.ExpectationSource
+	verificationSource ports.ExpectationSource
 }
 
-func NewListener(c config.Config, expectationFilename string) *Listener {
-	return &Listener{config: c, expectationFilename: expectationFilename, running: false}
+func NewListener(c config.Config, expectationSource ports.ExpectationSource, verificationSource ports.ExpectationSource) *Listener {
+	return &Listener{
+		config:             c,
+		expectationSource:  expectationSource,
+		verificationSource: expectationSource,
+		running:            false}
 }
 
 // Start starts listening by checking each new logfile entry against the expectations from the
@@ -39,20 +44,9 @@ func (l *Listener) Start() {
 	t := ticker.Ticker{}
 	t.Start()
 	log.Printf("Listening started at %v. Press Enter to stop listening...\n", t.GetStart())
-	expecations, err := os.ReadFile(l.expectationFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	verfications, err := os.ReadFile(fmt.Sprintf("%s.verify", l.expectationFilename))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	l.matcher = matcher.NewTokenMatcher(
-		l.config,
-		strings.Split(string(expecations), "\n"),
-		strings.Split(string(verfications), "\n"))
-
+	expectations := l.expectationSource.GetAll()
+	verifications := l.expectationSource.GetAll()
+	l.matcher = matcher.NewTokenMatcher(l.config, expectations, verifications)
 	logPort := adapter.NewMYSQLLog(l.config.Filename)
 	defer logPort.Close()
 
@@ -92,7 +86,9 @@ var listenCmd = &cobra.Command{
 		_, _ = fmt.Scanln()
 		go checkStopListening()
 
-		listener = NewListener(c, expectations)
+		expectationSource := adapter.NewFileExpectationSource(expectations)
+		verificationSource := adapter.NewFileExpectationSource(fmt.Sprintf("%s.verify", expectations))
+		listener = NewListener(c, expectationSource, verificationSource)
 		listener.Start()
 
 		return nil
