@@ -5,15 +5,5 @@
     "update job",
     "delete",
     "select job!publish_trials<1"
-  ],
-  "ignore": [
-    {
-      "formats": ["2024-03-28 10:57:27", "2024-03-28 10:57:27.261562"],
-      "replacement": "<DATE_STR>"
-    },
-    {
-      "formats": ["=12", ", 12"],
-      "replacement": "<ID>"
-    }
   ]
 }

@@ -18,6 +18,9 @@ func init() {
 	rootCmd.AddCommand(recordCmd)
 }
 
+// A Recorder monitors a database log and records all statements that match one
+// of the patterns specified in config. The recorded output is written to
+// recording sink.
 type Recorder struct {
 	config        config.Config
 	databsaseLog  ports.Log
@@ -26,14 +29,15 @@ type Recorder struct {
 	running       bool
 }
 
-func NewRecorder(c config.Config, databsaseLog ports.Log, recordingSink ports.RecordingSink, timer ports.Timer) *Recorder {
-	return &Recorder{config: c, databsaseLog: databsaseLog, recordingSink: recordingSink, timer: timer, running: false}
+// NewRecorder creates a new Recorder.
+func NewRecorder(c config.Config, log ports.Log, sink ports.RecordingSink, timer ports.Timer) *Recorder {
+	return &Recorder{config: c, databsaseLog: log, recordingSink: sink, timer: timer, running: false}
 }
 
-// Start starts the recording process as endless loop. Every log entry that matches one of the
-// patterns specified in config is written to t he out file. Only log entries that fall in the
-// actual recording period are considered. The caller should stop the recording by calling
-// Recorder.Stop().
+// Start starts the recording process as endless loop. Every log entry that
+// matches one of the patterns specified in config is written to the recording
+// sink. Only log entries that fall in the actual recording period are
+// considered. The caller should stop the recording by calling Recorder.Stop().
 func (r *Recorder) Start() {
 	r.running = true
 	r.timer.Start()
@@ -47,6 +51,8 @@ func (r *Recorder) Start() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		// Hack to enable test adapter to stop the recording
 		if line == "STOP" {
 			break
 		}
@@ -101,7 +107,7 @@ var recordCmd = &cobra.Command{
 	},
 }
 
-// Checks if enter was hit to stop recording
+// Checks if enter was hit to stop recording.
 func checkExit() {
 	var b = make([]byte, 1)
 	l, _ := os.Stdin.Read(b)
