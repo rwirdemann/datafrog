@@ -61,15 +61,18 @@ func (r *Recorder) Start() {
 		if err != nil {
 			continue
 		}
-		if r.timer.MatchesRecordingPeriod(ts) && matcher.MatchesPattern(r.config, line) {
-			log.Println(line)
-			_, err := r.recordingSink.WriteString(line)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = r.recordingSink.Flush()
-			if err != nil {
-				log.Fatal(err)
+		if r.timer.MatchesRecordingPeriod(ts) {
+			matches, _ := matcher.MatchesPattern(r.config, line)
+			if matches {
+				log.Println(line)
+				_, err := r.recordingSink.WriteString(line)
+				if err != nil {
+					log.Fatal(err)
+				}
+				err = r.recordingSink.Flush()
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}

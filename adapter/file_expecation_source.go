@@ -28,3 +28,8 @@ func (s FileExpectationSource) GetAll() []string {
 	}
 	return a
 }
+
+// RemoveFirst is not implemented for file based source.
+func (s FileExpectationSource) RemoveFirst(pattern string) error {
+	return nil
+}
