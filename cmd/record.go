@@ -81,7 +81,7 @@ func (r *Recorder) Start() {
 // Stop stops the recording.
 func (r *Recorder) Stop() {
 	r.running = false
-	log.Println("Recording stoped!")
+	log.Println("Recording finshed. Run verfication now!")
 }
 
 var recorder *Recorder

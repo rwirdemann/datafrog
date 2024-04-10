@@ -104,7 +104,11 @@ func (v *Verifier) Start() error {
 // Stop stops the verifcation.
 func (v *Verifier) Stop() {
 	v.running = false
-	log.Println("Verfication stoped!")
+	if len(v.expectationSource.GetAll()) == 0 {
+		log.Println("Verfication was successful!")
+	} else {
+		log.Printf("Verfication failed. %d unmatched verfications\n", len(v.expectationSource.GetAll()))
+	}
 }
 
 var verifier *Verifier
@@ -116,7 +120,7 @@ var verifyCmd = &cobra.Command{
 		verficationFilename := fmt.Sprintf("%s.verify", expectationsFilename)
 		c := config.NewConfig("config.json")
 		log.Printf("Verifying '%s'. Verification goes to '%s'. Hit enter when you are ready!", expectationsFilename, verficationFilename)
-		//_, _ = fmt.Scanln()
+		_, _ = fmt.Scanln()
 		go checkVerifyExit()
 
 		expectationSource := adapter.NewFileExpectationSource(expectationsFilename)

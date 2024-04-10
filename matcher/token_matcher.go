@@ -39,9 +39,9 @@ func (t *TokenMatcher) RemoveExpectation(i int) {
 
 func (t *TokenMatcher) PrintResults() {
 	if len(t.expectations) == 0 {
-		log.Printf("All expectations met!")
+		log.Printf("Interaction successfull!")
 	} else {
-		log.Printf("Failed due to missing expectations! Missing: %d", len(t.expectations))
+		log.Printf("Interaction successfull failed! Missing expectation: %d", len(t.expectations))
 	}
 }
 

@@ -82,7 +82,6 @@ func (l *Listener) Start() {
 
 // Stop stops the listening and validation loop.
 func (l *Listener) Stop() {
-	log.Println("Listening stoped")
 	l.matcher.PrintResults()
 }
 
