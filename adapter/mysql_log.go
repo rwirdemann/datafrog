@@ -2,13 +2,12 @@ package adapter
 
 import (
 	"bufio"
-	"errors"
-	"github.com/rwirdemann/databasedragon/ports"
 	"io"
 	"log"
 	"os"
-	"strings"
 	"time"
+
+	"github.com/rwirdemann/databasedragon/ports"
 )
 
 type MySQLLog struct {
@@ -32,16 +31,7 @@ func (m MySQLLog) Close() {
 }
 
 func (m MySQLLog) Timestamp(s string) (time.Time, error) {
-	split := strings.Split(s, "\t")
-	if len(split) == 0 {
-		return time.Time{}, errors.New("string contains no valid timestamp")
-	}
-
-	d, err := time.Parse(time.RFC3339Nano, split[0])
-	if err != nil {
-		return time.Time{}, errors.New("string contains no valid timestamp")
-	}
-	return d, nil
+	return Timestamp(s)
 }
 
 func (m MySQLLog) NextLine() (string, error) {

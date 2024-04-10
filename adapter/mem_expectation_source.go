@@ -23,7 +23,7 @@ func (es *MemExpectationSource) GetAll() []string {
 // expectations doesn't match the pattern.
 func (es *MemExpectationSource) RemoveFirst(pattern string) error {
 	if len(es.expecations) == 0 {
-		return errors.New("ist of expectations is empty")
+		return errors.New("list of expectations is empty")
 	}
 
 	if !matcher.NewPattern(pattern).MatchesAllConditions(es.expecations[0]) {

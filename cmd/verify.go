@@ -18,6 +18,10 @@ func init() {
 	rootCmd.AddCommand(verifyCmd)
 }
 
+// The Verifier verifies the expectations in expectationSource. It monitors the
+// databsaseLog for these expectations and requires them to be in same order as
+// given in expectationSource. Verified expectations are written to
+// verificationSink.
 type Verifier struct {
 	config            config.Config
 	databsaseLog      ports.Log
@@ -27,6 +31,7 @@ type Verifier struct {
 	running           bool
 }
 
+// NewVerifier creates a new Verifier.
 func NewVerifier(c config.Config, log ports.Log, source ports.ExpectationSource, sink ports.RecordingSink, t ports.Timer) *Verifier {
 	return &Verifier{
 		config:            c,
@@ -37,7 +42,9 @@ func NewVerifier(c config.Config, log ports.Log, source ports.ExpectationSource,
 		running:           false}
 }
 
-func (v *Verifier) Start() {
+// Start runs the verification loop. It stops, when the expectations got out of
+// order or when all expectations where met.
+func (v *Verifier) Start() error {
 	v.running = true
 	v.timer.Start()
 	log.Printf("Verification started at %v. Press Enter to stop verification...", v.timer.GetStart())
@@ -63,23 +70,30 @@ func (v *Verifier) Start() {
 		if v.timer.MatchesRecordingPeriod(ts) {
 			matches, pattern := matcher.MatchesPattern(v.config, line)
 			if matches {
-				log.Println(line)
+
+				// Since we expect the expectation in order we always remove the
+				// first from the list. But only if it matches the current
+				// matching pattern. If it doesn't match we return an error
+				// because the verify run didn't receive the expectations in the
+				// required order.
+				if err := v.expectationSource.RemoveFirst(pattern); err != nil {
+					return err
+				}
+
+				log.Printf("Verfication met: '%s'", line)
 				_, err := v.verificationSink.WriteString(line)
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 
 				err = v.verificationSink.Flush()
 				if err != nil {
-					log.Fatal(err)
-				}
-
-				if err := v.expectationSource.RemoveFirst(pattern); err != nil {
-					log.Fatal(err)
+					return err
 				}
 			}
 		}
 	}
+	return nil
 }
 
 // Stop stops the verifcation.
