@@ -72,6 +72,11 @@ func (l *Listener) Start() {
 			log.Printf("Expectation met: '%s'", actual)
 			l.matcher.RemoveExpectation(matchIndex)
 		}
+
+		if len(l.matcher.GetResults()) == 0 {
+			l.Stop()
+			break
+		}
 	}
 }
 

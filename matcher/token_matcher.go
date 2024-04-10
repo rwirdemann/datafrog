@@ -41,7 +41,7 @@ func (t *TokenMatcher) PrintResults() {
 	if len(t.expectations) == 0 {
 		log.Printf("All expectations met!")
 	} else {
-		log.Printf("Failed due to unmet expectations! Missing: %d", len(t.expectations))
+		log.Printf("Failed due to missing expectations! Missing: %d", len(t.expectations))
 	}
 }
 

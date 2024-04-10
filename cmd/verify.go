@@ -90,6 +90,11 @@ func (v *Verifier) Start() error {
 				if err != nil {
 					return err
 				}
+
+				if len(v.expectationSource.GetAll()) == 0 {
+					v.Stop()
+					break
+				}
 			}
 		}
 	}
@@ -111,7 +116,7 @@ var verifyCmd = &cobra.Command{
 		verficationFilename := fmt.Sprintf("%s.verify", expectationsFilename)
 		c := config.NewConfig("config.json")
 		log.Printf("Verifying '%s'. Verification goes to '%s'. Hit enter when you are ready!", expectationsFilename, verficationFilename)
-		_, _ = fmt.Scanln()
+		//_, _ = fmt.Scanln()
 		go checkVerifyExit()
 
 		expectationSource := adapter.NewFileExpectationSource(expectationsFilename)
@@ -124,9 +129,7 @@ var verifyCmd = &cobra.Command{
 		t := &adapter.UTCTimer{}
 
 		verifier = NewVerifier(c, databaseLog, expectationSource, verificationSink, t)
-		verifier.Start()
-
-		return nil
+		return verifier.Start()
 	},
 }
 
