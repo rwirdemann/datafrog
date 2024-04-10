@@ -99,7 +99,7 @@ func (v *Verifier) Start() error {
 // Stop stops the verifcation.
 func (v *Verifier) Stop() {
 	v.running = false
-	log.Println("Recording stoped!")
+	log.Println("Verfication stoped!")
 }
 
 var verifier *Verifier
@@ -124,13 +124,13 @@ var verifyCmd = &cobra.Command{
 		t := &adapter.UTCTimer{}
 
 		verifier = NewVerifier(c, databaseLog, expectationSource, verificationSink, t)
-		recorder.Start()
+		verifier.Start()
 
 		return nil
 	},
 }
 
-// Checks if enter was hit to stop recording.
+// Checks if enter was hit to stop verfication.
 func checkVerifyExit() {
 	var b = make([]byte, 1)
 	l, _ := os.Stdin.Read(b)

@@ -69,6 +69,7 @@ func (l *Listener) Start() {
 		}
 
 		if matchIndex := l.matcher.Matches(actual); matchIndex > -1 {
+			log.Printf("Expectation met: '%s'", actual)
 			l.matcher.RemoveExpectation(matchIndex)
 		}
 	}
