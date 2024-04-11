@@ -9,10 +9,22 @@ import (
 	"github.com/rwirdemann/databasedragon/matcher"
 )
 
+// A FileExpectationSource reads raw (plain SQL or other log entries)
+// expectations from a file. It is used by verification runs to verfify that the
+// same log entries are written and to build its differences.
+//
+// The file based expectations are stored in expectations. The idea is to remove
+// always the first item from this list when the verfication process has
+// retrieved a pattern matching line from the log. The matching pattern is
+// applied to the first entry in expectations. The entry is removed if it
+// matches and the verfication is successfull, after all expectations have been
+// removed. See RemoveFirst for details.
 type FileExpectationSource struct {
 	expectations []string
 }
 
+// NewFileExpectationSource creates a new NewFileExpectationSource that reads
+// its expectations from filename.
 func NewFileExpectationSource(filename string) *FileExpectationSource {
 	expectations, err := os.ReadFile(filename)
 	if err != nil {
@@ -28,6 +40,7 @@ func NewFileExpectationSource(filename string) *FileExpectationSource {
 	return &FileExpectationSource{expectations: all}
 }
 
+// GetAll returns all expectations.
 func (s *FileExpectationSource) GetAll() []string {
 	return s.expectations
 }
