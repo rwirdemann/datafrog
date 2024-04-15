@@ -1,6 +1,7 @@
 package matcher
 
 import (
+	"errors"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -8,7 +9,10 @@ import (
 
 type Expectation struct {
 	Tokens      []string `json:"tokens"`
-	IgnoreDiffs []int    `json:"ignoreDiffs"`
+	Pattern     string
+	Fulfilled   bool
+	Verified    int
+	IgnoreDiffs []int `json:"ignoreDiffs"`
 }
 
 func NewExpectation(expectation string, verification string) Expectation {
@@ -44,6 +48,22 @@ func (e Expectation) Equal(actual string) bool {
 		}
 	}
 	return equal
+}
+
+func (e Expectation) BuildDiff(sql string) ([]int, error) {
+	tokens := Tokenize(sql)
+	if len(tokens) != len(e.Tokens) {
+		return []int{}, errors.New("number of tokes must be equals")
+	}
+
+	diffs := []int{}
+	for i, v := range tokens {
+		if v != e.Tokens[i] {
+			diffs = append(diffs, i)
+		}
+	}
+	return diffs, nil
+
 }
 
 func Tokenize(s string) []string {

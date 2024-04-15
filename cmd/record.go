@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 
@@ -65,11 +64,11 @@ func (r *Recorder) Start() {
 			continue
 		}
 		if r.timer.MatchesRecordingPeriod(ts) {
-			matches, _ := matcher.MatchesPattern(r.config, line)
+			matches, pattern := matcher.MatchesPattern(r.config, line)
 			if matches {
 				log.Println(line)
 				tokens := matcher.Tokenize(matcher.Normalize(line, r.config.Patterns))
-				e := matcher.Expectation{Tokens: tokens, IgnoreDiffs: []int{}}
+				e := matcher.Expectation{Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 				expectations = append(expectations, e)
 			}
 		}
@@ -105,7 +104,7 @@ var recordCmd = &cobra.Command{
 		out, _ := cmd.Flags().GetString("out")
 		c := config.NewConfig("config.json")
 		log.Printf("Recording goes to '%s'. Hit enter when you are ready!", out)
-		_, _ = fmt.Scanln()
+		//_, _ = fmt.Scanln()
 		go checkExit()
 
 		recordingSink := adapter.NewFileRecordingSink(out)

@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "main.go",
-            "args": ["verify", "--expectations", "create-job.rt"],
+            "args": ["verify", "--expectations", "create-job.json"],
             "cwd": "${workspaceFolder}"
         }
     ]
