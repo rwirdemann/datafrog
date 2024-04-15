@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -42,9 +43,10 @@ func (r *Recorder) Start() {
 	r.running = true
 	r.timer.Start()
 	log.Printf("Recording started at %v. Press Enter to stop recording...", r.timer.GetStart())
-
+	var expectations []matcher.Expectation
 	for {
 		if !r.running {
+			r.writeExpectation(expectations)
 			break
 		}
 		line, err := r.databsaseLog.NextLine()
@@ -54,6 +56,7 @@ func (r *Recorder) Start() {
 
 		// Hack to enable test adapter to stop the recording
 		if line == "STOP" {
+			r.writeExpectation(expectations)
 			break
 		}
 
@@ -65,16 +68,26 @@ func (r *Recorder) Start() {
 			matches, _ := matcher.MatchesPattern(r.config, line)
 			if matches {
 				log.Println(line)
-				_, err := r.recordingSink.WriteString(line)
-				if err != nil {
-					log.Fatal(err)
-				}
-				err = r.recordingSink.Flush()
-				if err != nil {
-					log.Fatal(err)
-				}
+				tokens := matcher.Tokenize(matcher.Normalize(line, r.config.Patterns))
+				e := matcher.Expectation{Tokens: tokens, IgnoreDiffs: []int{}}
+				expectations = append(expectations, e)
 			}
 		}
+	}
+}
+
+func (r *Recorder) writeExpectation(expectations []matcher.Expectation) {
+	b, err := json.Marshal(expectations)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = r.recordingSink.WriteString(string(b))
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = r.recordingSink.Flush()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -116,6 +129,5 @@ func checkExit() {
 	l, _ := os.Stdin.Read(b)
 	if l > 0 {
 		recorder.Stop()
-		os.Exit(0)
 	}
 }

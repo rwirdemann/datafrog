@@ -36,7 +36,7 @@ func TestTokenize(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			tokens := tokenize(tC.s)
+			tokens := Tokenize(tC.s)
 			for _, v := range tokens {
 				log.Printf("%v", v)
 			}

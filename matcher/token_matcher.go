@@ -16,7 +16,7 @@ func NewTokenMatcher(c config.Config, expecations, verifications []string) Token
 	tm := TokenMatcher{config: c}
 	for i, v := range expecations {
 		if strings.Trim(v, " ") != "" {
-			e := NewExpectation(normalize(v, c.Patterns), normalize(verifications[i], c.Patterns))
+			e := NewExpectation(Normalize(v, c.Patterns), Normalize(verifications[i], c.Patterns))
 			tm.expectations = append(tm.expectations, e)
 		}
 	}
@@ -24,7 +24,7 @@ func NewTokenMatcher(c config.Config, expecations, verifications []string) Token
 }
 
 func (t *TokenMatcher) Matches(actual string) int {
-	normalized := normalize(actual, t.config.Patterns)
+	normalized := Normalize(actual, t.config.Patterns)
 	for i, v := range t.expectations {
 		if v.Equal(normalized) {
 			return i
@@ -49,7 +49,7 @@ func (t *TokenMatcher) GetResults() []Expectation {
 	return t.expectations
 }
 
-func normalize(s string, patterns []string) string {
+func Normalize(s string, patterns []string) string {
 	result := cutPrefix(s, patterns)
 	result = strings.TrimSuffix(result, "\n")
 	return result

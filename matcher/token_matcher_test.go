@@ -19,7 +19,7 @@ func TestNewTokenMatcher(t *testing.T) {
 	tm := NewTokenMatcher(c, expectations, verifications)
 	assert.Equal(t, 1, len(tm.expectations))
 	e := tm.expectations[0]
-	assert.Equal(t, 6, len(e.tokens))
+	assert.Equal(t, 6, len(e.Tokens))
 }
 
 func TestMatches(t *testing.T) {

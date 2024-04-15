@@ -7,25 +7,25 @@ import (
 )
 
 type Expectation struct {
-	tokens      []string
-	ignoreDiffs []int
+	Tokens      []string `json:"tokens"`
+	IgnoreDiffs []int    `json:"ignoreDiffs"`
 }
 
 func NewExpectation(expectation string, verification string) Expectation {
 	diffs := buildDiff(expectation, verification)
-	e := Expectation{tokens: tokenize(expectation), ignoreDiffs: diffs}
+	e := Expectation{Tokens: Tokenize(expectation), IgnoreDiffs: diffs}
 	return e
 }
 
 func (e Expectation) Equal(actual string) bool {
 	equal := true
-	actualTokens := tokenize(actual)
-	if len(actualTokens) != len(e.tokens) {
+	actualTokens := Tokenize(actual)
+	if len(actualTokens) != len(e.Tokens) {
 		return false
 	}
-	for i, v := range e.tokens {
+	for i, v := range e.Tokens {
 		if v != actualTokens[i] {
-			if contains(e.ignoreDiffs, i) {
+			if contains(e.IgnoreDiffs, i) {
 				log.WithFields(log.Fields{
 					"index":    i,
 					"expected": v,
@@ -46,7 +46,7 @@ func (e Expectation) Equal(actual string) bool {
 	return equal
 }
 
-func tokenize(s string) []string {
+func Tokenize(s string) []string {
 	tokens := []string{}
 	t := ""
 	quoted := false
@@ -77,8 +77,8 @@ func tokenize(s string) []string {
 }
 
 func buildDiff(expectation, verification string) []int {
-	t1 := tokenize(expectation)
-	t2 := tokenize(verification)
+	t1 := Tokenize(expectation)
+	t2 := Tokenize(verification)
 	diffs := []int{}
 	for i, v := range t1 {
 		if v != t2[i] {
