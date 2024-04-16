@@ -15,12 +15,6 @@ type Expectation struct {
 	IgnoreDiffs []int `json:"ignoreDiffs"`
 }
 
-func NewExpectation(expectation string, verification string) Expectation {
-	diffs := buildDiff(expectation, verification)
-	e := Expectation{Tokens: Tokenize(expectation), IgnoreDiffs: diffs}
-	return e
-}
-
 func (e Expectation) Equal(actual string) bool {
 	equal := true
 	actualTokens := Tokenize(actual)
@@ -103,16 +97,4 @@ func Tokenize(s string) []string {
 	tokens = append(tokens, t)
 	log.Debug(tokens)
 	return tokens
-}
-
-func buildDiff(expectation, verification string) []int {
-	t1 := Tokenize(expectation)
-	t2 := Tokenize(verification)
-	diffs := []int{}
-	for i, v := range t1 {
-		if v != t2[i] {
-			diffs = append(diffs, i)
-		}
-	}
-	return diffs
 }
