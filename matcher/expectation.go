@@ -50,6 +50,15 @@ func (e Expectation) Equal(actual string) bool {
 	return equal
 }
 
+func contains[T comparable](values []T, value T) bool {
+	for _, v := range values {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
 func (e Expectation) BuildDiff(sql string) ([]int, error) {
 	tokens := Tokenize(sql)
 	if len(tokens) != len(e.Tokens) {
