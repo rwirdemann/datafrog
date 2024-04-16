@@ -9,9 +9,9 @@ import (
 
 var version = "0.0.1"
 var rootCmd = &cobra.Command{
-	Use:     "dbd",
+	Use:     "dfg",
 	Version: version,
-	Short:   "database dragon - a database monitoring tool",
+	Short:   "data frog - a database monitoring tool",
 	Long:    `record log statements, validate their execution during replays`,
 	Run: func(cmd *cobra.Command, args []string) {
 
