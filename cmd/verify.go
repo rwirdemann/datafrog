@@ -82,9 +82,9 @@ func (v *Verifier) Start() error {
 					}
 
 					if e.Verified == 0 {
-						normalized := matcher.Normalize(line, v.config.Patterns)
-						if diff, err := e.Diff(normalized); err == nil {
-							log.Printf("reference expectation found: %s\n", normalized)
+						tokens := matcher.Tokenize(matcher.Normalize(line, v.config.Patterns))
+						if diff, err := e.Diff(tokens); err == nil {
+							log.Printf("reference expectation found: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
 							expectations[i].IgnoreDiffs = diff
 							expectations[i].Fulfilled = true
 							expectations[i].Verified = 1
@@ -93,9 +93,9 @@ func (v *Verifier) Start() error {
 					}
 
 					if e.Verified > 0 {
-						normalized := matcher.Normalize(line, v.config.Patterns)
-						if e.Equal(normalized) {
-							log.Printf("expectation verfied by: %s\n", normalized)
+						tokens := matcher.Tokenize(matcher.Normalize(line, v.config.Patterns))
+						if e.Equal(tokens) {
+							log.Printf("expectation verfied by: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
 							expectations[i].Fulfilled = true
 							expectations[i].Verified = e.Verified + 1
 							break
