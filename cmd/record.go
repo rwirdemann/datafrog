@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -14,6 +15,7 @@ import (
 
 func init() {
 	recordCmd.Flags().String("out", "", "Filename to save recording")
+	recordCmd.Flags().Bool("prompt", false, "Wait for key stroke before recording starts")
 	recordCmd.MarkFlagRequired("out")
 	rootCmd.AddCommand(recordCmd)
 }
@@ -103,8 +105,13 @@ var recordCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		out, _ := cmd.Flags().GetString("out")
 		c := config.NewConfig("config.json")
-		log.Printf("Recording goes to '%s'. Hit enter when you are ready!", out)
-		//_, _ = fmt.Scanln()
+		prompt, _ := cmd.Flags().GetBool("prompt")
+		if prompt {
+			log.Printf("Recording goes to '%s'. Hit enter when you are ready!", out)
+			_, _ = fmt.Scanln()
+		} else {
+			log.Printf("Recording goes to '%s'.", out)
+		}
 		go checkExit()
 
 		recordingSink := adapter.NewFileRecordingSink(out)
