@@ -6,5 +6,5 @@ import "github.com/rwirdemann/databasedragon/matcher"
 // underlying source.
 type ExpectationSource interface {
 	GetAll() []matcher.Expectation
-	WriteAll(expectations []matcher.Expectation)
+	WriteAll()
 }

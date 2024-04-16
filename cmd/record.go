@@ -95,7 +95,7 @@ func (r *Recorder) writeExpectation(expectations []matcher.Expectation) {
 // Stop stops the recording.
 func (r *Recorder) Stop() {
 	r.running = false
-	log.Println("Recording finshed. Run verfication now!")
+	log.Println("Recording finished. Run verification now!")
 }
 
 var recorder *Recorder

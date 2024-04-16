@@ -14,5 +14,5 @@ func (es *MemExpectationSource) GetAll() []matcher.Expectation {
 	return es.expecations
 }
 
-func (es *MemExpectationSource) WriteAll(expectations []matcher.Expectation) {
+func (es *MemExpectationSource) WriteAll() {
 }

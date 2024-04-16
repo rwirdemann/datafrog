@@ -54,7 +54,7 @@ func (v *Verifier) Start() error {
 	}
 	for {
 		if !v.running {
-			v.expectationSource.WriteAll(v.expectationSource.GetAll())
+			v.expectationSource.WriteAll()
 			break
 		}
 		line, err := v.databsaseLog.NextLine()
@@ -64,7 +64,7 @@ func (v *Verifier) Start() error {
 
 		// Hack to enable test adapter to stop the recording
 		if line == "STOP" {
-			v.expectationSource.WriteAll(v.expectationSource.GetAll())
+			v.expectationSource.WriteAll()
 			break
 		}
 
@@ -108,20 +108,24 @@ func (v *Verifier) Start() error {
 	return nil
 }
 
-// Stop stops the verifcation.
+// Stop stops the verification.
 func (v *Verifier) Stop() {
 	v.running = false
-	if len(v.expectationSource.GetAll()) == 0 {
-		log.Println("Verfication was successful!")
-	} else {
-		log.Printf("Verfication failed. %d unmatched verfications\n", len(v.expectationSource.GetAll()))
+	expectations := v.expectationSource.GetAll
+	fulfilled := 0
+	for _, e := range expectations() {
+		if e.Fulfilled {
+			fulfilled = fulfilled + 1
+		}
 	}
+
+	log.Printf("Fulfilled %d of %d expectations\n", fulfilled, len(expectations()))
 }
 
 var verifier *Verifier
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
-	Short: "Starts verifcation",
+	Short: "Starts verification",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		expectationsFilename, _ := cmd.Flags().GetString("expectations")
 		c := config.NewConfig("config.json")

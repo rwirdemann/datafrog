@@ -36,7 +36,7 @@ func (s *FileExpectationSource) GetAll() []matcher.Expectation {
 	return s.expectations
 }
 
-func (s *FileExpectationSource) WriteAll([]matcher.Expectation) {
+func (s *FileExpectationSource) WriteAll() {
 	f, err := os.Create(s.filename)
 	if err != nil {
 		log.Fatal(err)
