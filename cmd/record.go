@@ -16,7 +16,7 @@ import (
 func init() {
 	recordCmd.Flags().String("out", "", "Filename to save recording")
 	recordCmd.Flags().Bool("prompt", false, "Wait for key stroke before recording starts")
-	recordCmd.MarkFlagRequired("out")
+	_ = recordCmd.MarkFlagRequired("out")
 	rootCmd.AddCommand(recordCmd)
 }
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -13,6 +14,7 @@ import (
 
 func init() {
 	verifyCmd.Flags().String("expectations", "", "Filename to save verify")
+	verifyCmd.Flags().Bool("prompt", false, "Wait for key stroke before verification starts")
 	verifyCmd.MarkFlagRequired("expectations")
 	rootCmd.AddCommand(verifyCmd)
 }
@@ -123,8 +125,13 @@ var verifyCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		expectationsFilename, _ := cmd.Flags().GetString("expectations")
 		c := config.NewConfig("config.json")
-		log.Printf("Verifying '%s'. Hit enter when you are ready!", expectationsFilename)
-		//_, _ = fmt.Scanln()
+		prompt, _ := cmd.Flags().GetBool("prompt")
+		if prompt {
+			log.Printf("Verifying '%s'. Hit enter when you are ready!", expectationsFilename)
+			_, _ = fmt.Scanln()
+		} else {
+			log.Printf("Verifying '%s'.", expectationsFilename)
+		}
 		go checkVerifyExit()
 
 		expectationSource := adapter.NewFileExpectationSource(expectationsFilename)
@@ -138,7 +145,7 @@ var verifyCmd = &cobra.Command{
 	},
 }
 
-// Checks if enter was hit to stop verfication.
+// Checks if enter was hit to stop verification.
 func checkVerifyExit() {
 	var b = make([]byte, 1)
 	l, _ := os.Stdin.Read(b)
