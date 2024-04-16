@@ -118,8 +118,12 @@ func (v *Verifier) Stop() {
 			fulfilled = fulfilled + 1
 		}
 	}
-
 	log.Printf("Fulfilled %d of %d expectations\n", fulfilled, len(expectations()))
+	for _, e := range expectations() {
+		if !e.Fulfilled {
+			log.Printf("Unfulfilled: '%s...'. Verification quote: %d", e.Tokens[0], e.Verified)
+		}
+	}
 }
 
 var verifier *Verifier
