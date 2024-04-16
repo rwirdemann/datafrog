@@ -1,6 +1,7 @@
 # DataFrog (dfg)
 
-A simple command line tool to record and validate API logs statements.
+A simple command line tool to record and verify statement logged by external
+systems, e.g. databases.
 
 The current version was tested with MySQL on MacOS.
 
@@ -19,8 +20,9 @@ insert into job (description, ..., id) values ('World', ..., 2)
 Both statements should be recognized as equal even if they slightly differ. To
 detect and ignore this dynamic data we've build a token based diff algorithm
 that considers a list of allowed differences when comparing two statements. This
-algorithm requires to run the same usecase twice. The first run is called
-`recording`and the second `verification`.
+algorithm requires to run the same usecase at least twice. The first run is
+called `recording`. The second and all succeeding runs are called
+`verification`.
 
 ## Recording
 
@@ -30,14 +32,15 @@ dfg record --out create-job.json
 
 Starts the recorder in the command line.  
 
-## Verfication
+## Verification
 
 ```
 dfg verfify --expectations create-job.json
 ```
 
 Starts the verifier in the command line to verify the expectations recorded
-during the previous run in `create-job.json`. 
+during the previous run in `create-job.json`. The expectations file is updated
+according to the fulfilled expectations.
 
 ## Development
 

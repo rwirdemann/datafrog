@@ -68,10 +68,10 @@ func (r *Recorder) Start() {
 		if r.timer.MatchesRecordingPeriod(ts) {
 			matches, pattern := matcher.MatchesPattern(r.config, line)
 			if matches {
-				log.Println(line)
 				tokens := matcher.Tokenize(matcher.Normalize(line, r.config.Patterns))
 				e := matcher.Expectation{Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 				expectations = append(expectations, e)
+				log.Printf("recored: %s\n", e.Shorten(8))
 			}
 		}
 	}

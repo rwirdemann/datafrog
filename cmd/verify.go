@@ -104,8 +104,20 @@ func (v *Verifier) Start() error {
 				}
 			}
 		}
+		if allFulfilled(expectations) {
+			v.Stop()
+		}
 	}
 	return nil
+}
+
+func allFulfilled(expectations []matcher.Expectation) bool {
+	for _, e := range expectations {
+		if !e.Fulfilled {
+			return false
+		}
+	}
+	return true
 }
 
 // Stop stops the verification.
