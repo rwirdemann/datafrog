@@ -47,7 +47,7 @@ func (r *Recorder) Start() {
 	var expectations []matcher.Expectation
 	for {
 		if !r.running {
-			r.writeExpectation(expectations)
+			r.writeExpectations(expectations)
 			break
 		}
 		line, err := r.databsaseLog.NextLine()
@@ -57,7 +57,7 @@ func (r *Recorder) Start() {
 
 		// Hack to enable test adapter to stop the recording
 		if line == "STOP" {
-			r.writeExpectation(expectations)
+			r.writeExpectations(expectations)
 			break
 		}
 
@@ -77,7 +77,9 @@ func (r *Recorder) Start() {
 	}
 }
 
-func (r *Recorder) writeExpectation(expectations []matcher.Expectation) {
+// writeExpectations writes expectations as json to the recordingSink. Existing
+// exceptions are overridden.
+func (r *Recorder) writeExpectations(expectations []matcher.Expectation) {
 	b, err := json.Marshal(expectations)
 	if err != nil {
 		log.Fatal(err)

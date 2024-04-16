@@ -3,6 +3,7 @@ package matcher
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -53,7 +54,7 @@ func contains[T comparable](values []T, value T) bool {
 	return false
 }
 
-func (e Expectation) BuildDiff(sql string) ([]int, error) {
+func (e Expectation) Diff(sql string) ([]int, error) {
 	tokens := Tokenize(sql)
 	if len(tokens) != len(e.Tokens) {
 		return []int{}, errors.New("number of tokes must be equals")
@@ -66,7 +67,18 @@ func (e Expectation) BuildDiff(sql string) ([]int, error) {
 		}
 	}
 	return diffs, nil
+}
 
+func (e Expectation) String() string {
+	return strings.Join(e.Tokens, " ")
+}
+
+func (e Expectation) Shorten(i int) string {
+	if i >= len(e.Tokens) {
+		return e.String()
+	}
+
+	return fmt.Sprintf("%s...%s", strings.Join(e.Tokens[0:i/2], " "), strings.Join(e.Tokens[len(e.Tokens)-i/2:], " "))
 }
 
 func Tokenize(s string) []string {

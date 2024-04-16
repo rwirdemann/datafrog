@@ -20,12 +20,12 @@ func init() {
 }
 
 // The Verifier verifies the expectations in expectationSource. It monitors the
-// databsaseLog for these expectations and requires them to be in same order as
+// databaseLog for these expectations and requires them to be in same order as
 // given in expectationSource. Verified expectations are written to
 // verificationSink.
 type Verifier struct {
 	config            config.Config
-	databsaseLog      ports.Log
+	databaseLog       ports.Log
 	expectationSource ports.ExpectationSource
 	timer             ports.Timer
 	running           bool
@@ -35,7 +35,7 @@ type Verifier struct {
 func NewVerifier(c config.Config, log ports.Log, source ports.ExpectationSource, t ports.Timer) *Verifier {
 	return &Verifier{
 		config:            c,
-		databsaseLog:      log,
+		databaseLog:       log,
 		expectationSource: source,
 		timer:             t,
 		running:           false,
@@ -57,7 +57,7 @@ func (v *Verifier) Start() error {
 			v.expectationSource.WriteAll()
 			break
 		}
-		line, err := v.databsaseLog.NextLine()
+		line, err := v.databaseLog.NextLine()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -68,7 +68,7 @@ func (v *Verifier) Start() error {
 			break
 		}
 
-		ts, err := v.databsaseLog.Timestamp(line)
+		ts, err := v.databaseLog.Timestamp(line)
 		if err != nil {
 			continue
 		}
@@ -83,7 +83,7 @@ func (v *Verifier) Start() error {
 
 					if e.Verified == 0 {
 						normalized := matcher.Normalize(line, v.config.Patterns)
-						if diff, err := e.BuildDiff(normalized); err == nil {
+						if diff, err := e.Diff(normalized); err == nil {
 							log.Printf("reference expectation found: %s\n", normalized)
 							expectations[i].IgnoreDiffs = diff
 							expectations[i].Fulfilled = true
@@ -113,15 +113,18 @@ func (v *Verifier) Stop() {
 	v.running = false
 	expectations := v.expectationSource.GetAll
 	fulfilled := 0
+	verifiedSum := 0
 	for _, e := range expectations() {
+		verifiedSum += e.Verified
 		if e.Fulfilled {
 			fulfilled = fulfilled + 1
 		}
 	}
 	log.Printf("Fulfilled %d of %d expectations\n", fulfilled, len(expectations()))
+	log.Printf("Verification mean: %d\n", verifiedSum/len(expectations()))
 	for _, e := range expectations() {
 		if !e.Fulfilled {
-			log.Printf("Unfulfilled: '%s...'. Verification quote: %d", e.Tokens[0], e.Verified)
+			log.Printf("Unfulfilled: '%s'. Verification quote: %d", e.Shorten(6), e.Verified)
 		}
 	}
 }
