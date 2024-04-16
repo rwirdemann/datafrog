@@ -77,7 +77,7 @@ func (r *Recorder) Start() {
 	}
 }
 
-// writeExpectations writes expectations as json to the recordingSink. Existing
+// writeExpectations writes initialExpectations as json to the recordingSink. Existing
 // exceptions are overridden.
 func (r *Recorder) writeExpectations(expectations []matcher.Expectation) {
 	b, err := json.Marshal(expectations)

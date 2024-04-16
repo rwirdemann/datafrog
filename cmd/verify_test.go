@@ -10,32 +10,40 @@ import (
 )
 
 func TestVerify(t *testing.T) {
+	var emptyDiff []int
 	testCases := []struct {
-		desc         string
-		expectations []matcher.Expectation
-		logs         []string
-		patterns     []string
-		ignoreDiffs  []int
+		desc                string
+		initialExpectations []matcher.Expectation
+		updatedExpectations []matcher.Expectation
+		logs                []string
+		patterns            []string
 	}{
-		// {
-		// 	desc: "success",
-		// 	expectations: []matcher.Expectation{
-		// 		{
-		// 			Tokens:      matcher.Tokenize("select * from jobs;"),
-		// 			Pattern:     "select job",
-		// 			IgnoreDiffs: []int{},
-		// 		},
-		// 	},
-		// 	logs: []string{
-		// 		"2024-04-08T09:39:15.070009Z	 2549 Query	select * from jobs;",
-		// 		"STOP",
-		// 	},
-		// 	patterns:    []string{"select job"},
-		// 	ignoreDiffs: []int{},
-		// },
 		{
-			desc: "with id",
-			expectations: []matcher.Expectation{
+			desc: "empty diff vector",
+			initialExpectations: []matcher.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Pattern:     "select *",
+					IgnoreDiffs: emptyDiff,
+				},
+			},
+			logs: []string{
+				"2024-04-08T09:39:15.070009Z	 2549 Query	select * from jobs;",
+				"STOP",
+			},
+			updatedExpectations: []matcher.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Pattern:     "select *",
+					IgnoreDiffs: emptyDiff,
+					Fulfilled:   true,
+				},
+			},
+			patterns: []string{"select *"},
+		},
+		{
+			desc: "diff vector with one element",
+			initialExpectations: []matcher.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
@@ -46,8 +54,15 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	select * from jobs where id=2;",
 				"STOP",
 			},
-			patterns:    []string{"select *"},
-			ignoreDiffs: []int{5},
+			updatedExpectations: []matcher.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
+					Pattern:     "select *",
+					IgnoreDiffs: []int{5},
+					Fulfilled:   true,
+				},
+			},
+			patterns: []string{"select *"},
 		},
 	}
 	for _, tC := range testCases {
@@ -55,12 +70,17 @@ func TestVerify(t *testing.T) {
 			c := config.Config{}
 			c.Patterns = tC.patterns
 			databaseLog := adapter.NewMemSQLLog(tC.logs)
-			expectationSource := adapter.NewMemExpectationSource(tC.expectations)
+			expectationSource := adapter.NewMemExpectationSource(tC.initialExpectations)
 			timer := adapter.MockTimer{}
 			verifier := NewVerifier(c, databaseLog, expectationSource, timer)
 			verifier.Start()
-			updatedExpectations := expectationSource.GetAll()
-			assert.Equal(t, tC.ignoreDiffs, updatedExpectations[0].IgnoreDiffs)
+			expectations := expectationSource.GetAll()
+			for i, e := range expectations {
+				updatedExpectation := tC.updatedExpectations[i]
+				assert.Equal(t, updatedExpectation.IgnoreDiffs, e.IgnoreDiffs)
+				assert.Equal(t, updatedExpectation.Fulfilled, e.Fulfilled)
+			}
+
 		})
 	}
 }

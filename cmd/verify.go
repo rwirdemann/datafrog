@@ -13,15 +13,15 @@ import (
 )
 
 func init() {
-	verifyCmd.Flags().String("expectations", "", "Filename to save verify")
+	verifyCmd.Flags().String("initialExpectations", "", "Filename to save verify")
 	verifyCmd.Flags().Bool("prompt", false, "Wait for key stroke before verification starts")
-	verifyCmd.MarkFlagRequired("expectations")
+	verifyCmd.MarkFlagRequired("initialExpectations")
 	rootCmd.AddCommand(verifyCmd)
 }
 
-// The Verifier verifies the expectations in expectationSource. It monitors the
-// databaseLog for these expectations and requires them to be in same order as
-// given in expectationSource. Verified expectations are written to
+// The Verifier verifies the initialExpectations in expectationSource. It monitors the
+// databaseLog for these initialExpectations and requires them to be in same order as
+// given in expectationSource. Verified initialExpectations are written to
 // verificationSink.
 type Verifier struct {
 	config            config.Config
@@ -42,8 +42,8 @@ func NewVerifier(c config.Config, log ports.Log, source ports.ExpectationSource,
 	}
 }
 
-// Start runs the verification loop. It stops, when the expectations got out of
-// order or when all expectations where met.
+// Start runs the verification loop. It stops, when the initialExpectations got out of
+// order or when all initialExpectations where met.
 func (v *Verifier) Start() error {
 	v.running = true
 	v.timer.Start()
@@ -132,7 +132,7 @@ func (v *Verifier) Stop() {
 			fulfilled = fulfilled + 1
 		}
 	}
-	log.Printf("Fulfilled %d of %d expectations\n", fulfilled, len(expectations()))
+	log.Printf("Fulfilled %d of %d initialExpectations\n", fulfilled, len(expectations()))
 	log.Printf("Verification mean: %d\n", verifiedSum/len(expectations()))
 	for _, e := range expectations() {
 		if !e.Fulfilled {
@@ -146,7 +146,7 @@ var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Starts verification",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		expectationsFilename, _ := cmd.Flags().GetString("expectations")
+		expectationsFilename, _ := cmd.Flags().GetString("initialExpectations")
 		c := config.NewConfig("config.json")
 		prompt, _ := cmd.Flags().GetBool("prompt")
 		if prompt {
