@@ -56,7 +56,7 @@ func (e Expectation) BuildDiff(sql string) ([]int, error) {
 		return []int{}, errors.New("number of tokes must be equals")
 	}
 
-	diffs := []int{}
+	var diffs []int
 	for i, v := range tokens {
 		if v != e.Tokens[i] {
 			diffs = append(diffs, i)
@@ -67,7 +67,7 @@ func (e Expectation) BuildDiff(sql string) ([]int, error) {
 }
 
 func Tokenize(s string) []string {
-	tokens := []string{}
+	var tokens []string
 	t := ""
 	quoted := false
 	for i := 0; i < len(s); i++ {
