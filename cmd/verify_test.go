@@ -37,6 +37,7 @@ func TestVerify(t *testing.T) {
 					Pattern:     "select *",
 					IgnoreDiffs: emptyDiff,
 					Fulfilled:   true,
+					Verified:    1,
 				},
 			},
 			patterns: []string{"select *"},
@@ -60,6 +61,31 @@ func TestVerify(t *testing.T) {
 					Pattern:     "select *",
 					IgnoreDiffs: []int{5},
 					Fulfilled:   true,
+					Verified:    1,
+				},
+			},
+			patterns: []string{"select *"},
+		},
+		{
+			desc: "miss matching pattern",
+			initialExpectations: []matcher.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
+					Pattern:     "select *",
+					IgnoreDiffs: []int{},
+				},
+			},
+			logs: []string{
+				"2024-04-08T09:39:15.070009Z	 2549 Query	update job where id=2;",
+				"STOP",
+			},
+			updatedExpectations: []matcher.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
+					Pattern:     "select *",
+					IgnoreDiffs: []int{},
+					Fulfilled:   false,
+					Verified:    0,
 				},
 			},
 			patterns: []string{"select *"},
@@ -79,6 +105,7 @@ func TestVerify(t *testing.T) {
 				updatedExpectation := tC.updatedExpectations[i]
 				assert.Equal(t, updatedExpectation.IgnoreDiffs, e.IgnoreDiffs)
 				assert.Equal(t, updatedExpectation.Fulfilled, e.Fulfilled)
+				assert.Equal(t, updatedExpectation.Verified, e.Verified)
 			}
 
 		})
