@@ -13,9 +13,9 @@ import (
 )
 
 func init() {
-	verifyCmd.Flags().String("initialExpectations", "", "Filename to save verify")
+	verifyCmd.Flags().String("expectations", "", "Filename to save verify")
 	verifyCmd.Flags().Bool("prompt", false, "Wait for key stroke before verification starts")
-	verifyCmd.MarkFlagRequired("initialExpectations")
+	verifyCmd.MarkFlagRequired("expectations")
 	rootCmd.AddCommand(verifyCmd)
 }
 
@@ -132,7 +132,7 @@ func (v *Verifier) Stop() {
 			fulfilled = fulfilled + 1
 		}
 	}
-	log.Printf("Fulfilled %d of %d initialExpectations\n", fulfilled, len(expectations()))
+	log.Printf("Fulfilled %d of %d expectations\n", fulfilled, len(expectations()))
 	log.Printf("Verification mean: %d\n", verifiedSum/len(expectations()))
 	for _, e := range expectations() {
 		if !e.Fulfilled {
@@ -146,7 +146,7 @@ var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Starts verification",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		expectationsFilename, _ := cmd.Flags().GetString("initialExpectations")
+		expectationsFilename, _ := cmd.Flags().GetString("expectations")
 		c := config.NewConfig("config.json")
 		prompt, _ := cmd.Flags().GetBool("prompt")
 		if prompt {
