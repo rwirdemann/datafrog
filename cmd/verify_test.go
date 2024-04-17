@@ -140,6 +140,47 @@ func TestVerify(t *testing.T) {
 			},
 			patterns: []string{"select", "insert", "update"},
 		},
+		{
+			desc: "verified > 0 but equals fails should continue with next exception",
+			initialExpectations: []matcher.Expectation{
+				{
+					Tokens:      matcher.Tokenize("insert into job (description, id) values ('Developer', 4)"),
+					Pattern:     "insert",
+					Verified:    1,
+					Fulfilled:   true,
+					IgnoreDiffs: []int{7},
+				},
+				{
+					Tokens:      matcher.Tokenize("insert into application (name, job_id, id) values ('Ralf', 4, 1)"),
+					Pattern:     "insert",
+					Verified:    1,
+					Fulfilled:   true,
+					IgnoreDiffs: []int{8, 9},
+				},
+			},
+			logs: []string{
+				"2024-04-08T09:39:15.070009Z	 2549 Query	insert into application (name, job_id, id) values ('Ralf', 5, 2);",
+				"2024-04-08T09:39:15.070009Z	 2549 Query	insert into job (description, id) values ('Developer', 5);",
+				"STOP",
+			},
+			updatedExpectations: []matcher.Expectation{
+				{
+					Tokens:      matcher.Tokenize("insert into job (description, id) values ('Developer', 4)"),
+					Pattern:     "insert",
+					Verified:    2,
+					Fulfilled:   true,
+					IgnoreDiffs: []int{7},
+				},
+				{
+					Tokens:      matcher.Tokenize("insert into application (name, job_id, id) values ('Ralf', 4, 1)"),
+					Pattern:     "insert",
+					Verified:    2,
+					Fulfilled:   true,
+					IgnoreDiffs: []int{8, 9},
+				},
+			},
+			patterns: []string{"insert"},
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
