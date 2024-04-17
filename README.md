@@ -35,7 +35,7 @@ Starts the recorder in the command line.
 ## Verification
 
 ```
-dfg verfify --expectations create-job.json
+dfg verify --expectations create-job.json
 ```
 
 Starts the verifier in the command line to verify the expectations recorded
@@ -69,7 +69,7 @@ format:
 
 A database statement is only recorded if it contains one the configured
 patterns. The pattern format `select job!publish_trials<1` contains an exclude
-rule thus only statments that contain `select job` but not `publish_trials<1`
+rule thus only statements that contain `select job` but not `publish_trials<1`
 are recorded.
 
 ## Further options
