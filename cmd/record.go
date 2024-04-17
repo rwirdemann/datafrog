@@ -43,7 +43,7 @@ func NewRecorder(c config.Config, log ports.Log, sink ports.RecordingSink, timer
 func (r *Recorder) Start() {
 	r.running = true
 	r.timer.Start()
-	log.Printf("Recording started at %v. Press Enter to stop recording...", r.timer.GetStart())
+	log.Printf("Recording started at %v. Press Enter to stop and save recording...", r.timer.GetStart())
 	var expectations []matcher.Expectation
 	for {
 		if !r.running {
@@ -77,8 +77,8 @@ func (r *Recorder) Start() {
 	}
 }
 
-// writeExpectations writes initialExpectations as json to the recordingSink. Existing
-// exceptions are overridden.
+// writeExpectations writes initialExpectations as json to the recordingSink.
+// Existing exceptions are overridden.
 func (r *Recorder) writeExpectations(expectations []matcher.Expectation) {
 	b, err := json.Marshal(expectations)
 	if err != nil {

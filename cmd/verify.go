@@ -47,7 +47,7 @@ func NewVerifier(c config.Config, log ports.Log, source ports.ExpectationSource,
 func (v *Verifier) Start() error {
 	v.running = true
 	v.timer.Start()
-	log.Printf("Verification started at %v. Press Enter to stop verification...", v.timer.GetStart())
+	log.Printf("Verification started at %v. Press Enter to stop and save verification...", v.timer.GetStart())
 	expectations := v.expectationSource.GetAll()
 	for i := range expectations {
 		expectations[i].Fulfilled = false

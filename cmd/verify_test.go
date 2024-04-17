@@ -157,7 +157,6 @@ func TestVerify(t *testing.T) {
 				assert.Equal(t, updatedExpectation.Fulfilled, e.Fulfilled)
 				assert.Equal(t, updatedExpectation.Verified, e.Verified)
 			}
-
 		})
 	}
 }
