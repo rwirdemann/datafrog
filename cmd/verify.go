@@ -74,33 +74,33 @@ func (v *Verifier) Start() error {
 		}
 		if v.timer.MatchesRecordingPeriod(ts) {
 			matches, pattern := matcher.MatchesPattern(v.config, line)
-			if matches {
-				expectations := v.expectationSource.GetAll()
-				for i, e := range expectations {
-					if e.Fulfilled || e.Pattern != pattern {
-						continue
-					}
+			if !matches {
+				continue
+			}
 
-					if e.Verified == 0 {
-						tokens := matcher.Tokenize(matcher.Normalize(line, v.config.Patterns))
-						if diff, err := e.Diff(tokens); err == nil {
-							log.Printf("reference expectation found: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
-							expectations[i].IgnoreDiffs = diff
-							expectations[i].Fulfilled = true
-							expectations[i].Verified = 1
-							break
-						}
-					}
+			expectations := v.expectationSource.GetAll()
+			for i, e := range expectations {
+				if e.Fulfilled || e.Pattern != pattern {
+					continue
+				}
 
-					if e.Verified > 0 {
-						tokens := matcher.Tokenize(matcher.Normalize(line, v.config.Patterns))
-						if e.Equal(tokens) {
-							log.Printf("expectation verfied by: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
-							expectations[i].Fulfilled = true
-							expectations[i].Verified = e.Verified + 1
-							break
-						}
-					}
+				tokens := matcher.Tokenize(matcher.Normalize(line, v.config.Patterns))
+
+				// handle already verified expectations
+				if e.Verified > 0 && e.Equal(tokens) {
+					log.Printf("expectation verified by: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
+					expectations[i].Fulfilled = true
+					expectations[i].Verified = e.Verified + 1
+					break
+				}
+
+				// handle not yet verified expectations (verified == 0)
+				if diff, err := e.Diff(tokens); err == nil {
+					log.Printf("reference expectation found: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
+					expectations[i].IgnoreDiffs = diff
+					expectations[i].Fulfilled = true
+					expectations[i].Verified = 1
+					break
 				}
 			}
 		}
