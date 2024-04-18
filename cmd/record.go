@@ -25,15 +25,16 @@ func init() {
 // recording sink.
 type Recorder struct {
 	config        config.Config
-	databsaseLog  ports.Log
+	tokenizer     matcher.Tokenizer
+	databaseLog   ports.Log
 	recordingSink ports.RecordingSink
 	timer         ports.Timer
 	running       bool
 }
 
 // NewRecorder creates a new Recorder.
-func NewRecorder(c config.Config, log ports.Log, sink ports.RecordingSink, timer ports.Timer) *Recorder {
-	return &Recorder{config: c, databsaseLog: log, recordingSink: sink, timer: timer, running: false}
+func NewRecorder(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, sink ports.RecordingSink, timer ports.Timer) *Recorder {
+	return &Recorder{config: c, tokenizer: tokenizer, databaseLog: log, recordingSink: sink, timer: timer, running: false}
 }
 
 // Start starts the recording process as endless loop. Every log entry that
@@ -50,7 +51,7 @@ func (r *Recorder) Start() {
 			r.writeExpectations(expectations)
 			break
 		}
-		line, err := r.databsaseLog.NextLine()
+		line, err := r.databaseLog.NextLine()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -61,14 +62,14 @@ func (r *Recorder) Start() {
 			break
 		}
 
-		ts, err := r.databsaseLog.Timestamp(line)
+		ts, err := r.databaseLog.Timestamp(line)
 		if err != nil {
 			continue
 		}
 		if r.timer.MatchesRecordingPeriod(ts) {
 			matches, pattern := matcher.MatchesPattern(r.config, line)
 			if matches {
-				tokens := matcher.Tokenize(matcher.Normalize(line, r.config.Patterns))
+				tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
 				e := matcher.Expectation{Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 				expectations = append(expectations, e)
 				log.Printf("new expectation: %s\n", e.Shorten(8))
@@ -124,7 +125,7 @@ var recordCmd = &cobra.Command{
 
 		t := &adapter.UTCTimer{}
 
-		recorder = NewRecorder(c, databaseLog, recordingSink, t)
+		recorder = NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t)
 		recorder.Start()
 
 		return nil

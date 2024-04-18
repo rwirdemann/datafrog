@@ -46,7 +46,7 @@ func TestRecord(t *testing.T) {
 	databaseLog := adapter.NewMemSQLLog(logs)
 	recordingSink := adapter.NewMemRecordingSink()
 	timer := adapter.MockTimer{}
-	recorder := NewRecorder(c, databaseLog, recordingSink, timer)
+	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer)
 	recorder.Start()
 	recorder.Stop()
 	assert.Len(t, recordingSink.Recorded, 1)

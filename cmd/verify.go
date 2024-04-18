@@ -25,6 +25,7 @@ func init() {
 // verificationSink.
 type Verifier struct {
 	config            config.Config
+	tokenizer         matcher.Tokenizer
 	databaseLog       ports.Log
 	expectationSource ports.ExpectationSource
 	timer             ports.Timer
@@ -32,9 +33,10 @@ type Verifier struct {
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c config.Config, log ports.Log, source ports.ExpectationSource, t ports.Timer) *Verifier {
+func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, source ports.ExpectationSource, t ports.Timer) *Verifier {
 	return &Verifier{
 		config:            c,
+		tokenizer:         tokenizer,
 		databaseLog:       log,
 		expectationSource: source,
 		timer:             t,
@@ -84,7 +86,7 @@ func (v *Verifier) Start() error {
 					continue
 				}
 
-				tokens := matcher.Tokenize(matcher.Normalize(line, v.config.Patterns))
+				tokens := v.tokenizer.Tokenize(line, v.config.Patterns)
 
 				// handle already verified expectations
 				if e.Verified > 0 && e.Equal(tokens) {
@@ -163,7 +165,7 @@ var verifyCmd = &cobra.Command{
 
 		t := &adapter.UTCTimer{}
 
-		verifier = NewVerifier(c, databaseLog, expectationSource, t)
+		verifier = NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t)
 		return verifier.Start()
 	},
 }

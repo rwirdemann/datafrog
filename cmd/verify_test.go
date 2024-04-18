@@ -189,7 +189,7 @@ func TestVerify(t *testing.T) {
 			databaseLog := adapter.NewMemSQLLog(tC.logs)
 			expectationSource := adapter.NewMemExpectationSource(tC.initialExpectations)
 			timer := adapter.MockTimer{}
-			verifier := NewVerifier(c, databaseLog, expectationSource, timer)
+			verifier := NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, timer)
 			verifier.Start()
 			expectations := expectationSource.GetAll()
 			for i, e := range expectations {
