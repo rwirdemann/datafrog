@@ -71,7 +71,7 @@ func (r *Recorder) Start() {
 				tokens := matcher.Tokenize(matcher.Normalize(line, r.config.Patterns))
 				e := matcher.Expectation{Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 				expectations = append(expectations, e)
-				log.Printf("recored: %s\n", e.Shorten(8))
+				log.Printf("new expectation: %s\n", e.Shorten(8))
 			}
 		}
 	}

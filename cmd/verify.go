@@ -133,7 +133,7 @@ func (v *Verifier) Stop() {
 		}
 	}
 	log.Printf("Fulfilled %d of %d expectations\n", fulfilled, len(expectations()))
-	log.Printf("Verification mean: %d\n", verifiedSum/len(expectations()))
+	log.Printf("Verification mean: %f\n", float32(verifiedSum)/float32(len(expectations())))
 	for _, e := range expectations() {
 		if !e.Fulfilled {
 			log.Printf("Unfulfilled: '%s'. Verification quote: %d", e.Shorten(6), e.Verified)
