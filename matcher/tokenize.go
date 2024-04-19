@@ -3,6 +3,7 @@ package matcher
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 func Tokenize(s string) []string {
@@ -33,4 +34,20 @@ func Tokenize(s string) []string {
 	tokens = append(tokens, t)
 	log.Debug(tokens)
 	return tokens
+}
+
+func normalize(s string, patterns []string) string {
+	result := cutPrefix(s, patterns)
+	result = strings.TrimSuffix(result, "\n")
+	return result
+}
+
+func cutPrefix(s string, patterns []string) string {
+	for _, p := range patterns {
+		idx := strings.Index(s, NewPattern(p).Include)
+		if idx > -1 {
+			return s[idx:]
+		}
+	}
+	return s
 }

@@ -1,0 +1,4 @@
+2024-04-19 10:12:16.889 CEST [89718] LOG:  execute <unnamed>: insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ($1, $2, $3, $4, $5, $6, $7)
+2024-04-19 10:12:16.889 CEST [89718] DETAIL:  parameters: $1 = 'World', $2 = '2024-04-19 10:12:12', $3 = '0', $4 = NULL, $5 = '', $6 = 'Hello', $7 = '1'
+2024-04-19 10:12:18.541 CEST [89718] LOG:  execute S_3: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ where (job0_.published_timestamp is null) and job0_.publish_at<$1 and job0_.publish_trials<$2
+2024-04-19 10:12:18.541 CEST [89718] DETAIL:  parameters: $1 = '2024-04-19 10:12:18.540628', $2 = '1'
