@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -31,7 +32,11 @@ func (m MySQLLog) Close() {
 }
 
 func (m MySQLLog) Timestamp(s string) (time.Time, error) {
-	return Timestamp(s)
+	t, err := timestamp(s, "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z", time.RFC3339Nano)
+	if err != nil {
+		return time.Time{}, errors.New("string contains no valid timestamp")
+	}
+	return t, nil
 }
 
 func (m MySQLLog) NextLine() (string, error) {

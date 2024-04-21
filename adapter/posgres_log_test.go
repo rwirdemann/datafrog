@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
+	"time"
 )
 
 func TestRegex(t *testing.T) {
@@ -23,6 +24,14 @@ func TestReadLine(t *testing.T) {
 	defer pl.Close()
 	actual := readLine(t, pl)
 	expected := "2024-04-19 10:12:16.889 CEST [89718] LOG:  execute <unnamed>: insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-19 10:12:12', '0', NULL, '', 'Hello', '1')\n"
+	assert.Equal(t, expected, actual)
+}
+
+func TestPostgresTimestamp(t *testing.T) {
+	pl := PostgresLog{}
+	actual, err := pl.Timestamp("2024-04-19 10:12:16.889 CEST [89718] LOG:  execute <unnamed>: insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-19 10:12:12', '0', NULL, '', 'Hello', '1')")
+	assert.Nil(t, err)
+	expected, _ := time.Parse(time.DateTime, "2024-04-19 10:12:16.889")
 	assert.Equal(t, expected, actual)
 }
 
