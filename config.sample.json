@@ -1,5 +1,5 @@
 {
-  "filename": "/usr/local/var/mysql/MBP-von-Ralf.log",
+  "filename": "/usr/local/var/mysql/MacBook-Pro-von-Ralf.log",
   "logformat": "mysql",
   "patterns": [
     "insert into job",
