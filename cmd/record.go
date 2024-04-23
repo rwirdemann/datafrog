@@ -120,7 +120,7 @@ var recordCmd = &cobra.Command{
 		recordingSink := adapter.NewFileRecordingSink(out)
 		defer recordingSink.Close()
 
-		databaseLog := adapter.NewMYSQLLog(c.Filename)
+		databaseLog := createLogAdapter(c)
 		defer databaseLog.Close()
 
 		t := &adapter.UTCTimer{}

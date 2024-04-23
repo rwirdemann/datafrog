@@ -1,6 +1,6 @@
 {
-  "filename": "/usr/local/var/postgresql@14/log/postgresql.log",
-  "logformat": "postgres",
+  "filename": "/usr/local/var/mysql/MBP-von-Ralf.log",
+  "logformat": "mysql",
   "patterns": [
     "insert into job",
     "update job",

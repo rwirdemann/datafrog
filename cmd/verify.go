@@ -160,7 +160,7 @@ var verifyCmd = &cobra.Command{
 		go checkVerifyExit()
 
 		expectationSource := adapter.NewFileExpectationSource(expectationsFilename)
-		databaseLog := adapter.NewMYSQLLog(c.Filename)
+		databaseLog := createLogAdapter(c)
 		defer databaseLog.Close()
 
 		t := &adapter.UTCTimer{}

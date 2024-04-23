@@ -73,6 +73,8 @@ patterns. The pattern format `select job!publish_trials<1` contains an exclude
 rule thus only statements that contain `select job` but not `publish_trials<1`
 are recorded.
 
+Allowed logformat: mysql | postgres
+
 ## Further options
 
 See help to see recording and verfication options.
