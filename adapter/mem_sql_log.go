@@ -6,12 +6,13 @@ import (
 )
 
 type MemSQLLog struct {
-	logs  []string
-	index int
+	logs        []string
+	index       int
+	doneChannel chan struct{} // close this channel to notify verification loop to stop
 }
 
-func NewMemSQLLog(logs []string) *MemSQLLog {
-	return &MemSQLLog{logs: logs, index: 0}
+func NewMemSQLLog(logs []string, doneChannel chan struct{}) *MemSQLLog {
+	return &MemSQLLog{logs: logs, index: 0, doneChannel: doneChannel}
 }
 
 func (l *MemSQLLog) Timestamp(s string) (time.Time, error) {
@@ -28,6 +29,9 @@ func (l *MemSQLLog) NextLine() (string, error) {
 	}
 	line := l.logs[l.index]
 	l.index = l.index + 1
+	if line == "STOP" {
+		close(l.doneChannel)
+	}
 	return line, nil
 }
 

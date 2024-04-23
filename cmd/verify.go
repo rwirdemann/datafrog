@@ -19,17 +19,16 @@ func init() {
 	rootCmd.AddCommand(verifyCmd)
 }
 
-// The Verifier verifies the initialExpectations in expectationSource. It monitors the
-// databaseLog for these initialExpectations and requires them to be in same order as
-// given in expectationSource. Verified initialExpectations are written to
-// verificationSink.
+// The Verifier verifies the initialExpectations in expectationSource. It
+// monitors the databaseLog for these initialExpectations and requires them to
+// be in same order as given in expectationSource. Verified initialExpectations
+// are written to verificationSink.
 type Verifier struct {
 	config            config.Config
 	tokenizer         matcher.Tokenizer
 	databaseLog       ports.Log
 	expectationSource ports.ExpectationSource
 	timer             ports.Timer
-	running           bool
 }
 
 // NewVerifier creates a new Verifier.
@@ -40,79 +39,82 @@ func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, so
 		databaseLog:       log,
 		expectationSource: source,
 		timer:             t,
-		running:           false,
 	}
 }
 
-// Start runs the verification loop. It stops, when the initialExpectations got out of
-// order or when all initialExpectations where met.
-func (v *Verifier) Start() error {
-	v.running = true
+// Start runs the verification loop.
+func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	v.timer.Start()
 	log.Printf("Verification started at %v. Press Enter to stop and save verification...", v.timer.GetStart())
 	expectations := v.expectationSource.GetAll()
 	for i := range expectations {
 		expectations[i].Fulfilled = false
 	}
+
+	// tell caller that verification has been finished
+	defer close(stopped)
+
+	// called when done channel is closed
+	defer func() {
+		v.expectationSource.WriteAll()
+	}()
+
 	for {
-		if !v.running {
-			v.expectationSource.WriteAll()
-			break
-		}
-		line, err := v.databaseLog.NextLine()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// Hack to enable test adapter to stop the recording
-		if line == "STOP" {
-			v.expectationSource.WriteAll()
-			break
-		}
-
-		ts, err := v.databaseLog.Timestamp(line)
-		if err != nil {
-			continue
-		}
-		if v.timer.MatchesRecordingPeriod(ts) {
-			matches, pattern := matcher.MatchesPattern(v.config, line)
-			if !matches {
-				continue
+		select {
+		default:
+			if allFulfilled(expectations) {
+				return
 			}
 
-			expectations := v.expectationSource.GetAll()
-			for i, e := range expectations {
-				if e.Fulfilled || e.Pattern != pattern {
+			line, err := v.databaseLog.NextLine()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			ts, err := v.databaseLog.Timestamp(line)
+			if err != nil {
+				continue
+			}
+			if v.timer.MatchesRecordingPeriod(ts) {
+				matches, pattern := matcher.MatchesPattern(v.config, line)
+				if !matches {
 					continue
 				}
 
-				tokens := v.tokenizer.Tokenize(line, v.config.Patterns)
+				expectations := v.expectationSource.GetAll()
+				for i, e := range expectations {
+					if e.Fulfilled || e.Pattern != pattern {
+						continue
+					}
 
-				// handle already verified expectations
-				if e.Verified > 0 && e.Equal(tokens) {
-					log.Printf("expectation verified by: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
-					expectations[i].Fulfilled = true
-					expectations[i].Verified = e.Verified + 1
-					break
-				}
+					tokens := v.tokenizer.Tokenize(line, v.config.Patterns)
 
-				// handle not yet verified expectations (verified == 0)
-				if diff, err := e.Diff(tokens); err == nil {
-					log.Printf("reference expectation found: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
-					expectations[i].IgnoreDiffs = diff
-					expectations[i].Fulfilled = true
-					expectations[i].Verified = 1
-					break
+					// handle already verified expectations
+					if e.Verified > 0 && e.Equal(tokens) {
+						log.Printf("expectation verified by: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
+						expectations[i].Fulfilled = true
+						expectations[i].Verified = e.Verified + 1
+						break
+					}
+
+					// handle not yet verified expectations (verified == 0)
+					if diff, err := e.Diff(tokens); err == nil {
+						log.Printf("reference expectation found: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
+						expectations[i].IgnoreDiffs = diff
+						expectations[i].Fulfilled = true
+						expectations[i].Verified = 1
+						break
+					}
 				}
 			}
-		}
-		if allFulfilled(expectations) {
-			v.Stop()
+		case <-done:
+			return
 		}
 	}
-	return nil
 }
 
+// allFulfilled checks all expectations, returns true if all fulfilled and false
+// otherwise.
 func allFulfilled(expectations []matcher.Expectation) bool {
 	for _, e := range expectations {
 		if !e.Fulfilled {
@@ -122,9 +124,8 @@ func allFulfilled(expectations []matcher.Expectation) bool {
 	return true
 }
 
-// Stop stops the verification.
-func (v *Verifier) Stop() {
-	v.running = false
+// ReportResults reports the verification results.
+func (v *Verifier) ReportResults() {
 	expectations := v.expectationSource.GetAll
 	fulfilled := 0
 	verifiedSum := 0
@@ -143,11 +144,17 @@ func (v *Verifier) Stop() {
 	}
 }
 
+// close done channel to stop the verify loop.
+var done = make(chan struct{})
+
+// read from stopped channel to wait for the verifier to finish
+var stopped = make(chan struct{})
+
 var verifier *Verifier
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Starts verification",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		expectationsFilename, _ := cmd.Flags().GetString("expectations")
 		c := config.NewConfig("config.json")
 		prompt, _ := cmd.Flags().GetBool("prompt")
@@ -157,24 +164,24 @@ var verifyCmd = &cobra.Command{
 		} else {
 			log.Printf("Verifying '%s'.", expectationsFilename)
 		}
-		go checkVerifyExit()
 
 		expectationSource := adapter.NewFileExpectationSource(expectationsFilename)
 		databaseLog := createLogAdapter(c)
 		defer databaseLog.Close()
-
 		t := &adapter.UTCTimer{}
-
 		verifier = NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t)
-		return verifier.Start()
+		go checkVerifyExit()
+		go verifier.Start(done, stopped)
+		<-stopped // wait until verifier signals its finish
+		verifier.ReportResults()
 	},
 }
 
-// Checks if enter was hit to stop verification.
+// checkVerifyExit if key  was hit to stop verification.
 func checkVerifyExit() {
 	var b = make([]byte, 1)
 	l, _ := os.Stdin.Read(b)
 	if l > 0 {
-		verifier.Stop()
+		close(done)
 	}
 }

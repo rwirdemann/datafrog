@@ -186,11 +186,14 @@ func TestVerify(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			c := config.Config{}
 			c.Patterns = tC.patterns
-			databaseLog := adapter.NewMemSQLLog(tC.logs)
+			doneChannel := make(chan struct{})
+			stoppedChannel := make(chan struct{})
+			databaseLog := adapter.NewMemSQLLog(tC.logs, doneChannel)
 			expectationSource := adapter.NewMemExpectationSource(tC.initialExpectations)
 			timer := adapter.MockTimer{}
 			verifier := NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, timer)
-			verifier.Start()
+			go verifier.Start(doneChannel, stoppedChannel)
+			<-stoppedChannel // wait till verifier is done
 			expectations := expectationSource.GetAll()
 			for i, e := range expectations {
 				updatedExpectation := tC.updatedExpectations[i]
