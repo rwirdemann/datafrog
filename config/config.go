@@ -13,8 +13,9 @@ import (
 // and exclude rule thus only statements that contain `select job` but not
 // `publish_trials<1` are considered.
 type Config struct {
-	Filename string   `json:"filename"` // full path of logfile to be used
-	Patterns []string `json:"patterns"` // list of patterns to consider
+	Filename  string   `json:"filename"`  // full path of logfile to be used
+	Logformat string   `json:"logformat"` // format of log file, actual mysql | postgresql
+	Patterns  []string `json:"patterns"`  // list of patterns to consider
 }
 
 // NewConfig creates a new instance given its settings from filename in json

@@ -58,6 +58,7 @@ format:
 ```json
 {
   "filename": "/usr/local/var/mysql/development.log",
+  "logformat": "mysql",
   "patterns": [
     "insert into job",
     "update job",
