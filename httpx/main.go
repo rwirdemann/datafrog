@@ -82,13 +82,15 @@ func StartTest() http.HandlerFunc {
 		}
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
-		verifier = cmd.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t)
+		verifier = cmd.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
 		doneChannels[testname] = make(chan struct{})
 		stoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(doneChannels[testname], stoppedChannels[testname])
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		testID := uuid.New().String()
 		writer.Header().Set("Location", testID)
+		writer.Write([]byte(fmt.Sprintf("Test '%s' is waiting for interaction...\n", testname)))
+		writer.Header().Set("Content-Type", "text/plain")
 		writer.WriteHeader(http.StatusAccepted)
 		log.Printf("PUT StartTest: %s\n", testname)
 	}
@@ -110,7 +112,8 @@ func StopTest() http.HandlerFunc {
 		doneChannels[testname] = nil
 		<-stoppedChannels[testname]
 		stoppedChannels[testname] = nil
-		verifier.ReportResults()
+		result := verifier.ReportResults()
+		writer.Write([]byte(result))
 		writer.WriteHeader(http.StatusOK)
 		log.Printf("DELETE StopTest: %s\n", testname)
 	}

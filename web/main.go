@@ -3,11 +3,14 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/databasedragon/httpx/api"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -40,12 +43,15 @@ func runHandler(w http.ResponseWriter, request *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, err = client.Do(r)
+	response, err := client.Do(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, request, "/", http.StatusSeeOther)
+	body, err := io.ReadAll(response.Body)
+	s := strings.ReplaceAll(string(body), "\n", "%0A")
+	indexURL := fmt.Sprintf("/?result=%s", s)
+	http.Redirect(w, request, indexURL, http.StatusSeeOther)
 }
 
 func indexHandler(w http.ResponseWriter, request *http.Request) {
@@ -64,8 +70,16 @@ func indexHandler(w http.ResponseWriter, request *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	result := request.URL.Query().Get("result")
+	var results []string
+	if len(strings.Trim(result, " ")) > 0 {
+		results = strings.Split(strings.Trim(result, " "), "\n")
+	}
+
 	index.Execute(w, struct {
-		Title string
-		Tests []api.Test
-	}{Title: "All Tests", Tests: allTests.Tests})
+		Title  string
+		Tests  []api.Test
+		Result []string
+	}{Title: "All Tests", Tests: allTests.Tests, Result: results})
 }

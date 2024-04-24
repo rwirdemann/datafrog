@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/config"
@@ -29,16 +30,18 @@ type Verifier struct {
 	databaseLog       ports.Log
 	expectationSource ports.ExpectationSource
 	timer             ports.Timer
+	name              string
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, source ports.ExpectationSource, t ports.Timer) *Verifier {
+func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, source ports.ExpectationSource, t ports.Timer, name string) *Verifier {
 	return &Verifier{
 		config:            c,
 		tokenizer:         tokenizer,
 		databaseLog:       log,
 		expectationSource: source,
 		timer:             t,
+		name:              name,
 	}
 }
 
@@ -126,7 +129,7 @@ func allFulfilled(expectations []matcher.Expectation) bool {
 }
 
 // ReportResults reports the verification results.
-func (v *Verifier) ReportResults() {
+func (v *Verifier) ReportResults() string {
 	expectations := v.expectationSource.GetAll
 	fulfilled := 0
 	verifiedSum := 0
@@ -136,13 +139,16 @@ func (v *Verifier) ReportResults() {
 			fulfilled = fulfilled + 1
 		}
 	}
-	log.Printf("Fulfilled %d of %d expectations\n", fulfilled, len(expectations()))
-	log.Printf("Verification mean: %f\n", float32(verifiedSum)/float32(len(expectations())))
+	result := fmt.Sprintf("Testname: %s\n", v.name)
+	result = fmt.Sprintf("%sLast execution: %s\n", result, time.Now().Format(time.DateTime))
+	result = fmt.Sprintf("%sFulfilled %d of %d expectations\n", result, fulfilled, len(expectations()))
+	result = fmt.Sprintf("%sVerification mean: %f\n", result, float32(verifiedSum)/float32(len(expectations())))
 	for _, e := range expectations() {
 		if !e.Fulfilled {
-			log.Printf("Unfulfilled: '%s'. Verification quote: %d", e.Shorten(6), e.Verified)
+			result = fmt.Sprintf("%sUnfulfilled: '%s'. Verification quote: %d\n", result, e.Shorten(6), e.Verified)
 		}
 	}
+	return result
 }
 
 // close done channel to stop the verify loop.
@@ -173,7 +179,7 @@ var verifyCmd = &cobra.Command{
 		databaseLog := createLogAdapter(c)
 		defer databaseLog.Close()
 		t := &adapter.UTCTimer{}
-		verifier = NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t)
+		verifier = NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, expectationsFilename)
 		go checkVerifyExit()
 		go verifier.Start(done, stopped)
 		<-stopped // wait until verifier signals its finish

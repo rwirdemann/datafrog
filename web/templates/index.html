@@ -1,21 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<body>
-<h1>DataFrog Web</h1>
-<h2>{{.Title}}</h2>
-{{range .Tests}}
-    <form action="/run" method="POST">
-        {{.Name}}
-        {{if .Running}}
-        <input type="submit" value="Stop...">
-        <input type="hidden" name="mode" value="stop">
-        {{else}}
-        <input type="submit" value="Start...">
-        <input type="hidden" name="mode" value="start">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+</head>
+<body style="padding: 0px 10px">
+<h1><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">DataFrog Dashboard</a></h1>
+<div class="pure-g">
+    <div class="pure-u-1-3">
+        <h2>Tests</h2>
+        <table class="pure-table">
+            <thead>
+            <tr>
+                <th>Testname</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Tests}}
+            <tr>
+                <form action="/run" method="POST">
+                    <td>
+                        {{.Name}}
+                    </td>
+                    <td>
+                        {{if .Running}}
+                        <input class="pure-button pure-button" type="submit" value="Stop...">
+                        <input type="hidden" name="mode" value="stop">
+                        {{else}}
+                        <input class="pure-button pure-button-primary" type="submit" value="Start...">
+                        <input type="hidden" name="mode" value="start">
+                        {{end}}
+                    </td>
+                </form>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+    <div class="pure-u-2-3"></p>
+        {{if .Result }}
+        <h2>Result</h2>
+        <table class="pure-table">
+            <thead>
+            <tr>
+                <th>Detail</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Result}}
+            <tr>
+                <td>{{.}}
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
         {{end}}
-    </form>
-{{end}}
+    </div>
+</div>
 </body>
-
 </html>

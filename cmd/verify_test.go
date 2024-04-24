@@ -191,7 +191,7 @@ func TestVerify(t *testing.T) {
 			databaseLog := adapter.NewMemSQLLog(tC.logs, doneChannel)
 			expectationSource := adapter.NewMemExpectationSource(tC.initialExpectations)
 			timer := adapter.MockTimer{}
-			verifier := NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, timer)
+			verifier := NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, timer, "")
 			go verifier.Start(doneChannel, stoppedChannel)
 			<-stoppedChannel // wait till verifier is done
 			expectations := expectationSource.GetAll()
