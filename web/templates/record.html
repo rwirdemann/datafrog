@@ -9,7 +9,7 @@
 <body>
 <section class="section">
     <div class="container">
-        <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Test is running...</a></h1>
+        <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Test is being recorded...</a></h1>
         <table class="table">
             <thead>
             <tr>
@@ -19,13 +19,12 @@
             </thead>
             <tbody>
             <tr>
-                <form action="/stop" method="POST">
+                <form action="/stoprecording" method="POST">
                     <td>
                         {{.Testname}}
                     </td>
                     <td>
-                        <input class="button is-small is-danger" type="submit" value="Stop...">
-                        <input type="hidden" value="{{.Testname}}" name="testname">
+                        <input class="button is-small is-danger" type="submit" value="Stop recording...">
                     </td>
                 </form>
             </tr>

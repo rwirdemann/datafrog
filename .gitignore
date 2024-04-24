@@ -2,4 +2,5 @@
 *.rt
 *.rt.verify
 create-job.json
+delete-job.json
 config.json

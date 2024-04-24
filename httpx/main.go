@@ -10,8 +10,8 @@ import (
 	"github.com/rwirdemann/databasedragon/matcher"
 	"log"
 	"net/http"
-
-	"github.com/google/uuid"
+	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -51,14 +51,25 @@ func AllTests() http.HandlerFunc {
 			Tests []api.Test `json:"tests"`
 		}{}
 
-		var running = false
-		if doneChannels["create-job.json"] != nil {
-			running = true
+		entries, err := os.ReadDir(".")
+		var tests []string
+		for _, entry := range entries {
+			if strings.HasSuffix(entry.Name(), ".json") && !strings.HasPrefix(entry.Name(), "config") {
+				log.Printf("file: %s", entry.Name())
+				tests = append(tests, strings.Split(entry.Name(), ".")[0])
+			}
 		}
-		allTests.Tests = append(allTests.Tests, api.Test{
-			Name:    "create-job",
-			Running: running,
-		})
+
+		for _, t := range tests {
+			var running = false
+			if doneChannels[t] != nil {
+				running = true
+			}
+			allTests.Tests = append(allTests.Tests, api.Test{
+				Name:    t,
+				Running: running,
+			})
+		}
 
 		b, err := json.Marshal(allTests)
 		if err != nil {
@@ -72,14 +83,19 @@ func AllTests() http.HandlerFunc {
 
 func StartTest() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		c := config.NewConfig("config.json")
-		vars := mux.Vars(request)
-		testname := fmt.Sprintf("%s.json", vars["name"])
-		expectationSource, err := adapter.NewFileExpectationSource(testname)
-		if err != nil {
-			writer.WriteHeader(http.StatusNotFound)
+		if len(mux.Vars(request)["name"]) == 0 {
+			http.Error(writer, "name is required", http.StatusBadRequest)
 			return
 		}
+
+		testname := fmt.Sprintf("%s.json", mux.Vars(request)["name"])
+		expectationSource, err := adapter.NewFileExpectationSource(testname)
+		if err != nil {
+			http.Error(writer, "testfile not found", http.StatusNotFound)
+			return
+		}
+
+		c := config.NewConfig("config.json")
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		verifier = cmd.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
@@ -87,12 +103,7 @@ func StartTest() http.HandlerFunc {
 		stoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(doneChannels[testname], stoppedChannels[testname])
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
-		testID := uuid.New().String()
-		writer.Header().Set("Location", testID)
-		writer.Write([]byte(fmt.Sprintf("Test '%s' is waiting for interaction...\n", testname)))
-		writer.Header().Set("Content-Type", "text/plain")
 		writer.WriteHeader(http.StatusAccepted)
-		log.Printf("PUT StartTest: %s\n", testname)
 	}
 }
 
@@ -107,14 +118,19 @@ func StopTest() http.HandlerFunc {
 		}()
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(request)["name"])
-		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		close(doneChannels[testname])
 		doneChannels[testname] = nil
 		<-stoppedChannels[testname]
 		stoppedChannels[testname] = nil
-		result := verifier.ReportResults()
-		writer.Write([]byte(result))
-		writer.WriteHeader(http.StatusOK)
-		log.Printf("DELETE StopTest: %s\n", testname)
+		report := verifier.ReportResults()
+
+		b, err := json.Marshal(report)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Write(b)
 	}
 }

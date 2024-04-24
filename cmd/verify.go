@@ -132,21 +132,24 @@ func allFulfilled(expectations []matcher.Expectation) bool {
 func (v *Verifier) ReportResults() Report {
 	expectations := v.expectationSource.GetAll()
 	fulfilled := 0
+	verifiedSum := 0
 	for _, e := range expectations {
+		verifiedSum += e.Verified
 		if e.Fulfilled {
 			fulfilled = fulfilled + 1
 		}
 	}
 
 	report := Report{
-		Testname:      v.name,
-		LastExecution: time.Now(),
-		Expectations:  len(expectations),
-		Fulfilled:     fulfilled,
+		Testname:         v.name,
+		LastExecution:    time.Now(),
+		Expectations:     len(expectations),
+		Fulfilled:        fulfilled,
+		VerificationMean: float32(verifiedSum) / float32(len(expectations)),
 	}
 	for _, e := range expectations {
 		if !e.Fulfilled {
-			report.Unfulfilled = append(report.Unfulfilled, fmt.Sprintf("Unfulfilled: '%s'. Verification quote: %d", e.Shorten(6), e.Verified))
+			report.Unfulfilled = append(report.Unfulfilled, fmt.Sprintf("%s. Verification quote: %d", e.Shorten(6), e.Verified))
 		}
 	}
 	return report
