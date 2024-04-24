@@ -4,25 +4,18 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
 </head>
 <body style="padding: 0px 10px">
-<h1><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">DataFrog Dashboard</a></h1>
+<h1><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Test results</a></h1>
 <table class="pure-table pure-table-horizontal">
     <thead>
     <tr>
-        <th>Testname</th>
-        <th>Action</th>
+        <th>Detail</th>
     </tr>
     </thead>
     <tbody>
-    {{range .Tests}}
+    {{range .Result}}
     <tr>
-        <form action="/run" method="POST">
-            <td>
-                {{.Name}}
-            </td>
-            <td>
-                <input class="pure-button pure-button-primary" type="submit" value="Start...">
-            </td>
-        </form>
+        <td>{{.}}
+        </td>
     </tr>
     {{end}}
     </tbody>

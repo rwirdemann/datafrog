@@ -22,23 +22,46 @@ var client = &http.Client{Timeout: 10 * time.Second}
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
-	router.HandleFunc("/run", runHandler)
+	router.HandleFunc("/create", createHandler)
+	router.HandleFunc("/stoprecording", stopRecordingHandler)
+	router.HandleFunc("/run", startHandler)
+	router.HandleFunc("/stop", stopHandler)
+	router.HandleFunc("/show", showHandler)
 	log.Println("Listening on :8081...")
 	_ = http.ListenAndServe(":8081", router)
 }
 
-func runHandler(w http.ResponseWriter, request *http.Request) {
+func showHandler(w http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
-	mode := request.FormValue("mode")
-	log.Printf("mode: %s", mode)
-	var method string
-	if mode == "stop" {
-		method = http.MethodDelete
-	} else {
-		method = http.MethodPut
+	testname := request.FormValue("testname")
+	show, err := template.ParseFS(templates, "templates/show.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	show.Execute(w, struct {
+		Testname string
+	}{Testname: testname})
+}
+
+func startHandler(w http.ResponseWriter, request *http.Request) {
 	url := "http://localhost:3000/tests/create-job/runs"
-	r, err := http.NewRequest(method, url, nil)
+	r, err := http.NewRequest(http.MethodPut, url, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = client.Do(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, request, "/show?testname=create-job", http.StatusSeeOther)
+}
+
+func stopHandler(w http.ResponseWriter, request *http.Request) {
+	url := "http://localhost:3000/tests/create-job/runs"
+	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -49,8 +72,29 @@ func runHandler(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	body, err := io.ReadAll(response.Body)
-	s := strings.ReplaceAll(string(body), "\n", "%0A")
-	indexURL := fmt.Sprintf("/?result=%s", s)
+	result, err := template.ParseFS(templates, "templates/result.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	result.Execute(w, struct {
+		Result []string
+	}{Result: strings.Split(string(body), "\n")})
+}
+
+func createHandler(w http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	testname := request.FormValue("testname")
+	log.Printf("testname: %s", testname)
+	indexURL := fmt.Sprintf("/?result=%s&recording=true", fmt.Sprintf("Test '%s' beeing created. Run interactions...", testname))
+	http.Redirect(w, request, indexURL, http.StatusSeeOther)
+}
+
+func stopRecordingHandler(w http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	testname := request.FormValue("testname")
+	log.Printf("testname: %s", testname)
+	indexURL := fmt.Sprintf("/?result=%s&recording=false", fmt.Sprintf("Test '%s' has been created.", testname))
 	http.Redirect(w, request, indexURL, http.StatusSeeOther)
 }
 
@@ -71,15 +115,7 @@ func indexHandler(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	result := request.URL.Query().Get("result")
-	var results []string
-	if len(strings.Trim(result, " ")) > 0 {
-		results = strings.Split(strings.Trim(result, " "), "\n")
-	}
-
 	index.Execute(w, struct {
-		Title  string
-		Tests  []api.Test
-		Result []string
-	}{Title: "All Tests", Tests: allTests.Tests, Result: results})
+		Tests []api.Test
+	}{Tests: allTests.Tests})
 }
