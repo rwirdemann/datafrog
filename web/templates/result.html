@@ -1,24 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DataFrog</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
 </head>
-<body style="padding: 0px 10px">
-<h1><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Test results</a></h1>
-<table class="pure-table pure-table-horizontal">
-    <thead>
-    <tr>
-        <th>Detail</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{range .Result}}
-    <tr>
-        <td>{{.}}
-        </td>
-    </tr>
-    {{end}}
-    </tbody>
-</table>
+<body>
+<section class="section">
+    <div class="container">
+        <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Test results</a></h1>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Detail</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Result}}
+            <tr>
+                <td>{{.}}
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+</section>
 </body>
 </html>
