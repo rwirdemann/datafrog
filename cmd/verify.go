@@ -129,26 +129,27 @@ func allFulfilled(expectations []matcher.Expectation) bool {
 }
 
 // ReportResults reports the verification results.
-func (v *Verifier) ReportResults() string {
-	expectations := v.expectationSource.GetAll
+func (v *Verifier) ReportResults() Report {
+	expectations := v.expectationSource.GetAll()
 	fulfilled := 0
-	verifiedSum := 0
-	for _, e := range expectations() {
-		verifiedSum += e.Verified
+	for _, e := range expectations {
 		if e.Fulfilled {
 			fulfilled = fulfilled + 1
 		}
 	}
-	result := fmt.Sprintf("Testname: %s\n", v.name)
-	result = fmt.Sprintf("%sLast execution: %s\n", result, time.Now().Format(time.DateTime))
-	result = fmt.Sprintf("%sFulfilled %d of %d expectations\n", result, fulfilled, len(expectations()))
-	result = fmt.Sprintf("%sVerification mean: %f\n", result, float32(verifiedSum)/float32(len(expectations())))
-	for _, e := range expectations() {
+
+	report := Report{
+		Testname:      v.name,
+		LastExecution: time.Now(),
+		Expectations:  len(expectations),
+		Fulfilled:     fulfilled,
+	}
+	for _, e := range expectations {
 		if !e.Fulfilled {
-			result = fmt.Sprintf("%sUnfulfilled: '%s'. Verification quote: %d\n", result, e.Shorten(6), e.Verified)
+			report.Unfulfilled = append(report.Unfulfilled, fmt.Sprintf("Unfulfilled: '%s'. Verification quote: %d", e.Shorten(6), e.Verified))
 		}
 	}
-	return result
+	return report
 }
 
 // close done channel to stop the verify loop.
@@ -183,7 +184,7 @@ var verifyCmd = &cobra.Command{
 		go checkVerifyExit()
 		go verifier.Start(done, stopped)
 		<-stopped // wait until verifier signals its finish
-		verifier.ReportResults()
+		fmt.Println(verifier.ReportResults())
 	},
 }
 
