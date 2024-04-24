@@ -17,18 +17,18 @@ type FileExpectationSource struct {
 
 // NewFileExpectationSource creates a new NewFileExpectationSource that reads
 // its expectations from filename.
-func NewFileExpectationSource(filename string) *FileExpectationSource {
+func NewFileExpectationSource(filename string) (*FileExpectationSource, error) {
 	expectations, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	fes := FileExpectationSource{filename: filename}
 	if err := json.Unmarshal(expectations, &fes.expectations); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return &fes
+	return &fes, nil
 }
 
 // GetAll returns all expectations.

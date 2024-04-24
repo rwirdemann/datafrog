@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<body>
+<h1>DataFrog Web</h1>
+<h2>{{.Title}}</h2>
+{{range .Tests}}
+    <form action="/run" method="POST">
+        {{.Name}}
+        {{if .Running}}
+        <input type="submit" value="Stop...">
+        <input type="hidden" name="mode" value="stop">
+        {{else}}
+        <input type="submit" value="Start...">
+        <input type="hidden" name="mode" value="start">
+        {{end}}
+    </form>
+{{end}}
+</body>
+
+</html>

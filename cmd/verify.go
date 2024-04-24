@@ -108,6 +108,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				}
 			}
 		case <-done:
+			log.Printf("Verification done")
 			return
 		}
 	}
@@ -165,7 +166,10 @@ var verifyCmd = &cobra.Command{
 			log.Printf("Verifying '%s'.", expectationsFilename)
 		}
 
-		expectationSource := adapter.NewFileExpectationSource(expectationsFilename)
+		expectationSource, err := adapter.NewFileExpectationSource(expectationsFilename)
+		if err != nil {
+			log.Fatal(err)
+		}
 		databaseLog := createLogAdapter(c)
 		defer databaseLog.Close()
 		t := &adapter.UTCTimer{}
