@@ -43,13 +43,14 @@ func TestRecord(t *testing.T) {
 	c := config.Config{}
 	c.Patterns = []string{"insert", "select job!publish_trials<1"}
 
-	doneChannel := make(chan struct{})
-	databaseLog := adapter.NewMemSQLLog(logs, doneChannel)
+	recordingDone := make(chan struct{})
+	recordingStopped := make(chan struct{})
+	databaseLog := adapter.NewMemSQLLog(logs, recordingDone)
 	recordingSink := adapter.NewMemRecordingSink()
 	timer := adapter.MockTimer{}
 	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer)
-	recorder.Start()
-	recorder.Stop()
+	go recorder.Start(recordingDone, recordingStopped)
+	<-recordingStopped
 	assert.Len(t, recordingSink.Recorded, 1)
 	assert.Equal(t, string(expectations), recordingSink.Recorded[0])
 }
