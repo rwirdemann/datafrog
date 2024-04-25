@@ -96,14 +96,26 @@ func deleteHandler(w http.ResponseWriter, request *http.Request) {
 func showHandler(w http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	testname := request.FormValue("testname")
-	show, err := template.ParseFS(templates, "templates/show.html")
+	show, err := template.ParseFS(templates, "templates/show.html", "templates/header.html", "templates/messages.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	m, e := clearMessages()
 	show.Execute(w, struct {
 		Testname string
-	}{Testname: testname})
+		Message  string
+		Error    string
+	}{Testname: testname, Message: m, Error: e})
+}
+
+func clearMessages() (string, string) {
+	e := msgError
+	m := msgSuccess
+	msgError = ""
+	msgSuccess = ""
+	return m, e
 }
 
 func startHandler(w http.ResponseWriter, request *http.Request) {
@@ -112,26 +124,18 @@ func startHandler(w http.ResponseWriter, request *http.Request) {
 	url := fmt.Sprintf("http://localhost:3000/tests/%s/runs", testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		msgError = err.Error()
+		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 	_, err = client.Do(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		msgError = err.Error()
+		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
+	msgSuccess = "Test has been started. Run UI interactions and click 'Stop' when you are done!"
 	http.Redirect(w, request, fmt.Sprintf("/show?testname=%s", testname), http.StatusSeeOther)
-}
-
-func errorHandler(w http.ResponseWriter, request *http.Request) {
-	errTmpl, err := template.ParseFS(templates, "templates/error.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	errTmpl.Execute(w, struct {
-		Message string
-	}{Message: request.FormValue("message")})
 }
 
 func stopHandler(w http.ResponseWriter, request *http.Request) {
@@ -214,16 +218,13 @@ func indexHandler(w http.ResponseWriter, request *http.Request) {
 	json.NewDecoder(r.Body).Decode(&allTests)
 
 	w.Header().Add("Content-Type", "text/html")
-	index, err := template.ParseFS(templates, "templates/index.html")
+	index, err := template.ParseFS(templates, "templates/index.html", "templates/header.html", "templates/messages.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	e := msgError
-	m := msgSuccess
-	msgError = ""
-	msgSuccess = ""
+	m, e := clearMessages()
 	index.Execute(w, struct {
 		Tests   []api.Test
 		Message string

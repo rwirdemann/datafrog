@@ -1,36 +1,14 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DataFrog</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
-                const $notification = $delete.parentNode;
-
-                $delete.addEventListener('click', () => {
-                    $notification.parentNode.removeChild($notification);
-                });
-            });
-        });
-    </script>
-</head>
+{{template "_header"}}
 <body>
 <section class="section">
     <div class="container">
         <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Data Frog</a></h1>
+        {{template "_messages" .}}
 
         <form action="/run" method="POST" id="run"></form>
         <form action="/delete" method="POST" id="delete"></form>
-
-        {{if .Message}}
-        <div class="notification is-success is-light">
-            <button class="delete"></button>
-            {{.Message}}
-        </div>
-        {{end}}
 
         <table class="table">
             <thead>
