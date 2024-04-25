@@ -12,6 +12,7 @@ type Report struct {
 	Expectations     int       `json:"expectations"`
 	Fulfilled        int       `json:"fulfilled"`
 	Unfulfilled      []string  `json:"unfulfilled,omitempty"`
+	MaxVerified      int       `json:"max_verified"`
 	VerificationMean float32   `json:"verification_mean"`
 }
 

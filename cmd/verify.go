@@ -134,17 +134,20 @@ func (v *Verifier) ReportResults() Report {
 	expectations := v.expectationSource.GetAll()
 	fulfilled := 0
 	verifiedSum := 0
+	maxVerified := 0
 	for _, e := range expectations {
 		verifiedSum += e.Verified
 		if e.Fulfilled {
 			fulfilled = fulfilled + 1
 		}
+		maxVerified = max(e.Verified, maxVerified)
 	}
 	report := Report{
 		Testname:         v.name,
 		LastExecution:    time.Now(),
 		Expectations:     len(expectations),
 		Fulfilled:        fulfilled,
+		MaxVerified:      maxVerified,
 		VerificationMean: verificationMean(float32(verifiedSum), float32(len(expectations))),
 	}
 	for _, e := range expectations {
