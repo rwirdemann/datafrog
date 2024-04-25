@@ -11,7 +11,7 @@ type Report struct {
 	LastExecution    time.Time `json:"last_execution"`
 	Expectations     int       `json:"expectations"`
 	Fulfilled        int       `json:"fulfilled"`
-	Unfulfilled      []string  `json:"unfulfilled"`
+	Unfulfilled      []string  `json:"unfulfilled,omitempty"`
 	VerificationMean float32   `json:"verification_mean"`
 }
 

@@ -66,6 +66,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 		select {
 		default:
 			if allFulfilled(expectations) {
+				log.Printf("Verification done")
 				return
 			}
 
@@ -139,13 +140,12 @@ func (v *Verifier) ReportResults() Report {
 			fulfilled = fulfilled + 1
 		}
 	}
-
 	report := Report{
 		Testname:         v.name,
 		LastExecution:    time.Now(),
 		Expectations:     len(expectations),
 		Fulfilled:        fulfilled,
-		VerificationMean: float32(verifiedSum) / float32(len(expectations)),
+		VerificationMean: verificationMean(float32(verifiedSum), float32(len(expectations))),
 	}
 	for _, e := range expectations {
 		if !e.Fulfilled {
@@ -153,6 +153,13 @@ func (v *Verifier) ReportResults() Report {
 		}
 	}
 	return report
+}
+
+func verificationMean(sum, expectationCount float32) float32 {
+	if expectationCount > 0 {
+		return sum / expectationCount
+	}
+	return 0
 }
 
 // close done channel to stop the verify loop.

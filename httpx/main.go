@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/cmd"
 	"github.com/rwirdemann/databasedragon/config"
@@ -12,22 +13,36 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
 var verifier *cmd.Verifier
 var doneChannels map[string]chan struct{}
 var stoppedChannels map[string]chan struct{}
 
+var recorder *cmd.Recorder
+var recordingDoneChannels map[string]chan struct{}
+var recordingStoppedChannels map[string]chan struct{}
+
 func main() {
 	doneChannels = make(map[string]chan struct{})
 	stoppedChannels = make(map[string]chan struct{})
+	recordingDoneChannels = make(map[string]chan struct{})
+	recordingStoppedChannels = make(map[string]chan struct{})
 
 	router := mux.NewRouter()
 	router.HandleFunc("/tests", AllTests()).Methods("GET")
-	router.HandleFunc("/tests/{name}/runs", StartTest()).Methods("PUT")
-	router.HandleFunc("/tests/{name}/runs", StopTest()).Methods("DELETE")
+
+	// create new test and start recording
+	router.HandleFunc("/tests/{name}", CreateTest()).Methods("POST")
+
+	// stop recording
+	router.HandleFunc("/tests/{name}", StopRecording()).Methods("DELETE")
+
+	// start verify
+	router.HandleFunc("/tests/{name}/runs", StartVerify()).Methods("PUT")
+
+	// stop verify
+	router.HandleFunc("/tests/{name}/runs", StopVerify()).Methods("DELETE")
 	log.Printf("starting http service on port %d...", 3000)
 	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		tpl, _ := route.GetPathTemplate()
@@ -42,6 +57,55 @@ func main() {
 	err = http.ListenAndServe(fmt.Sprintf(":%d", 3000), router)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func CreateTest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if len(mux.Vars(r)["name"]) == 0 {
+			http.Error(w, "name is required", http.StatusBadRequest)
+			return
+		}
+
+		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
+		c := config.NewConfig("config.json")
+		databaseLog := adapter.NewMYSQLLog(c.Filename)
+		t := &adapter.UTCTimer{}
+		recordingSink := adapter.NewFileRecordingSink(testname)
+		recorder = cmd.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t)
+		recordingDoneChannels[testname] = make(chan struct{})
+		recordingStoppedChannels[testname] = make(chan struct{})
+		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
+func StopRecording() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("Recovered:", r)
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+		}()
+
+		if len(mux.Vars(r)["name"]) == 0 {
+			http.Error(w, "name is required", http.StatusBadRequest)
+			return
+		}
+
+		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
+		if _, err := os.Stat(testname); os.IsNotExist(err) {
+			http.Error(w, "test does not exist", http.StatusNotFound)
+			return
+		}
+
+		close(recordingDoneChannels[testname])
+		recordingDoneChannels[testname] = nil
+		<-recordingStoppedChannels[testname]
+		recordingStoppedChannels[testname] = nil
 	}
 }
 
@@ -81,7 +145,7 @@ func AllTests() http.HandlerFunc {
 	}
 }
 
-func StartTest() http.HandlerFunc {
+func StartVerify() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if len(mux.Vars(request)["name"]) == 0 {
 			http.Error(writer, "name is required", http.StatusBadRequest)
@@ -107,7 +171,7 @@ func StartTest() http.HandlerFunc {
 	}
 }
 
-func StopTest() http.HandlerFunc {
+func StopVerify() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {

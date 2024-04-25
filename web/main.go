@@ -23,12 +23,18 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/new", newHandler)
+
+	// start recording
 	router.HandleFunc("/record", recordHandler)
+
+	// stop recording
 	router.HandleFunc("/stoprecording", stopRecordingHandler)
+
 	router.HandleFunc("/create", createHandler)
 	router.HandleFunc("/run", startHandler)
 	router.HandleFunc("/stop", stopHandler)
 	router.HandleFunc("/show", showHandler)
+	router.HandleFunc("/error", errorHandler)
 	log.Println("Listening on :8081...")
 	_ = http.ListenAndServe(":8081", router)
 }
@@ -51,6 +57,18 @@ func recordHandler(w http.ResponseWriter, request *http.Request) {
 	}
 	request.ParseForm()
 	testname := request.FormValue("testname")
+	url := fmt.Sprintf("http://localhost:3000/tests/%s", testname)
+	r, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = client.Do(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	record.Execute(w, struct {
 		Testname string
 	}{Testname: testname})
@@ -86,6 +104,17 @@ func startHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, fmt.Sprintf("/show?testname=%s", testname), http.StatusSeeOther)
 }
 
+func errorHandler(w http.ResponseWriter, request *http.Request) {
+	errTmpl, err := template.ParseFS(templates, "templates/error.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	errTmpl.Execute(w, struct {
+		Message string
+	}{Message: request.FormValue("message")})
+}
+
 func stopHandler(w http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	testname := request.FormValue("testname")
@@ -98,6 +127,13 @@ func stopHandler(w http.ResponseWriter, request *http.Request) {
 	response, err := client.Do(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
+	if !statusOK {
+		message := fmt.Sprintf("HTTP status not OK: %d", response.StatusCode)
+		http.Redirect(w, request, fmt.Sprintf("/error?message=%s", message), http.StatusSeeOther)
 		return
 	}
 
@@ -133,9 +169,19 @@ func createHandler(w http.ResponseWriter, request *http.Request) {
 func stopRecordingHandler(w http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	testname := request.FormValue("testname")
-	log.Printf("testname: %s", testname)
-	indexURL := fmt.Sprintf("/?result=%s&recording=false", fmt.Sprintf("Test '%s' has been created.", testname))
-	http.Redirect(w, request, indexURL, http.StatusSeeOther)
+	url := fmt.Sprintf("http://localhost:3000/tests/%s", testname)
+	r, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = client.Do(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, request, "/", http.StatusSeeOther)
 }
 
 func indexHandler(w http.ResponseWriter, request *http.Request) {

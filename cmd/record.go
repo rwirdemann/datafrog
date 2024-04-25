@@ -51,6 +51,8 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	// called when done channel is closed
 	defer func() {
 		r.writeExpectations(expectations)
+		r.recordingSink.Close()
+		r.databaseLog.Close()
 	}()
 
 	for {
@@ -120,13 +122,8 @@ var recordCmd = &cobra.Command{
 		}
 
 		recordingSink := adapter.NewFileRecordingSink(out)
-		defer recordingSink.Close()
-
 		databaseLog := createLogAdapter(c)
-		defer databaseLog.Close()
-
 		t := &adapter.UTCTimer{}
-
 		recorder = NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t)
 		go checkExit()
 		go recorder.Start(recordingDone, recordingStopped)
