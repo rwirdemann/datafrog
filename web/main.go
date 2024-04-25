@@ -51,7 +51,7 @@ func newHandler(w http.ResponseWriter, request *http.Request) {
 }
 
 func startRecording(w http.ResponseWriter, request *http.Request) {
-	record, err := template.ParseFS(templates, "templates/record.html")
+	record, err := template.ParseFS(templates, "templates/record.html", "templates/header.html", "templates/messages.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -69,10 +69,13 @@ func startRecording(w http.ResponseWriter, request *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	msgSuccess = "Recording has been started. Run UI interactions and click 'Stop recording...' when finished"
+	m, e := clearMessages()
 	record.Execute(w, struct {
 		Testname string
-	}{Testname: testname})
+		Message  string
+		Error    string
+	}{Testname: testname, Message: m, Error: e})
 }
 
 func deleteHandler(w http.ResponseWriter, request *http.Request) {
@@ -134,7 +137,7 @@ func startHandler(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
-	msgSuccess = "Test has been started. Run UI interactions and click 'Stop' when you are done!"
+	msgSuccess = "Test has been started. Run test script and click 'Stop...' when you are done!"
 	http.Redirect(w, request, fmt.Sprintf("/show?testname=%s", testname), http.StatusSeeOther)
 }
 
