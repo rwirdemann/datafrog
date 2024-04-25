@@ -23,12 +23,13 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", indexHandler)
 	router.HandleFunc("/new", newHandler)
+	router.HandleFunc("/delete", deleteHandler)
 
 	// start recording
-	router.HandleFunc("/record", recordHandler)
+	router.HandleFunc("/record", startRecording)
 
 	// stop recording
-	router.HandleFunc("/stoprecording", stopRecordingHandler)
+	router.HandleFunc("/stoprecording", stopRecording)
 
 	router.HandleFunc("/create", createHandler)
 	router.HandleFunc("/run", startHandler)
@@ -49,7 +50,7 @@ func newHandler(w http.ResponseWriter, request *http.Request) {
 	}{})
 }
 
-func recordHandler(w http.ResponseWriter, request *http.Request) {
+func startRecording(w http.ResponseWriter, request *http.Request) {
 	record, err := template.ParseFS(templates, "templates/record.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -57,7 +58,7 @@ func recordHandler(w http.ResponseWriter, request *http.Request) {
 	}
 	request.ParseForm()
 	testname := request.FormValue("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s", testname)
+	url := fmt.Sprintf("http://localhost:3000/tests/%s/recordings", testname)
 	r, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,6 +73,23 @@ func recordHandler(w http.ResponseWriter, request *http.Request) {
 	record.Execute(w, struct {
 		Testname string
 	}{Testname: testname})
+}
+
+func deleteHandler(w http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	testname := request.FormValue("testname")
+	url := fmt.Sprintf("http://localhost:3000/tests/%s", testname)
+	r, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		http.Redirect(w, request, fmt.Sprintf("/?error=%s", "Error deleting test"), http.StatusSeeOther)
+		return
+	}
+	_, err = client.Do(r)
+	if err != nil {
+		http.Redirect(w, request, fmt.Sprintf("/?error=%s", "Error deleting test"), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, request, fmt.Sprintf("/?message=%s", "Test successfully deleted"), http.StatusSeeOther)
 }
 
 func showHandler(w http.ResponseWriter, request *http.Request) {
@@ -166,10 +184,10 @@ func createHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, fmt.Sprintf("/record&testname=%s", testname), http.StatusSeeOther)
 }
 
-func stopRecordingHandler(w http.ResponseWriter, request *http.Request) {
+func stopRecording(w http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	testname := request.FormValue("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s", testname)
+	url := fmt.Sprintf("http://localhost:3000/tests/%s/recordings", testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -201,7 +219,10 @@ func indexHandler(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	request.ParseForm()
 	index.Execute(w, struct {
-		Tests []api.Test
-	}{Tests: allTests.Tests})
+		Tests   []api.Test
+		Message string
+		Error   string
+	}{Tests: allTests.Tests, Message: request.FormValue("message"), Error: request.FormValue("error")})
 }

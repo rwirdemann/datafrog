@@ -5,32 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DataFrog</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+                const $notification = $delete.parentNode;
+
+                $delete.addEventListener('click', () => {
+                    $notification.parentNode.removeChild($notification);
+                });
+            });
+        });
+    </script>
 </head>
 <body>
 <section class="section">
     <div class="container">
-        <h1 class="title">
-            DataFrog Dashboard
-        </h1>
+        <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Data Frog</a></h1>
+
+        <form action="/run" method="POST" id="run"></form>
+        <form action="/delete" method="POST" id="delete"></form>
+
+        {{if .Message}}
+        <div class="notification is-success is-light">
+            <button class="delete"></button>
+            {{.Message}}
+        </div>
+        {{end}}
+
         <table class="table">
             <thead>
             <tr>
                 <th>Testname</th>
-                <th>Action</th>
+                <th colspan="2">Action</th>
             </tr>
             </thead>
             <tbody>
             {{range .Tests}}
             <tr>
-                <form action="/run" method="POST">
-                    <td>
-                        {{.Name}}
-                    </td>
-                    <td>
-                        <input class="button is-primary is-small" type="submit" value="Start...">
-                        <input type="hidden" name="testname" value="{{.Name}}">
-                    </td>
-                </form>
+                <td>
+                    {{.Name}}
+                </td>
+                <td>
+                    <input type="submit" class="button is-danger is-small" value="Delete" form="delete"/>
+                    <input type="hidden" name="testname" value="{{.Name}}" form="delete"/>
+                </td>
+                <td>
+                    <input type="submit" class="button is-primary is-small" value="Start..." form="run"/>
+                    <input type="hidden" name="testname" value="{{.Name}}" form="run"/>
+                </td>
             </tr>
             {{end}}
             </tbody>

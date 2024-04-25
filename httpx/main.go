@@ -33,10 +33,13 @@ func main() {
 	router.HandleFunc("/tests", AllTests()).Methods("GET")
 
 	// create new test and start recording
-	router.HandleFunc("/tests/{name}", CreateTest()).Methods("POST")
+	router.HandleFunc("/tests/{name}/recordings", CreateTest()).Methods("POST")
 
 	// stop recording
-	router.HandleFunc("/tests/{name}", StopRecording()).Methods("DELETE")
+	router.HandleFunc("/tests/{name}/recordings", StopRecording()).Methods("DELETE")
+
+	// delete test
+	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
 
 	// start verify
 	router.HandleFunc("/tests/{name}/runs", StartVerify()).Methods("PUT")
@@ -57,6 +60,21 @@ func main() {
 	err = http.ListenAndServe(fmt.Sprintf(":%d", 3000), router)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func DeleteTest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if len(mux.Vars(r)["name"]) == 0 {
+			http.Error(w, "name is required", http.StatusBadRequest)
+			return
+		}
+		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
+		err := os.Remove(testname)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
