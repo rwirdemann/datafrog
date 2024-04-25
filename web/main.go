@@ -18,6 +18,7 @@ import (
 var templates embed.FS
 
 var client = &http.Client{Timeout: 10 * time.Second}
+var msgSuccess, msgError string
 
 func main() {
 	router := mux.NewRouter()
@@ -35,7 +36,6 @@ func main() {
 	router.HandleFunc("/run", startHandler)
 	router.HandleFunc("/stop", stopHandler)
 	router.HandleFunc("/show", showHandler)
-	router.HandleFunc("/error", errorHandler)
 	log.Println("Listening on :8081...")
 	_ = http.ListenAndServe(":8081", router)
 }
@@ -89,7 +89,8 @@ func deleteHandler(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, fmt.Sprintf("/?error=%s", "Error deleting test"), http.StatusSeeOther)
 		return
 	}
-	http.Redirect(w, request, fmt.Sprintf("/?message=%s", "Test successfully deleted"), http.StatusSeeOther)
+	msgSuccess = "Test successfully deleted"
+	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
 func showHandler(w http.ResponseWriter, request *http.Request) {
@@ -150,8 +151,8 @@ func stopHandler(w http.ResponseWriter, request *http.Request) {
 
 	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
 	if !statusOK {
-		message := fmt.Sprintf("HTTP status not OK: %d", response.StatusCode)
-		http.Redirect(w, request, fmt.Sprintf("/error?message=%s", message), http.StatusSeeOther)
+		msgError = fmt.Sprintf("HTTP status not OK: %d", response.StatusCode)
+		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -219,10 +220,13 @@ func indexHandler(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	request.ParseForm()
+	e := msgError
+	m := msgSuccess
+	msgError = ""
+	msgSuccess = ""
 	index.Execute(w, struct {
 		Tests   []api.Test
 		Message string
 		Error   string
-	}{Tests: allTests.Tests, Message: request.FormValue("message"), Error: request.FormValue("error")})
+	}{Tests: allTests.Tests, Message: m, Error: e})
 }
