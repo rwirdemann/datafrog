@@ -3,10 +3,9 @@ package adapter
 import (
 	"bufio"
 	"encoding/json"
+	"github.com/rwirdemann/databasedragon/matcher"
 	"log"
 	"os"
-
-	"github.com/rwirdemann/databasedragon/matcher"
 )
 
 // A FileExpectationSource reads expectations from a file in json format.

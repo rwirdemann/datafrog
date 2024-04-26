@@ -201,48 +201,48 @@ func startHandler(w http.ResponseWriter, request *http.Request) {
 }
 
 func stopHandler(w http.ResponseWriter, request *http.Request) {
-	request.ParseForm()
-	testname := request.FormValue("testname")
+	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("http://localhost:3000/tests/%s/runs", testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirectE(w, request, "/", err)
 		return
 	}
 	response, err := client.Do(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirectE(w, request, "/", err)
 		return
 	}
 
 	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
 	if !statusOK {
-		msgError = fmt.Sprintf("HTTP status not OK: %d", response.StatusCode)
+		body, _ := io.ReadAll(response.Body)
+		msgError = fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body)
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirectE(w, request, "/", err)
 		return
 	}
 	var report cmd.Report
 	err = json.Unmarshal(body, &report)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirectE(w, request, "/", err)
 		return
 	}
 
-	result, err := template.ParseFS(templates, "templates/result.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	result.Execute(w, struct {
+	m, e := clearMessages()
+	render("result.html", w, struct {
+		ViewData
 		Report cmd.Report
-	}{Report: report})
+	}{ViewData: ViewData{
+		Title:   "Result",
+		Message: m,
+		Error:   e,
+	}, Report: report})
 }
 
 func createHandler(w http.ResponseWriter, request *http.Request) {

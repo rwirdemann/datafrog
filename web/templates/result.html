@@ -1,56 +1,43 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DataFrog</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
-</head>
-<body>
-<section class="section">
-    <div class="container">
-        <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Test results</a></h1>
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Key</th>
-                <th>Value</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>Testname:</td>
-                <td>{{.Report.Testname}}</td>
-            </tr>
-            <tr>
-                <td>Last execution:</td>
-                <td>{{.Report.LastExecution}}</td>
-            </tr>
-            <tr>
-                <td>Expectation count:</td>
-                <td>{{.Report.Expectations}}</td>
-            </tr>
-            <tr>
-                <td>Fulfilled expectations:</td>
-                <td>{{.Report.Fulfilled}}</td>
-            </tr>
-            <tr>
-                <td>Max verification</td>
-                <td>{{.Report.MaxVerified}}</td>
-            </tr>
-            <tr>
-                <td>Verification mean:</td>
-                <td>{{.Report.VerificationMean}}</td>
-            </tr>
-            {{range .Report.Unfulfilled}}
-            <tr>
-                <td>Unfulfilled expectation:</td>
-                <td>{{.}}</td>
-            </tr>
-            {{end}}
-            </tbody>
-        </table>
-    </div>
-</section>
-</body>
-</html>
+{{define "_content"}}
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Key</th>
+        <th>Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Testname:</td>
+        <td>{{.Report.Testname}}</td>
+    </tr>
+    <tr>
+        <td>Last execution:</td>
+        <td>{{.Report.LastExecution.Format "2006-01-02 15:04:05"}}</td>
+    </tr>
+    <tr>
+        <td>Expectation count:</td>
+        <td>{{.Report.Expectations}}</td>
+    </tr>
+    <tr>
+        <td>Fulfilled expectations:</td>
+        <td>{{.Report.Fulfilled}}</td>
+    </tr>
+    <tr>
+        <td>Max verification</td>
+        <td>{{.Report.MaxVerified}}</td>
+    </tr>
+    <tr>
+        <td>Verification mean:</td>
+        <td>{{.Report.VerificationMean}}</td>
+    </tr>
+    {{range .Report.Unfulfilled}}
+    <tr>
+        <td>Unfulfilled expectation:</td>
+        <td>{{.}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}
