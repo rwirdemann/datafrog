@@ -1,42 +1,29 @@
-<!DOCTYPE html>
-<html>
-{{template "_header"}}
-<body>
-<section class="section">
-    <div class="container">
-        <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Data Frog</a></h1>
-        {{template "_messages" .}}
+{{define "_content"}}
+<form action="/run" method="POST" id="run"></form>
+<form action="/delete" method="POST" id="delete"></form>
 
-        <form action="/run" method="POST" id="run"></form>
-        <form action="/delete" method="POST" id="delete"></form>
-
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Testname</th>
-                <th colspan="2">Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{range .Tests}}
-            <tr>
-                <td>
-                    {{.Name}}
-                </td>
-                <td>
-                    <input type="submit" class="button is-danger is-small" value="Delete" form="delete"/>
-                    <input type="hidden" name="testname" value="{{.Name}}" form="delete"/>
-                </td>
-                <td>
-                    <input type="submit" class="button is-primary is-small" value="Start..." form="run"/>
-                    <input type="hidden" name="testname" value="{{.Name}}" form="run"/>
-                </td>
-            </tr>
-            {{end}}
-            </tbody>
-        </table>
-        <a href="/new">Create new test...</a>
-    </div>
-</section>
-</body>
-</html>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Testname</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .Tests}}
+    <tr>
+        <td>
+            {{.Name}}
+        </td>
+        <td>
+            <input type="submit" class="button is-small" value="Delete" form="delete"/>
+            <input type="hidden" name="testname" value="{{.Name}}" form="delete"/>
+            <input type="submit" class="button is-small" value="Start..." form="run"/>
+            <input type="hidden" name="testname" value="{{.Name}}" form="run"/>
+        </td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+<a href="/new">Create new test...</a>
+{{end}}

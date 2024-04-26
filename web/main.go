@@ -54,6 +54,31 @@ func render(tmpl string, w http.ResponseWriter, data any) error {
 	return t.Execute(w, data)
 }
 
+func indexHandler(w http.ResponseWriter, request *http.Request) {
+	allTests := struct {
+		Tests []api.Test `json:"tests"`
+	}{}
+	r, err := client.Get("http://localhost:3000/tests")
+	if err != nil {
+		msgError = err.Error()
+	} else {
+		json.NewDecoder(r.Body).Decode(&allTests)
+	}
+
+	m, e := clearMessages()
+	data := struct {
+		ViewData
+		Tests []api.Test
+	}{ViewData: ViewData{
+		Title:   "DataFrog Home",
+		Message: m,
+		Error:   e,
+	}, Tests: allTests.Tests}
+	if err := render("index.html", w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func showHandler(w http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -223,29 +248,4 @@ func stopRecording(w http.ResponseWriter, request *http.Request) {
 	}
 
 	http.Redirect(w, request, "/", http.StatusSeeOther)
-}
-
-func indexHandler(w http.ResponseWriter, request *http.Request) {
-	r, err := client.Get("http://localhost:3000/tests")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	allTests := struct {
-		Tests []api.Test `json:"tests"`
-	}{}
-	json.NewDecoder(r.Body).Decode(&allTests)
-
-	w.Header().Add("Content-Type", "text/html")
-	index, err := template.ParseFS(templates, "templates/index.html", "templates/header.html", "templates/messages.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	m, e := clearMessages()
-	index.Execute(w, struct {
-		Tests   []api.Test
-		Message string
-		Error   string
-	}{Tests: allTests.Tests, Message: m, Error: e})
 }
