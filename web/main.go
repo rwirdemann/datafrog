@@ -54,7 +54,7 @@ func render(tmpl string, w http.ResponseWriter, data any) error {
 	return t.Execute(w, data)
 }
 
-func indexHandler(w http.ResponseWriter, request *http.Request) {
+func indexHandler(w http.ResponseWriter, _ *http.Request) {
 	allTests := struct {
 		Tests []api.Test `json:"tests"`
 	}{}
@@ -136,20 +136,21 @@ func startRecording(w http.ResponseWriter, request *http.Request) {
 }
 
 func deleteHandler(w http.ResponseWriter, request *http.Request) {
-	request.ParseForm()
-	testname := request.FormValue("testname")
+	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("http://localhost:3000/tests/%s", testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
-		http.Redirect(w, request, fmt.Sprintf("/?error=%s", "Error deleting test"), http.StatusSeeOther)
+		msgError = err.Error()
+		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 	_, err = client.Do(r)
 	if err != nil {
-		http.Redirect(w, request, fmt.Sprintf("/?error=%s", "Error deleting test"), http.StatusSeeOther)
+		msgError = err.Error()
+		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
-	msgSuccess = "Test successfully deleted"
+	msgSuccess = fmt.Sprintf("Test '%s' successfully deleted", testname)
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
@@ -162,8 +163,7 @@ func clearMessages() (string, string) {
 }
 
 func startHandler(w http.ResponseWriter, request *http.Request) {
-	request.ParseForm()
-	testname := request.FormValue("testname")
+	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("http://localhost:3000/tests/%s/runs", testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {

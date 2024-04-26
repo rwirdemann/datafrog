@@ -1,7 +1,4 @@
 {{define "_content"}}
-<form action="/run" method="POST" id="run"></form>
-<form action="/delete" method="POST" id="delete"></form>
-
 <table class="table">
     <thead>
     <tr>
@@ -16,10 +13,8 @@
             {{.Name}}
         </td>
         <td>
-            <input type="submit" class="button is-small" value="Delete" form="delete"/>
-            <input type="hidden" name="testname" value="{{.Name}}" form="delete"/>
-            <input type="submit" class="button is-small" value="Start..." form="run"/>
-            <input type="hidden" name="testname" value="{{.Name}}" form="run"/>
+            <a href="/delete?testname={{.Name}}">Delete</a> |
+            <a href="/run?testname={{.Name}}">Start</a>
         </td>
     </tr>
     {{end}}
