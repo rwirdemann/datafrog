@@ -1,24 +1,63 @@
 {{define "_content"}}
-<table class="table">
-    <thead>
-    <tr>
-        <th>Testname</th>
-        <th>Action</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{range .Tests}}
-    <tr>
-        <td>
-            {{.Name}}
-        </td>
-        <td>
-            <a href="/delete?testname={{.Name}}">Delete</a> |
-            <a href="/run?testname={{.Name}}">Start</a>
-        </td>
-    </tr>
-    {{end}}
-    </tbody>
-</table>
-<a href="/new">Create new test...</a>
+<div class="columns">
+    <div class="column">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Testname</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Tests}}
+            <tr>
+                <td>
+                    {{.Name}}
+                </td>
+                <td>
+                    <a href="/delete?testname={{.Name}}">Delete</a> |
+                    <a href="/run?testname={{.Name}}">Start</a>
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+        <a href="/new">Create new test...</a>
+    </div>
+    <div class="column">
+        <table class="table">
+            <tr>
+                <th colspan="2">
+                    Settings
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    Logfile:
+                </td>
+                <td>
+                    {{.Config.Filename}}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Logformat:
+                </td>
+                <td>
+                    {{.Config.Logformat}}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Patterns:
+                </td>
+                <td>
+                    {{range .Config.Patterns}}
+                    {{.}}<br/>
+                    {{end}}
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
 {{end}}

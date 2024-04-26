@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/databasedragon/cmd"
+	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/httpx/api"
 	"html/template"
 	"io"
@@ -19,6 +20,11 @@ var templates embed.FS
 
 var client = &http.Client{Timeout: 10 * time.Second}
 var msgSuccess, msgError string
+var conf config.Config
+
+func init() {
+	conf = config.NewConfig("config.json")
+}
 
 func main() {
 	router := mux.NewRouter()
@@ -93,12 +99,13 @@ func indexHandler(w http.ResponseWriter, _ *http.Request) {
 	m, e := clearMessages()
 	render("index.html", w, struct {
 		ViewData
-		Tests []api.Test
+		Tests  []api.Test
+		Config config.Config
 	}{ViewData: ViewData{
 		Title:   "DataFrog Home",
 		Message: m,
 		Error:   e,
-	}, Tests: allTests.Tests})
+	}, Tests: allTests.Tests, Config: conf})
 }
 
 func showHandler(w http.ResponseWriter, request *http.Request) {

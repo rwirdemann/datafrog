@@ -3,4 +3,5 @@
 *.rt.verify
 create-job.json
 delete-job.json
+edit-job.json
 config.json
