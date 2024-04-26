@@ -46,7 +46,16 @@ type ViewData struct {
 	Error   string
 }
 
-func render(tmpl string, w http.ResponseWriter, data any) error {
+// render renders tmpl embedded in layout.html using the provided data.
+func render(tmpl string, w http.ResponseWriter, data any) {
+	if err := renderE(tmpl, w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// renderE works the same as render except returning the error instead of
+// handling it.
+func renderE(tmpl string, w http.ResponseWriter, data any) error {
 	t, err := template.ParseFS(templates, "templates/layout.html", "templates/messages.html", fmt.Sprintf("templates/%s", tmpl))
 	if err != nil {
 		return err
@@ -54,29 +63,36 @@ func render(tmpl string, w http.ResponseWriter, data any) error {
 	return t.Execute(w, data)
 }
 
+// renderS renders tmpl embedded in layout.html and inserts title.
+func renderS(tmpl string, w http.ResponseWriter, title string) {
+	if err := renderE(tmpl, w, ViewData{
+		Title:   title,
+		Message: "",
+		Error:   "",
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func indexHandler(w http.ResponseWriter, _ *http.Request) {
 	allTests := struct {
 		Tests []api.Test `json:"tests"`
 	}{}
-	r, err := client.Get("http://localhost:3000/tests")
-	if err != nil {
+	if r, err := client.Get("http://localhost:3000/tests"); err != nil {
 		msgError = err.Error()
 	} else {
 		json.NewDecoder(r.Body).Decode(&allTests)
 	}
 
 	m, e := clearMessages()
-	data := struct {
+	render("index.html", w, struct {
 		ViewData
 		Tests []api.Test
 	}{ViewData: ViewData{
 		Title:   "DataFrog Home",
 		Message: m,
 		Error:   e,
-	}, Tests: allTests.Tests}
-	if err := render("index.html", w, data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	}, Tests: allTests.Tests})
 }
 
 func showHandler(w http.ResponseWriter, request *http.Request) {
@@ -84,27 +100,18 @@ func showHandler(w http.ResponseWriter, request *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	m, e := clearMessages()
-	data := struct {
+	render("show.html", w, struct {
 		ViewData
 		Testname string
 	}{ViewData: ViewData{
 		Title:   "Show",
 		Message: m,
 		Error:   e,
-	}, Testname: request.FormValue("testname")}
-	if err := render("show.html", w, data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	}, Testname: request.FormValue("testname")})
 }
 
-func newHandler(w http.ResponseWriter, request *http.Request) {
-	newtest, err := template.ParseFS(templates, "templates/new.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	newtest.Execute(w, struct {
-	}{})
+func newHandler(w http.ResponseWriter, _ *http.Request) {
+	renderS("new.html", w, "New")
 }
 
 func startRecording(w http.ResponseWriter, request *http.Request) {
