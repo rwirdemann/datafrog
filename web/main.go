@@ -40,6 +40,38 @@ func main() {
 	_ = http.ListenAndServe(":8081", router)
 }
 
+type ViewData struct {
+	Title   string
+	Message string
+	Error   string
+}
+
+func render(tmpl string, w http.ResponseWriter, data any) error {
+	t, err := template.ParseFS(templates, "templates/layout.html", "templates/messages.html", fmt.Sprintf("templates/%s", tmpl))
+	if err != nil {
+		return err
+	}
+	return t.Execute(w, data)
+}
+
+func showHandler(w http.ResponseWriter, request *http.Request) {
+	if err := request.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	m, e := clearMessages()
+	data := struct {
+		ViewData
+		Testname string
+	}{ViewData: ViewData{
+		Title:   "Show",
+		Message: m,
+		Error:   e,
+	}, Testname: request.FormValue("testname")}
+	if err := render("show.html", w, data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func newHandler(w http.ResponseWriter, request *http.Request) {
 	newtest, err := template.ParseFS(templates, "templates/new.html")
 	if err != nil {
@@ -94,23 +126,6 @@ func deleteHandler(w http.ResponseWriter, request *http.Request) {
 	}
 	msgSuccess = "Test successfully deleted"
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
-}
-
-func showHandler(w http.ResponseWriter, request *http.Request) {
-	request.ParseForm()
-	testname := request.FormValue("testname")
-	show, err := template.ParseFS(templates, "templates/show.html", "templates/header.html", "templates/messages.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	m, e := clearMessages()
-	show.Execute(w, struct {
-		Testname string
-		Message  string
-		Error    string
-	}{Testname: testname, Message: m, Error: e})
 }
 
 func clearMessages() (string, string) {
