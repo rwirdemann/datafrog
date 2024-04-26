@@ -1,33 +1,20 @@
-<!DOCTYPE html>
-<html>
-{{template "_header"}}
-<body>
-<section class="section">
-    <div class="container">
-        <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">Test is being recorded...</a></h1>
-        {{template "_messages" .}}
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Testname</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <form action="/stoprecording" method="POST">
-                    <td>
-                        {{.Testname}}
-                    </td>
-                    <td>
-                        <input class="button is-small" type="submit" value="Stop recording...">
-                        <input type="hidden" value="{{.Testname}}" name="testname">
-                    </td>
-                </form>
-            </tr>
-            </tbody>
-        </table>
-    </div>
-</section>
-</body>
-</html>
+{{define "_content"}}
+<table class="table">
+    <thead>
+    <tr>
+        <th>Testname</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>
+            {{.Testname}}
+        </td>
+        <td>
+            <a href="/stoprecording?testname={{.Testname}}">Stop recording...</a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+{{end}}

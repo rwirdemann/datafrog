@@ -74,6 +74,12 @@ func renderS(tmpl string, w http.ResponseWriter, title string) {
 	}
 }
 
+// redirectE redirects to url after setting the global msgError to err.
+func redirectE(w http.ResponseWriter, r *http.Request, url string, err error) {
+	msgError = err.Error()
+	http.Redirect(w, r, url, http.StatusSeeOther)
+}
+
 func indexHandler(w http.ResponseWriter, _ *http.Request) {
 	allTests := struct {
 		Tests []api.Test `json:"tests"`
@@ -115,31 +121,31 @@ func newHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func startRecording(w http.ResponseWriter, request *http.Request) {
-	record, err := template.ParseFS(templates, "templates/record.html", "templates/header.html", "templates/messages.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := request.ParseForm(); err != nil {
+		redirectE(w, request, "/", err)
 		return
 	}
-	request.ParseForm()
 	testname := request.FormValue("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s/recordings", testname)
-	r, err := http.NewRequest(http.MethodPost, url, nil)
+	r, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:3000/tests/%s/recordings", testname), nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirectE(w, request, "/", err)
 		return
 	}
 	_, err = client.Do(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirectE(w, request, "/", err)
 		return
 	}
 	msgSuccess = "Recording has been started. Run UI interactions and click 'Stop recording...' when finished"
 	m, e := clearMessages()
-	record.Execute(w, struct {
+	render("record.html", w, struct {
+		ViewData
 		Testname string
-		Message  string
-		Error    string
-	}{Testname: testname, Message: m, Error: e})
+	}{ViewData: ViewData{
+		Title:   "Record",
+		Message: m,
+		Error:   e,
+	}, Testname: testname})
 }
 
 func deleteHandler(w http.ResponseWriter, request *http.Request) {
@@ -240,17 +246,18 @@ func createHandler(w http.ResponseWriter, request *http.Request) {
 }
 
 func stopRecording(w http.ResponseWriter, request *http.Request) {
-	request.ParseForm()
-	testname := request.FormValue("testname")
+	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("http://localhost:3000/tests/%s/recordings", testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		msgError = err.Error()
+		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 	_, err = client.Do(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		msgError = err.Error()
+		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 
