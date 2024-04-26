@@ -42,7 +42,7 @@ func main() {
 	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/runs", StartVerify()).Methods("PUT")
+	router.HandleFunc("/tests/{name}/runs", startVerify).Methods("PUT")
 
 	// stop verify
 	router.HandleFunc("/tests/{name}/runs", StopVerify()).Methods("DELETE")
@@ -163,30 +163,28 @@ func AllTests() http.HandlerFunc {
 	}
 }
 
-func StartVerify() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		if len(mux.Vars(request)["name"]) == 0 {
-			http.Error(writer, "name is required", http.StatusBadRequest)
-			return
-		}
-
-		testname := fmt.Sprintf("%s.json", mux.Vars(request)["name"])
-		expectationSource, err := adapter.NewFileExpectationSource(testname)
-		if err != nil {
-			http.Error(writer, "testfile not found", http.StatusNotFound)
-			return
-		}
-
-		c := config.NewConfig("config.json")
-		databaseLog := adapter.NewMYSQLLog(c.Filename)
-		t := &adapter.UTCTimer{}
-		verifier = cmd.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
-		doneChannels[testname] = make(chan struct{})
-		stoppedChannels[testname] = make(chan struct{})
-		go verifier.Start(doneChannels[testname], stoppedChannels[testname])
-		writer.Header().Set("Access-Control-Allow-Origin", "*")
-		writer.WriteHeader(http.StatusAccepted)
+func startVerify(writer http.ResponseWriter, request *http.Request) {
+	if len(mux.Vars(request)["name"]) == 0 {
+		http.Error(writer, "name is required", http.StatusBadRequest)
+		return
 	}
+
+	testname := fmt.Sprintf("%s.json", mux.Vars(request)["name"])
+	expectationSource, err := adapter.NewFileExpectationSource(testname)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	c := config.NewConfig("config.json")
+	databaseLog := adapter.NewMYSQLLog(c.Filename)
+	t := &adapter.UTCTimer{}
+	verifier = cmd.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
+	doneChannels[testname] = make(chan struct{})
+	stoppedChannels[testname] = make(chan struct{})
+	go verifier.Start(doneChannels[testname], stoppedChannels[testname])
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.WriteHeader(http.StatusAccepted)
 }
 
 func StopVerify() http.HandlerFunc {

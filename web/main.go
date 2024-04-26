@@ -184,13 +184,19 @@ func startHandler(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
-	_, err = client.Do(r)
+	response, err := client.Do(r)
 	if err != nil {
 		msgError = err.Error()
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
-	msgSuccess = "Test has been started. Run test script and click 'Stop...' when you are done!"
+	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
+	if !statusOK {
+		body, _ := io.ReadAll(response.Body)
+		msgError = fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body)
+	} else {
+		msgSuccess = fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop...' when you are done!", testname)
+	}
 	http.Redirect(w, request, fmt.Sprintf("/show?testname=%s", testname), http.StatusSeeOther)
 }
 
