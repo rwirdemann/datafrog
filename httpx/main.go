@@ -192,7 +192,7 @@ func StopVerify() http.HandlerFunc {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("Recovered:", r)
-				writer.WriteHeader(http.StatusNotFound)
+				http.Error(writer, fmt.Sprintf("%v", r), http.StatusNotFound)
 				return
 			}
 		}()

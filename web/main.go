@@ -237,12 +237,13 @@ func stopHandler(w http.ResponseWriter, request *http.Request) {
 	m, e := clearMessages()
 	render("result.html", w, struct {
 		ViewData
-		Report cmd.Report
+		Testname string
+		Report   cmd.Report
 	}{ViewData: ViewData{
 		Title:   "Result",
 		Message: m,
 		Error:   e,
-	}, Report: report})
+	}, Testname: testname, Report: report})
 }
 
 func createHandler(w http.ResponseWriter, request *http.Request) {
