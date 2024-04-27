@@ -3,9 +3,9 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rwirdemann/databasedragon/cmd"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/httpx/api"
+	"github.com/rwirdemann/databasedragon/matcher"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -161,7 +161,7 @@ func StopHandler(w http.ResponseWriter, request *http.Request) {
 		RedirectE(w, request, "/", err)
 		return
 	}
-	var report cmd.Report
+	var report matcher.Report
 	err = json.Unmarshal(body, &report)
 	if err != nil {
 		RedirectE(w, request, "/", err)
@@ -172,7 +172,7 @@ func StopHandler(w http.ResponseWriter, request *http.Request) {
 	Render("result.html", w, struct {
 		ViewData
 		Testname string
-		Report   cmd.Report
+		Report   matcher.Report
 	}{ViewData: ViewData{
 		Title:   "Result",
 		Message: m,

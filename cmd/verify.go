@@ -130,7 +130,7 @@ func allFulfilled(expectations []matcher.Expectation) bool {
 }
 
 // ReportResults reports the verification results.
-func (v *Verifier) ReportResults() Report {
+func (v *Verifier) ReportResults() matcher.Report {
 	expectations := v.expectationSource.GetAll()
 	fulfilled := 0
 	verifiedSum := 0
@@ -142,7 +142,7 @@ func (v *Verifier) ReportResults() Report {
 		}
 		maxVerified = max(e.Verified, maxVerified)
 	}
-	report := Report{
+	report := matcher.Report{
 		Testname:         v.name,
 		LastExecution:    time.Now(),
 		Expectations:     len(expectations),
