@@ -16,6 +16,9 @@ type Config struct {
 	Filename  string   `json:"filename"`  // full path of logfile to be used
 	Logformat string   `json:"logformat"` // format of log file, actual mysql | postgresql
 	Patterns  []string `json:"patterns"`  // list of patterns to consider
+	Web       struct {
+		Port int `json:"port"` // web app http port
+	}
 }
 
 // NewConfig creates a new instance given its settings from filename in json
