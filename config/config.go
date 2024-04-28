@@ -19,6 +19,9 @@ type Config struct {
 	Web       struct {
 		Port int `json:"port"` // web app http port
 	}
+	Api struct {
+		Port int `json:"port"` // api http port
+	}
 }
 
 // NewConfig creates a new instance given its settings from filename in json

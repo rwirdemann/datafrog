@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/httpx/api"
+	"github.com/rwirdemann/databasedragon/http/api"
 	"github.com/rwirdemann/databasedragon/matcher"
 	log "github.com/sirupsen/logrus"
 	"io"

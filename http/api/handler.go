@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/app"
 	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/httpx/api"
 	"github.com/rwirdemann/databasedragon/matcher"
 	"log"
 	"net/http"
@@ -23,13 +22,14 @@ var recorder *app.Recorder
 var recordingDoneChannels map[string]chan struct{}
 var recordingStoppedChannels map[string]chan struct{}
 
-func main() {
+func init() {
 	doneChannels = make(map[string]chan struct{})
 	stoppedChannels = make(map[string]chan struct{})
 	recordingDoneChannels = make(map[string]chan struct{})
 	recordingStoppedChannels = make(map[string]chan struct{})
+}
 
-	router := mux.NewRouter()
+func RegisterHandler(router *mux.Router) {
 	router.HandleFunc("/tests", AllTests()).Methods("GET")
 
 	// create new test and start recording
@@ -42,25 +42,11 @@ func main() {
 	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/runs", startVerify).Methods("PUT")
+	router.HandleFunc("/tests/{name}/runs", StartVerify).Methods("PUT")
 
 	// stop verify
 	router.HandleFunc("/tests/{name}/runs", StopVerify()).Methods("DELETE")
-	log.Printf("starting http service on port %d...", 3000)
-	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
-		tpl, _ := route.GetPathTemplate()
-		met, _ := route.GetMethods()
-		log.Println(tpl, met)
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	err = http.ListenAndServe(fmt.Sprintf(":%d", 3000), router)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func DeleteTest() http.HandlerFunc {
@@ -130,7 +116,7 @@ func StopRecording() http.HandlerFunc {
 func AllTests() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		allTests := struct {
-			Tests []api.Test `json:"tests"`
+			Tests []Test `json:"tests"`
 		}{}
 
 		entries, err := os.ReadDir(".")
@@ -147,7 +133,7 @@ func AllTests() http.HandlerFunc {
 			if doneChannels[t] != nil {
 				running = true
 			}
-			allTests.Tests = append(allTests.Tests, api.Test{
+			allTests.Tests = append(allTests.Tests, Test{
 				Name:    t,
 				Running: running,
 			})
@@ -163,7 +149,7 @@ func AllTests() http.HandlerFunc {
 	}
 }
 
-func startVerify(writer http.ResponseWriter, request *http.Request) {
+func StartVerify(writer http.ResponseWriter, request *http.Request) {
 	if len(mux.Vars(request)["name"]) == 0 {
 		http.Error(writer, "name is required", http.StatusBadRequest)
 		return
