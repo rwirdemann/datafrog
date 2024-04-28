@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/databasedragon/adapter"
+	"github.com/rwirdemann/databasedragon/app"
 	"github.com/rwirdemann/databasedragon/cmd"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/httpx/api"
@@ -15,7 +16,7 @@ import (
 	"strings"
 )
 
-var verifier *cmd.Verifier
+var verifier *app.Verifier
 var doneChannels map[string]chan struct{}
 var stoppedChannels map[string]chan struct{}
 
@@ -177,9 +178,10 @@ func startVerify(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	c := config.NewConfig("config.json")
-	databaseLog := adapter.NewMYSQLLog(c.Filename)
+	databaseLog := adapter.NewMYSQLLog(
+		c.Filename)
 	t := &adapter.UTCTimer{}
-	verifier = cmd.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
+	verifier = app.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
 	doneChannels[testname] = make(chan struct{})
 	stoppedChannels[testname] = make(chan struct{})
 	go verifier.Start(doneChannels[testname], stoppedChannels[testname])
