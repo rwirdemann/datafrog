@@ -64,7 +64,13 @@ format:
     "update job",
     "delete",
     "select job!publish_trials<1"
-  ]
+  ],
+  "web": {
+    "port": 8081
+  },
+  "api": {
+    "port": 3000
+  }
 }
 ```
 
@@ -74,6 +80,34 @@ rule thus only statements that contain `select job` but not `publish_trials<1`
 are recorded.
 
 Allowed logformat: mysql | postgres
+
+## API
+
+Run `dfg api` to start the backend.
+
+```
+# List of avaiable tests
+GET /tests 
+
+# Creates test 'name' and starts recording
+POST /tests/{name}/recordings [POST]
+
+# Stops recording of test 'name' 
+DELETE /tests/{name}/recordings [DELETE]
+
+# Delete test 'name'
+DELETE /tests/{name}
+
+# Starts verification of test 'name'
+PUT /tests/{name}/verifications [PUT]
+
+# Stops verification of test 'name'
+DELETE /tests/{name}/verifications 
+```
+
+## Web UI
+
+Run `dfg web` to start the web frontend. Requires a running backend.
 
 ## Further options
 

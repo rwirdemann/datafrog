@@ -3,9 +3,9 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/rwirdemann/databasedragon/app/domain"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/http/api"
-	"github.com/rwirdemann/databasedragon/matcher"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -37,8 +37,8 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 		Tests  []api.Test
 		Config config.Config
 	}{ViewData: ViewData{
-		Title:   "DataFrog Home",
 		Message: m,
+		Title:   "Home",
 		Error:   e,
 	}, Tests: allTests.Tests, Config: Conf})
 }
@@ -111,7 +111,7 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 
 func StartHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s/runs", testname)
+	url := fmt.Sprintf("http://localhost:3000/tests/%s/verifications", testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
 		MsgError = err.Error()
@@ -136,7 +136,7 @@ func StartHandler(w http.ResponseWriter, request *http.Request) {
 
 func StopHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s/runs", testname)
+	url := fmt.Sprintf("http://localhost:3000/tests/%s/verifications", testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		RedirectE(w, request, "/", err)
@@ -161,7 +161,7 @@ func StopHandler(w http.ResponseWriter, request *http.Request) {
 		RedirectE(w, request, "/", err)
 		return
 	}
-	var report matcher.Report
+	var report domain.Report
 	err = json.Unmarshal(body, &report)
 	if err != nil {
 		RedirectE(w, request, "/", err)
@@ -172,7 +172,7 @@ func StopHandler(w http.ResponseWriter, request *http.Request) {
 	Render("result.html", w, struct {
 		ViewData
 		Testname string
-		Report   matcher.Report
+		Report   domain.Report
 	}{ViewData: ViewData{
 		Title:   "Result",
 		Message: m,

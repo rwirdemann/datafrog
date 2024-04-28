@@ -42,10 +42,10 @@ func RegisterHandler(router *mux.Router) {
 	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/runs", StartVerify).Methods("PUT")
+	router.HandleFunc("/tests/{name}/verifications", StartVerify).Methods("PUT")
 
 	// stop verify
-	router.HandleFunc("/tests/{name}/runs", StopVerify()).Methods("DELETE")
+	router.HandleFunc("/tests/{name}/verifications", StopVerify()).Methods("DELETE")
 
 }
 

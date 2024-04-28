@@ -1,16 +1,18 @@
 package adapter
 
-import "github.com/rwirdemann/databasedragon/matcher"
+import (
+	"github.com/rwirdemann/databasedragon/app/domain"
+)
 
 type MemExpectationSource struct {
-	expecations []matcher.Expectation
+	expecations []domain.Expectation
 }
 
-func NewMemExpectationSource(expectations []matcher.Expectation) *MemExpectationSource {
+func NewMemExpectationSource(expectations []domain.Expectation) *MemExpectationSource {
 	return &MemExpectationSource{expecations: expectations}
 }
 
-func (es *MemExpectationSource) GetAll() []matcher.Expectation {
+func (es *MemExpectationSource) GetAll() []domain.Expectation {
 	return es.expecations
 }
 

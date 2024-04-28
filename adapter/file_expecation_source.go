@@ -3,14 +3,14 @@ package adapter
 import (
 	"bufio"
 	"encoding/json"
-	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/databasedragon/app/domain"
 	"log"
 	"os"
 )
 
 // A FileExpectationSource reads expectations from a file in json format.
 type FileExpectationSource struct {
-	expectations []matcher.Expectation
+	expectations []domain.Expectation
 	filename     string
 }
 
@@ -31,7 +31,7 @@ func NewFileExpectationSource(filename string) (*FileExpectationSource, error) {
 }
 
 // GetAll returns all expectations.
-func (s *FileExpectationSource) GetAll() []matcher.Expectation {
+func (s *FileExpectationSource) GetAll() []domain.Expectation {
 	return s.expectations
 }
 

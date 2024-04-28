@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/rwirdemann/databasedragon/app/domain"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
 	"github.com/rwirdemann/databasedragon/ports"
@@ -84,7 +85,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 					// handle already verified expectations
 					if e.Verified > 0 && e.Equal(tokens) {
-						log.Printf("expectation verified by: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
+						log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: tokens}.Shorten(6))
 						expectations[i].Fulfilled = true
 						expectations[i].Verified = e.Verified + 1
 						break
@@ -92,7 +93,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 					// handle not yet verified expectations (verified == 0)
 					if diff, err := e.Diff(tokens); err == nil {
-						log.Printf("reference expectation found: %s\n", matcher.Expectation{Tokens: tokens}.Shorten(6))
+						log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: tokens}.Shorten(6))
 						expectations[i].IgnoreDiffs = diff
 						expectations[i].Fulfilled = true
 						expectations[i].Verified = 1
@@ -109,7 +110,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 // allFulfilled checks all expectations, returns true if all fulfilled and false
 // otherwise.
-func allFulfilled(expectations []matcher.Expectation) bool {
+func allFulfilled(expectations []domain.Expectation) bool {
 	for _, e := range expectations {
 		if !e.Fulfilled {
 			return false
@@ -119,7 +120,7 @@ func allFulfilled(expectations []matcher.Expectation) bool {
 }
 
 // ReportResults reports the verification results.
-func (v *Verifier) ReportResults() matcher.Report {
+func (v *Verifier) ReportResults() domain.Report {
 	expectations := v.expectationSource.GetAll()
 	fulfilled := 0
 	verifiedSum := 0
@@ -131,7 +132,7 @@ func (v *Verifier) ReportResults() matcher.Report {
 		}
 		maxVerified = max(e.Verified, maxVerified)
 	}
-	report := matcher.Report{
+	report := domain.Report{
 		Testname:         v.name,
 		LastExecution:    time.Now(),
 		Expectations:     len(expectations),

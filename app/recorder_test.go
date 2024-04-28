@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/rwirdemann/databasedragon/app/domain"
 	"testing"
 
 	"github.com/rwirdemann/databasedragon/adapter"
@@ -22,7 +23,7 @@ func TestRecord(t *testing.T) {
 		"STOP",
 	}
 
-	e1 := matcher.Expectation{
+	e1 := domain.Expectation{
 		Tokens:      matcher.Tokenize("select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ order by job0_.publish_at desc"),
 		IgnoreDiffs: []int{},
 		Verified:    0,
@@ -30,7 +31,7 @@ func TestRecord(t *testing.T) {
 		Pattern:     "select job!publish_trials<1",
 	}
 
-	e2 := matcher.Expectation{
+	e2 := domain.Expectation{
 		Tokens:      matcher.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-08 14:50:20', 0, null, '', 'Hello', 3)"),
 		IgnoreDiffs: []int{},
 		Verified:    0,
@@ -38,7 +39,7 @@ func TestRecord(t *testing.T) {
 		Pattern:     "insert",
 	}
 
-	expectations, _ := json.Marshal([]matcher.Expectation{e1, e2})
+	expectations, _ := json.Marshal([]domain.Expectation{e1, e2})
 
 	c := config.Config{}
 	c.Patterns = []string{"insert", "select job!publish_trials<1"}

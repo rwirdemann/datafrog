@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/rwirdemann/databasedragon/app/domain"
 	"testing"
 
 	"github.com/rwirdemann/databasedragon/adapter"
@@ -13,14 +14,14 @@ func TestVerify(t *testing.T) {
 	var emptyDiff []int
 	testCases := []struct {
 		desc                string
-		initialExpectations []matcher.Expectation
-		updatedExpectations []matcher.Expectation
+		initialExpectations []domain.Expectation
+		updatedExpectations []domain.Expectation
 		logs                []string
 		patterns            []string
 	}{
 		{
 			desc: "empty diff vector",
-			initialExpectations: []matcher.Expectation{
+			initialExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
@@ -31,7 +32,7 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	select * from jobs;",
 				"STOP",
 			},
-			updatedExpectations: []matcher.Expectation{
+			updatedExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
@@ -44,7 +45,7 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "diff vector with one element",
-			initialExpectations: []matcher.Expectation{
+			initialExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
@@ -55,7 +56,7 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	select * from jobs where id=2;",
 				"STOP",
 			},
-			updatedExpectations: []matcher.Expectation{
+			updatedExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
@@ -68,7 +69,7 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "miss matching pattern",
-			initialExpectations: []matcher.Expectation{
+			initialExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
@@ -79,7 +80,7 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	update job where id=2;",
 				"STOP",
 			},
-			updatedExpectations: []matcher.Expectation{
+			updatedExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
@@ -92,7 +93,7 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "multiple expectations, different order",
-			initialExpectations: []matcher.Expectation{
+			initialExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0"),
 					Pattern:     "select",
@@ -115,7 +116,7 @@ func TestVerify(t *testing.T) {
 				"2024-04-17T13:55:57.090960Z\t 2001 Query\tselect job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0",
 				"STOP",
 			},
-			updatedExpectations: []matcher.Expectation{
+			updatedExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_"),
 					Pattern:     "select",
@@ -142,7 +143,7 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "verified > 0 but equals fails should continue with next exception",
-			initialExpectations: []matcher.Expectation{
+			initialExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("insert into job (description, id) values ('Developer', 4)"),
 					Pattern:     "insert",
@@ -163,7 +164,7 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	insert into job (description, id) values ('Developer', 5);",
 				"STOP",
 			},
-			updatedExpectations: []matcher.Expectation{
+			updatedExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("insert into job (description, id) values ('Developer', 4)"),
 					Pattern:     "insert",
