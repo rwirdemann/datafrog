@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/app"
-	"github.com/rwirdemann/databasedragon/cmd"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/httpx/api"
 	"github.com/rwirdemann/databasedragon/matcher"
@@ -20,7 +19,7 @@ var verifier *app.Verifier
 var doneChannels map[string]chan struct{}
 var stoppedChannels map[string]chan struct{}
 
-var recorder *cmd.Recorder
+var recorder *app.Recorder
 var recordingDoneChannels map[string]chan struct{}
 var recordingStoppedChannels map[string]chan struct{}
 
@@ -91,7 +90,7 @@ func CreateTest() http.HandlerFunc {
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		recordingSink := adapter.NewFileRecordingSink(testname)
-		recorder = cmd.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t)
+		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t)
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
