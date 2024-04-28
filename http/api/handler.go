@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/databasedragon/adapter"
 	"github.com/rwirdemann/databasedragon/app"
+	"github.com/rwirdemann/databasedragon/app/domain"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
 	"log"
@@ -76,7 +77,7 @@ func CreateTest() http.HandlerFunc {
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		recordingSink := adapter.NewFileRecordingSink(testname)
-		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t)
+		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t, testname)
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
@@ -116,7 +117,7 @@ func StopRecording() http.HandlerFunc {
 func AllTests() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		allTests := struct {
-			Tests []Test `json:"tests"`
+			Tests []domain.Testcase `json:"tests"`
 		}{}
 
 		entries, err := os.ReadDir(".")
@@ -133,7 +134,7 @@ func AllTests() http.HandlerFunc {
 			if doneChannels[t] != nil {
 				running = true
 			}
-			allTests.Tests = append(allTests.Tests, Test{
+			allTests.Tests = append(allTests.Tests, domain.Testcase{
 				Name:    t,
 				Running: running,
 			})

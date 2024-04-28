@@ -4,7 +4,9 @@
         <table class="table">
             <thead>
             <tr>
-                <th colspan="2">Test</th>
+                <th>Test</th>
+                <th>Verifications</th>
+                <th>Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -12,6 +14,9 @@
             <tr>
                 <td>
                     {{.Name}}
+                </td>
+                <td style="text-align:right;">
+                    {{.Verifications}}
                 </td>
                 <td>
                     <a href="/delete?testname={{.Name}}">Delete</a> |

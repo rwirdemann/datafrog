@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/rwirdemann/databasedragon/app/domain"
 	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/http/api"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -21,7 +20,7 @@ func init() {
 
 func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	allTests := struct {
-		Tests []api.Test `json:"tests"`
+		Tests []domain.Testcase `json:"tests"`
 	}{}
 	if r, err := client.Get("http://localhost:3000/tests"); err != nil {
 		MsgError = err.Error()
@@ -34,7 +33,7 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	m, e := ClearMessages()
 	Render("index.html", w, struct {
 		ViewData
-		Tests  []api.Test
+		Tests  []domain.Testcase
 		Config config.Config
 	}{ViewData: ViewData{
 		Message: m,

@@ -39,7 +39,12 @@ func TestRecord(t *testing.T) {
 		Pattern:     "insert",
 	}
 
-	expectations, _ := json.Marshal([]domain.Expectation{e1, e2})
+	expectedTestcase, _ := json.Marshal(domain.Testcase{
+		Name:          "create-job.json",
+		Running:       false,
+		Verifications: 0,
+		Expectations:  []domain.Expectation{e1, e2},
+	})
 
 	c := config.Config{}
 	c.Patterns = []string{"insert", "select job!publish_trials<1"}
@@ -49,9 +54,9 @@ func TestRecord(t *testing.T) {
 	databaseLog := adapter.NewMemSQLLog(logs, recordingDone)
 	recordingSink := adapter.NewMemRecordingSink()
 	timer := adapter.MockTimer{}
-	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer)
+	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer, "create-job.json ")
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped
 	assert.Len(t, recordingSink.Recorded, 1)
-	assert.Equal(t, string(expectations), recordingSink.Recorded[0])
+	assert.Equal(t, string(expectedTestcase), recordingSink.Recorded[0])
 }

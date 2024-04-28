@@ -18,11 +18,12 @@ type Recorder struct {
 	databaseLog   ports.Log
 	recordingSink ports.RecordingSink
 	timer         ports.Timer
+	name          string
 }
 
 // NewRecorder creates a new Recorder.
-func NewRecorder(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, sink ports.RecordingSink, timer ports.Timer) *Recorder {
-	return &Recorder{config: c, tokenizer: tokenizer, databaseLog: log, recordingSink: sink, timer: timer}
+func NewRecorder(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, sink ports.RecordingSink, timer ports.Timer, name string) *Recorder {
+	return &Recorder{config: c, tokenizer: tokenizer, databaseLog: log, recordingSink: sink, timer: timer, name: name}
 }
 
 // Start starts the recording process as endless loop. Every log entry that
@@ -32,14 +33,14 @@ func NewRecorder(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, si
 func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	r.timer.Start()
 	log.Printf("Recording started at %v. Press Enter to stop and save recording...", r.timer.GetStart())
-	var expectations []domain.Expectation
+	testcase := domain.Testcase{Name: r.name}
 
 	// tell caller that verification has been finished
 	defer close(stopped)
 
 	// called when done channel is closed
 	defer func() {
-		r.writeExpectations(expectations)
+		r.writeExpectations(testcase)
 		r.recordingSink.Close()
 		r.databaseLog.Close()
 	}()
@@ -61,7 +62,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 				if matches {
 					tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
 					e := domain.Expectation{Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
-					expectations = append(expectations, e)
+					testcase.Expectations = append(testcase.Expectations, e)
 					log.Printf("new expectation: %s\n", e.Shorten(8))
 				}
 			}
@@ -74,8 +75,8 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 
 // writeExpectations writes initialExpectations as json to the recordingSink.
 // Existing exceptions are overridden.
-func (r *Recorder) writeExpectations(expectations []domain.Expectation) {
-	b, err := json.Marshal(expectations)
+func (r *Recorder) writeExpectations(testcase domain.Testcase) {
+	b, err := json.Marshal(testcase)
 	if err != nil {
 		log.Fatal(err)
 	}
