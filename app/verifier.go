@@ -19,17 +19,20 @@ type Verifier struct {
 	tokenizer         matcher.Tokenizer
 	databaseLog       ports.Log
 	expectationSource ports.ExpectationSource
+	testcase          domain.Testcase
 	timer             ports.Timer
 	name              string
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, source ports.ExpectationSource, t ports.Timer, name string) *Verifier {
+func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log,
+	source ports.ExpectationSource, t ports.Timer, name string) *Verifier {
 	return &Verifier{
 		config:            c,
 		tokenizer:         tokenizer,
 		databaseLog:       log,
 		expectationSource: source,
+		testcase:          source.Get(),
 		timer:             t,
 		name:              name,
 	}
@@ -39,9 +42,9 @@ func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, so
 func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	v.timer.Start()
 	log.Printf("Verification started at %v. Press Enter to stop and save verification...", v.timer.GetStart())
-	expectations := v.expectationSource.GetAll()
-	for i := range expectations {
-		expectations[i].Fulfilled = false
+	v.testcase.Verifications = v.testcase.Verifications + 1
+	for i := range v.testcase.Expectations {
+		v.testcase.Expectations[i].Fulfilled = false
 	}
 
 	// tell caller that verification has been finished
@@ -49,13 +52,13 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 	// called when done channel is closed
 	defer func() {
-		v.expectationSource.WriteAll()
+		_ = v.expectationSource.Write(v.testcase)
 	}()
 
 	for {
 		select {
 		default:
-			if allFulfilled(expectations) {
+			if allFulfilled(v.testcase.Expectations) {
 				log.Printf("Verification done")
 				return
 			}
@@ -75,8 +78,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 					continue
 				}
 
-				expectations := v.expectationSource.GetAll()
-				for i, e := range expectations {
+				for i, e := range v.testcase.Expectations {
 					if e.Fulfilled || e.Pattern != pattern {
 						continue
 					}
@@ -86,17 +88,17 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 					// handle already verified expectations
 					if e.Verified > 0 && e.Equal(tokens) {
 						log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: tokens}.Shorten(6))
-						expectations[i].Fulfilled = true
-						expectations[i].Verified = e.Verified + 1
+						v.testcase.Expectations[i].Fulfilled = true
+						v.testcase.Expectations[i].Verified = e.Verified + 1
 						break
 					}
 
 					// handle not yet verified expectations (verified == 0)
 					if diff, err := e.Diff(tokens); err == nil {
 						log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: tokens}.Shorten(6))
-						expectations[i].IgnoreDiffs = diff
-						expectations[i].Fulfilled = true
-						expectations[i].Verified = 1
+						v.testcase.Expectations[i].IgnoreDiffs = diff
+						v.testcase.Expectations[i].Fulfilled = true
+						v.testcase.Expectations[i].Verified = 1
 						break
 					}
 				}
@@ -121,26 +123,23 @@ func allFulfilled(expectations []domain.Expectation) bool {
 
 // ReportResults reports the verification results.
 func (v *Verifier) ReportResults() domain.Report {
-	expectations := v.expectationSource.GetAll()
 	fulfilled := 0
 	verifiedSum := 0
-	maxVerified := 0
-	for _, e := range expectations {
+	for _, e := range v.testcase.Expectations {
 		verifiedSum += e.Verified
 		if e.Fulfilled {
 			fulfilled = fulfilled + 1
 		}
-		maxVerified = max(e.Verified, maxVerified)
 	}
 	report := domain.Report{
 		Testname:         v.name,
 		LastExecution:    time.Now(),
-		Expectations:     len(expectations),
+		Expectations:     len(v.testcase.Expectations),
+		Verifications:    v.testcase.Verifications,
 		Fulfilled:        fulfilled,
-		MaxVerified:      maxVerified,
-		VerificationMean: verificationMean(float32(verifiedSum), float32(len(expectations))),
+		VerificationMean: verificationMean(float32(verifiedSum), float32(len(v.testcase.Expectations))),
 	}
-	for _, e := range expectations {
+	for _, e := range v.testcase.Expectations {
 		if !e.Fulfilled {
 			report.Unfulfilled = append(report.Unfulfilled, fmt.Sprintf("%s. Verification quote: %d", e.Shorten(6), e.Verified))
 		}

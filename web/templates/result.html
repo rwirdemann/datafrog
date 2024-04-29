@@ -16,20 +16,12 @@
         <td>{{.Report.LastExecution.Format "2006-01-02 15:04:05"}}</td>
     </tr>
     <tr>
-        <td>Expectation count:</td>
-        <td>{{.Report.Expectations}}</td>
+        <td>Verification runs:</td>
+        <td>{{.Report.Verifications}}</td>
     </tr>
     <tr>
-        <td>Fulfilled expectations:</td>
-        <td>{{.Report.Fulfilled}}</td>
-    </tr>
-    <tr>
-        <td>Max verification</td>
-        <td>{{.Report.MaxVerified}}</td>
-    </tr>
-    <tr>
-        <td>Verification mean:</td>
-        <td>{{.Report.VerificationMean}}</td>
+        <td>Fulfilled:</td>
+        <td>{{.Report.Fulfilled}} of {{.Report.Expectations}}</td>
     </tr>
     {{range .Report.Unfulfilled}}
     <tr>

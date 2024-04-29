@@ -5,16 +5,17 @@ import (
 )
 
 type MemExpectationSource struct {
-	expecations []domain.Expectation
+	testcase domain.Testcase
 }
 
 func NewMemExpectationSource(expectations []domain.Expectation) *MemExpectationSource {
-	return &MemExpectationSource{expecations: expectations}
+	return &MemExpectationSource{testcase: domain.Testcase{Expectations: expectations}}
 }
 
-func (es *MemExpectationSource) GetAll() []domain.Expectation {
-	return es.expecations
+func (es MemExpectationSource) Get() domain.Testcase {
+	return es.testcase
 }
 
-func (es *MemExpectationSource) WriteAll() {
+func (es *MemExpectationSource) Write(testcase domain.Testcase) error {
+	return nil
 }

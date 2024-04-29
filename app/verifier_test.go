@@ -195,8 +195,8 @@ func TestVerify(t *testing.T) {
 			verifier := NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, timer, "")
 			go verifier.Start(doneChannel, stoppedChannel)
 			<-stoppedChannel // wait till verifier is done
-			expectations := expectationSource.GetAll()
-			for i, e := range expectations {
+			tc := expectationSource.Get()
+			for i, e := range tc.Expectations {
 				updatedExpectation := tC.updatedExpectations[i]
 				assert.Equal(t, updatedExpectation.IgnoreDiffs, e.IgnoreDiffs)
 				assert.Equal(t, updatedExpectation.Fulfilled, e.Fulfilled)

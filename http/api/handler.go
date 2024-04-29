@@ -9,6 +9,7 @@ import (
 	"github.com/rwirdemann/databasedragon/app/domain"
 	"github.com/rwirdemann/databasedragon/config"
 	"github.com/rwirdemann/databasedragon/matcher"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -120,24 +121,16 @@ func AllTests() http.HandlerFunc {
 			Tests []domain.Testcase `json:"tests"`
 		}{}
 
-		entries, err := os.ReadDir(".")
-		var tests []string
-		for _, entry := range entries {
-			if strings.HasSuffix(entry.Name(), ".json") && !strings.HasPrefix(entry.Name(), "config") {
-				log.Printf("file: %s", entry.Name())
-				tests = append(tests, strings.Split(entry.Name(), ".")[0])
+		testfiles, err := os.ReadDir(".")
+		for _, f := range testfiles {
+			if strings.HasSuffix(f.Name(), ".json") && !strings.HasPrefix(f.Name(), "config") {
+				tc, err := readTestcase(f.Name())
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				allTests.Tests = append(allTests.Tests, tc)
 			}
-		}
-
-		for _, t := range tests {
-			var running = false
-			if doneChannels[t] != nil {
-				running = true
-			}
-			allTests.Tests = append(allTests.Tests, domain.Testcase{
-				Name:    t,
-				Running: running,
-			})
 		}
 
 		b, err := json.Marshal(allTests)
@@ -150,13 +143,27 @@ func AllTests() http.HandlerFunc {
 	}
 }
 
+func readTestcase(filename string) (domain.Testcase, error) {
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		return domain.Testcase{}, err
+	}
+	defer jsonFile.Close()
+	b, _ := io.ReadAll(jsonFile)
+	var tc domain.Testcase
+	if err := json.Unmarshal(b, &tc); err != nil {
+		return domain.Testcase{}, err
+	}
+	return tc, nil
+}
+
 func StartVerify(writer http.ResponseWriter, request *http.Request) {
 	if len(mux.Vars(request)["name"]) == 0 {
 		http.Error(writer, "name is required", http.StatusBadRequest)
 		return
 	}
 
-	testname := fmt.Sprintf("%s.json", mux.Vars(request)["name"])
+	testname := mux.Vars(request)["name"]
 	expectationSource, err := adapter.NewFileExpectationSource(testname)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusNotFound)
@@ -185,7 +192,7 @@ func StopVerify() http.HandlerFunc {
 			}
 		}()
 
-		testname := fmt.Sprintf("%s.json", mux.Vars(request)["name"])
+		testname := mux.Vars(request)["name"]
 		close(doneChannels[testname])
 		doneChannels[testname] = nil
 		<-stoppedChannels[testname]

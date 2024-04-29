@@ -10,8 +10,8 @@ import (
 
 // A FileExpectationSource reads expectations from a file in json format.
 type FileExpectationSource struct {
-	expectations []domain.Expectation
-	filename     string
+	filename string
+	testcase domain.Testcase
 }
 
 // NewFileExpectationSource creates a new NewFileExpectationSource that reads
@@ -23,19 +23,18 @@ func NewFileExpectationSource(filename string) (*FileExpectationSource, error) {
 	}
 
 	fes := FileExpectationSource{filename: filename}
-	if err := json.Unmarshal(expectations, &fes.expectations); err != nil {
+	if err := json.Unmarshal(expectations, &fes.testcase); err != nil {
 		return nil, err
 	}
-
 	return &fes, nil
 }
 
-// GetAll returns all expectations.
-func (s *FileExpectationSource) GetAll() []domain.Expectation {
-	return s.expectations
+// Get returns the testcase.
+func (s FileExpectationSource) Get() domain.Testcase {
+	return s.testcase
 }
 
-func (s *FileExpectationSource) WriteAll() {
+func (s FileExpectationSource) Write(testcase domain.Testcase) error {
 	f, err := os.Create(s.filename)
 	if err != nil {
 		log.Fatal(err)
@@ -43,10 +42,15 @@ func (s *FileExpectationSource) WriteAll() {
 	defer f.Close()
 
 	writer := bufio.NewWriter(f)
-	b, err := json.Marshal(s.expectations)
+	b, err := json.Marshal(testcase)
 	if err != nil {
 		log.Fatal(err)
 	}
-	writer.WriteString(string(b))
-	writer.Flush()
+	if _, err := writer.WriteString(string(b)); err != nil {
+		return err
+	}
+	if err := writer.Flush(); err != nil {
+		return err
+	}
+	return nil
 }

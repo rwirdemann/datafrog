@@ -54,7 +54,7 @@ func TestRecord(t *testing.T) {
 	databaseLog := adapter.NewMemSQLLog(logs, recordingDone)
 	recordingSink := adapter.NewMemRecordingSink()
 	timer := adapter.MockTimer{}
-	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer, "create-job.json ")
+	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer, "create-job.json")
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped
 	assert.Len(t, recordingSink.Recorded, 1)
