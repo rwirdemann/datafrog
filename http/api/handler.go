@@ -57,7 +57,7 @@ func DeleteTest() http.HandlerFunc {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
-		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
+		testname := mux.Vars(r)["name"]
 		err := os.Remove(testname)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
