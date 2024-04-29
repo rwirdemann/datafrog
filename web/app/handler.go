@@ -13,16 +13,18 @@ import (
 
 var client = &http.Client{Timeout: 10 * time.Second}
 var Conf config.Config
+var apiBaseURL string
 
 func init() {
 	Conf = config.NewConfig("config.json")
+	apiBaseURL = fmt.Sprintf("http://localhost:%d", Conf.Api.Port)
 }
 
 func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	allTests := struct {
 		Tests []domain.Testcase `json:"tests"`
 	}{}
-	if r, err := client.Get("http://localhost:3000/tests"); err != nil {
+	if r, err := client.Get(fmt.Sprintf("%s/tests", apiBaseURL)); err != nil {
 		MsgError = err.Error()
 	} else {
 		if err := json.NewDecoder(r.Body).Decode(&allTests); err != nil {
@@ -67,7 +69,8 @@ func StartRecording(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	testname := request.FormValue("testname")
-	r, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://localhost:3000/tests/%s/recordings", testname), nil)
+	url := fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)
+	r, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
 		RedirectE(w, request, "/", err)
 		return
@@ -91,7 +94,7 @@ func StartRecording(w http.ResponseWriter, request *http.Request) {
 
 func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s", testname)
+	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		MsgError = err.Error()
@@ -110,7 +113,7 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 
 func StartHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s/verifications", testname)
+	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
 		MsgError = err.Error()
@@ -135,7 +138,7 @@ func StartHandler(w http.ResponseWriter, request *http.Request) {
 
 func StopHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s/verifications", testname)
+	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		RedirectE(w, request, "/", err)
@@ -190,7 +193,7 @@ func CreateHandler(w http.ResponseWriter, request *http.Request) {
 
 func StopRecording(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
-	url := fmt.Sprintf("http://localhost:3000/tests/%s/recordings", testname)
+	url := fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		RedirectE(w, request, "/", err)

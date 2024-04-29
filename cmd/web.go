@@ -19,6 +19,7 @@ var webCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		router := mux.NewRouter()
 		app.RegisterHandler(router)
+		log.Printf("Connecting backend: http://localhost:/%d", app.Conf.Api.Port)
 		log.Printf("Listening on :%d...", app.Conf.Web.Port)
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", app.Conf.Web.Port), router); err != nil {
 			log.Fatal(err)

@@ -126,10 +126,10 @@ func AllTests() http.HandlerFunc {
 			if strings.HasSuffix(f.Name(), ".json") && !strings.HasPrefix(f.Name(), "config") {
 				tc, err := readTestcase(f.Name())
 				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
+					log.Printf("error decoding testfile %s: %v", f.Name(), err)
+				} else {
+					allTests.Tests = append(allTests.Tests, tc)
 				}
-				allTests.Tests = append(allTests.Tests, tc)
 			}
 		}
 
@@ -187,7 +187,7 @@ func StopVerify() http.HandlerFunc {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("Recovered:", r)
-				http.Error(writer, fmt.Sprintf("%v", r), http.StatusNotFound)
+				http.Error(writer, fmt.Sprintf("%v", r), http.StatusInternalServerError)
 				return
 			}
 		}()

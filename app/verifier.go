@@ -59,7 +59,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 		select {
 		default:
 			if allFulfilled(v.testcase.Expectations) {
-				log.Printf("Verification done")
+				log.Printf("All verifications fulfilled. Verification done")
 				return
 			}
 
@@ -104,7 +104,7 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				}
 			}
 		case <-done:
-			log.Printf("Verification done")
+			log.Printf("Channel close: Verification done")
 			return
 		}
 	}
