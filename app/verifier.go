@@ -39,12 +39,12 @@ func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log,
 }
 
 // Start runs the verification loop.
-func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
-	v.timer.Start()
-	log.Printf("Verification started at %v. Press Enter to stop and save verification...", v.timer.GetStart())
-	v.testcase.Verifications = v.testcase.Verifications + 1
-	for i := range v.testcase.Expectations {
-		v.testcase.Expectations[i].Fulfilled = false
+func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
+	verifier.timer.Start()
+	log.Printf("Verification started at %v. Press Enter to stop and save verification...", verifier.timer.GetStart())
+	verifier.testcase.Verifications = verifier.testcase.Verifications + 1
+	for i := range verifier.testcase.Expectations {
+		verifier.testcase.Expectations[i].Fulfilled = false
 	}
 
 	// tell caller that verification has been finished
@@ -52,54 +52,60 @@ func (v *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 	// called when done channel is closed
 	defer func() {
-		_ = v.expectationSource.Write(v.testcase)
+		_ = verifier.expectationSource.Write(verifier.testcase)
 	}()
 
 	for {
 		select {
 		default:
-			if allFulfilled(v.testcase.Expectations) {
+			if allFulfilled(verifier.testcase.Expectations) {
 				log.Printf("All verifications fulfilled. Verification done")
 				return
 			}
 
-			line, err := v.databaseLog.NextLine()
+			v, err := verifier.databaseLog.NextLine()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			ts, err := v.databaseLog.Timestamp(line)
+			ts, err := verifier.databaseLog.Timestamp(v)
 			if err != nil {
 				continue
 			}
-			if v.timer.MatchesRecordingPeriod(ts) {
-				matches, pattern := matcher.MatchesPattern(v.config, line)
+			if verifier.timer.MatchesRecordingPeriod(ts) {
+				matches, pattern := matcher.MatchesPattern(verifier.config, v)
 				if !matches {
 					continue
 				}
 
-				for i, e := range v.testcase.Expectations {
+				for i, e := range verifier.testcase.Expectations {
 					if e.Fulfilled || e.Pattern != pattern {
-						continue
+						continue // -> continue with next e
 					}
 
-					tokens := v.tokenizer.Tokenize(line, v.config.Patterns)
+					vTokens := verifier.tokenizer.Tokenize(v, verifier.config.Patterns)
 
-					// handle already verified expectations
-					if e.Verified > 0 && e.Equal(tokens) {
-						log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: tokens}.Shorten(6))
-						v.testcase.Expectations[i].Fulfilled = true
-						v.testcase.Expectations[i].Verified = e.Verified + 1
-						break
+					// Handle already verified expectations.
+					if e.Verified > 0 && e.Equal(vTokens) {
+						log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
+						verifier.testcase.Expectations[i].Fulfilled = true
+						verifier.testcase.Expectations[i].Verified = e.Verified + 1
+						break // -> continue with next verifier
 					}
 
-					// handle not yet verified expectations (verified == 0)
-					if diff, err := e.Diff(tokens); err == nil {
-						log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: tokens}.Shorten(6))
-						v.testcase.Expectations[i].IgnoreDiffs = diff
-						v.testcase.Expectations[i].Fulfilled = true
-						v.testcase.Expectations[i].Verified = 1
-						break
+					if len(e.Tokens) != len(vTokens) {
+						break // -> continue with next verifier
+					}
+
+					// Not yet verified expectation e with same token lengths as
+					// verifier found. This expectation e becomes our references
+					// expectation.
+					if diff, err := e.Diff(vTokens); err == nil {
+						log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
+						verifier.testcase.Expectations[i].IgnoreDiffs = diff
+						verifier.testcase.Expectations[i].Fulfilled = true
+						verifier.testcase.Expectations[i].Verified = 1
+						break // -> continue with next verifier
 					}
 				}
 			}
@@ -122,24 +128,24 @@ func allFulfilled(expectations []domain.Expectation) bool {
 }
 
 // ReportResults reports the verification results.
-func (v *Verifier) ReportResults() domain.Report {
+func (verifier *Verifier) ReportResults() domain.Report {
 	fulfilled := 0
 	verifiedSum := 0
-	for _, e := range v.testcase.Expectations {
+	for _, e := range verifier.testcase.Expectations {
 		verifiedSum += e.Verified
 		if e.Fulfilled {
 			fulfilled = fulfilled + 1
 		}
 	}
 	report := domain.Report{
-		Testname:         v.name,
+		Testname:         verifier.name,
 		LastExecution:    time.Now(),
-		Expectations:     len(v.testcase.Expectations),
-		Verifications:    v.testcase.Verifications,
+		Expectations:     len(verifier.testcase.Expectations),
+		Verifications:    verifier.testcase.Verifications,
 		Fulfilled:        fulfilled,
-		VerificationMean: verificationMean(float32(verifiedSum), float32(len(v.testcase.Expectations))),
+		VerificationMean: verificationMean(float32(verifiedSum), float32(len(verifier.testcase.Expectations))),
 	}
-	for _, e := range v.testcase.Expectations {
+	for _, e := range verifier.testcase.Expectations {
 		if !e.Fulfilled {
 			report.Unfulfilled = append(report.Unfulfilled, fmt.Sprintf("%s. Verification quote: %d", e.Shorten(6), e.Verified))
 		}
