@@ -2,12 +2,12 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/rwirdemann/databasedragon/app/domain"
+	"github.com/rwirdemann/datafrog/app/domain"
 	"testing"
 
-	"github.com/rwirdemann/databasedragon/adapter"
-	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/datafrog/adapter"
+	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/stretchr/testify/assert"
 )
 

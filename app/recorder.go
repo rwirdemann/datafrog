@@ -2,10 +2,10 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/rwirdemann/databasedragon/app/domain"
-	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/matcher"
-	"github.com/rwirdemann/databasedragon/ports"
+	"github.com/rwirdemann/datafrog/app/domain"
+	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/matcher"
+	"github.com/rwirdemann/datafrog/ports"
 	"log"
 )
 

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/rwirdemann/databasedragon/web/templates"
+	"github.com/rwirdemann/datafrog/web/templates"
 	"html/template"
 	"net/http"
 )

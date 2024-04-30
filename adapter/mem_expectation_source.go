@@ -1,7 +1,7 @@
 package adapter
 
 import (
-	"github.com/rwirdemann/databasedragon/app/domain"
+	"github.com/rwirdemann/datafrog/app/domain"
 )
 
 type MemExpectationSource struct {

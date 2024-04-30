@@ -3,7 +3,7 @@ package matcher
 import (
 	"strings"
 
-	"github.com/rwirdemann/databasedragon/config"
+	"github.com/rwirdemann/datafrog/config"
 )
 
 type Pattern struct {

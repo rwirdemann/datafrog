@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/datafrog/matcher"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

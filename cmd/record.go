@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/rwirdemann/databasedragon/app"
+	"github.com/rwirdemann/datafrog/app"
 	"log"
 	"os"
 
-	"github.com/rwirdemann/databasedragon/adapter"
-	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/datafrog/adapter"
+	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/spf13/cobra"
 )
 

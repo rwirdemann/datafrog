@@ -3,7 +3,7 @@ package adapter
 import (
 	"bufio"
 	"encoding/json"
-	"github.com/rwirdemann/databasedragon/app/domain"
+	"github.com/rwirdemann/datafrog/app/domain"
 	"log"
 	"os"
 )

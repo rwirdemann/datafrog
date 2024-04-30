@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/rwirdemann/databasedragon/adapter"
-	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/ports"
+	"github.com/rwirdemann/datafrog/adapter"
+	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/ports"
 	"log"
 )
 

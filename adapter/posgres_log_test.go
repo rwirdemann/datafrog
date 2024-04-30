@@ -2,7 +2,7 @@ package adapter
 
 import (
 	"fmt"
-	"github.com/rwirdemann/databasedragon/config"
+	"github.com/rwirdemann/datafrog/config"
 	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"

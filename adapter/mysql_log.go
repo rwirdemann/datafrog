@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/rwirdemann/databasedragon/ports"
+	"github.com/rwirdemann/datafrog/ports"
 )
 
 type MySQLLog struct {

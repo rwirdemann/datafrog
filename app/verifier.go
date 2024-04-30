@@ -2,10 +2,10 @@ package app
 
 import (
 	"fmt"
-	"github.com/rwirdemann/databasedragon/app/domain"
-	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/matcher"
-	"github.com/rwirdemann/databasedragon/ports"
+	"github.com/rwirdemann/datafrog/app/domain"
+	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/matcher"
+	"github.com/rwirdemann/datafrog/ports"
 	"log"
 	"time"
 )
@@ -90,22 +90,22 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 						log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
 						verifier.testcase.Expectations[i].Fulfilled = true
 						verifier.testcase.Expectations[i].Verified = e.Verified + 1
-						break // -> continue with next verifier
+						break // -> continue with next v
 					}
 
 					if len(e.Tokens) != len(vTokens) {
-						break // -> continue with next verifier
+						continue // -> continue with next e
 					}
 
 					// Not yet verified expectation e with same token lengths as
-					// verifier found. This expectation e becomes our references
+					// v found. This expectation e becomes our references
 					// expectation.
 					if diff, err := e.Diff(vTokens); err == nil {
 						log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
 						verifier.testcase.Expectations[i].IgnoreDiffs = diff
 						verifier.testcase.Expectations[i].Fulfilled = true
 						verifier.testcase.Expectations[i].Verified = 1
-						break // -> continue with next verifier
+						break // -> continue with next v
 					}
 				}
 			}

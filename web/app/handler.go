@@ -3,8 +3,8 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rwirdemann/databasedragon/app/domain"
-	"github.com/rwirdemann/databasedragon/config"
+	"github.com/rwirdemann/datafrog/app/domain"
+	"github.com/rwirdemann/datafrog/config"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"

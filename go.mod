@@ -1,9 +1,8 @@
-module github.com/rwirdemann/databasedragon
+module github.com/rwirdemann/datafrog
 
 go 1.21.6
 
 require (
-	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0

@@ -1,12 +1,12 @@
 package app
 
 import (
-	"github.com/rwirdemann/databasedragon/app/domain"
+	"github.com/rwirdemann/datafrog/app/domain"
 	"testing"
 
-	"github.com/rwirdemann/databasedragon/adapter"
-	"github.com/rwirdemann/databasedragon/config"
-	"github.com/rwirdemann/databasedragon/matcher"
+	"github.com/rwirdemann/datafrog/adapter"
+	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -142,7 +142,7 @@ func TestVerify(t *testing.T) {
 			patterns: []string{"select", "insert", "update"},
 		},
 		{
-			desc: "verified > 0 but equals fails should continue with next exception",
+			desc: "verified > 0 but equals fails should continue with next expectation",
 			initialExpectations: []domain.Expectation{
 				{
 					Tokens:      matcher.Tokenize("insert into job (description, id) values ('Developer', 4)"),

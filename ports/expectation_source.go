@@ -1,7 +1,7 @@
 package ports
 
 import (
-	"github.com/rwirdemann/databasedragon/app/domain"
+	"github.com/rwirdemann/datafrog/app/domain"
 )
 
 // ExpectationSource defines methods to read and write expectations from and to

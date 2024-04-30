@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/rwirdemann/databasedragon/http/api"
-	"github.com/rwirdemann/databasedragon/web/app"
+	"github.com/rwirdemann/datafrog/http/api"
+	"github.com/rwirdemann/datafrog/web/app"
 	"github.com/spf13/cobra"
 	"log"
 	"net/http"
