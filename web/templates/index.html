@@ -5,7 +5,8 @@
             <thead>
             <tr>
                 <th>Test</th>
-                <th>Verifications</th>
+                <th>Expectations</th>
+                <th>Runs</th>
                 <th>Actions</th>
             </tr>
             </thead>
@@ -14,6 +15,9 @@
             <tr>
                 <td>
                     {{.Name}}
+                </td>
+                <td style="text-align:right;">
+                    {{len .Expectations}}
                 </td>
                 <td style="text-align:right;">
                     {{.Verifications}}
