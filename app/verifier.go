@@ -10,14 +10,14 @@ import (
 	"time"
 )
 
-// The Verifier verifies the initialExpectations in expectationSource. It
-// monitors the databaseLog for these initialExpectations and requires them to
-// be in same order as given in expectationSource. Verified initialExpectations
-// are written to verificationSink.
+// The Verifier verifies the expectations in expectationSource. It monitors the
+// log for these expectations and increases their verify count if matched. The
+// updated expectation list is written back to expectationSource after the
+// verification run is done.
 type Verifier struct {
 	config            config.Config
 	tokenizer         matcher.Tokenizer
-	databaseLog       ports.Log
+	log               ports.Log
 	expectationSource ports.ExpectationSource
 	testcase          domain.Testcase
 	timer             ports.Timer
@@ -30,7 +30,7 @@ func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log,
 	return &Verifier{
 		config:            c,
 		tokenizer:         tokenizer,
-		databaseLog:       log,
+		log:               log,
 		expectationSource: source,
 		testcase:          source.Get(),
 		timer:             t,
@@ -38,7 +38,9 @@ func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log,
 	}
 }
 
-// Start runs the verification loop.
+// Start runs the verification loop. Stops when done channel was closed. Closes
+// stopped channel afterward in order to tell its caller (web, cli, ...) that
+// verification has been finished.
 func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	verifier.timer.Start()
 	log.Printf("Verification started at %v. Press Enter to stop and save verification...", verifier.timer.GetStart())
@@ -63,12 +65,12 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				return
 			}
 
-			v, err := verifier.databaseLog.NextLine()
+			v, err := verifier.log.NextLine()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			ts, err := verifier.databaseLog.Timestamp(v)
+			ts, err := verifier.log.Timestamp(v)
 			if err != nil {
 				continue
 			}
@@ -127,7 +129,7 @@ func allFulfilled(expectations []domain.Expectation) bool {
 	return true
 }
 
-// ReportResults reports the verification results.
+// ReportResults creates a [domain.Report] of the verification results.
 func (verifier *Verifier) ReportResults() domain.Report {
 	fulfilled := 0
 	verifiedSum := 0
