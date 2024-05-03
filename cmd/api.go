@@ -19,7 +19,14 @@ var apiCmd = &cobra.Command{
 	Short: "Start the backend API",
 	Run: func(cmd *cobra.Command, args []string) {
 		router := mux.NewRouter()
-		api.RegisterHandler(router)
+		verificationDoneChannels := make(api.ChannelMap)
+		verificationStoppedChannels := make(api.ChannelMap)
+		recordingDoneChannels := make(api.ChannelMap)
+		recordingStoppedChannels := make(api.ChannelMap)
+
+		api.RegisterHandler(router,
+			verificationDoneChannels, verificationStoppedChannels,
+			recordingDoneChannels, recordingStoppedChannels)
 		err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			tpl, _ := route.GetPathTemplate()
 			met, _ := route.GetMethods()

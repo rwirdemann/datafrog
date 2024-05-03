@@ -17,40 +17,36 @@ import (
 )
 
 var verifier *app.Verifier
-var doneChannels map[string]chan struct{}
-var stoppedChannels map[string]chan struct{}
-
 var recorder *app.Recorder
-var recordingDoneChannels map[string]chan struct{}
-var recordingStoppedChannels map[string]chan struct{}
 
-func init() {
-	doneChannels = make(map[string]chan struct{})
-	stoppedChannels = make(map[string]chan struct{})
-	recordingDoneChannels = make(map[string]chan struct{})
-	recordingStoppedChannels = make(map[string]chan struct{})
-}
+// ChannelMap represents a map of empty channels indexed by test names.
+type ChannelMap map[string]chan struct{}
 
-func RegisterHandler(router *mux.Router) {
+// RegisterHandler registers http handler to record and verify testcases.
+func RegisterHandler(router *mux.Router,
+	verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap,
+	recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) {
+
 	router.HandleFunc("/tests", AllTests()).Methods("GET")
 
 	// create new test and start recording
-	router.HandleFunc("/tests/{name}/recordings", CreateTest()).Methods("POST")
+	router.HandleFunc("/tests/{name}/recordings", StartRecording(recordingDoneChannels, recordingStoppedChannels)).Methods("POST")
 
 	// stop recording
-	router.HandleFunc("/tests/{name}/recordings", StopRecording()).Methods("DELETE")
+	router.HandleFunc("/tests/{name}/recordings", StopRecording(recordingDoneChannels, recordingStoppedChannels)).Methods("DELETE")
 
 	// delete test
 	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/verifications", StartVerify).Methods("PUT")
+	router.HandleFunc("/tests/{name}/verifications", StartVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("PUT")
 
 	// stop verify
-	router.HandleFunc("/tests/{name}/verifications", StopVerify()).Methods("DELETE")
-
+	router.HandleFunc("/tests/{name}/verifications", StopVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("DELETE")
 }
 
+// DeleteTest returns a http handler to delete the test given in the request
+// param "name".
 func DeleteTest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
@@ -66,7 +62,13 @@ func DeleteTest() http.HandlerFunc {
 	}
 }
 
-func CreateTest() http.HandlerFunc {
+// StartRecording returns a http handler to start the recording of the test
+// given in the request params "name". Adds new channels to
+// recordingDoneChannels and recordingStoppedChannels. Both channels are used to
+// stop the recording (recordingDoneChannels, see StopRecording) and to wait for
+// the recorder to gracefully finish its recording loop
+// (recordingStoppedChannels see [app.Recorder]).
+func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
@@ -87,7 +89,10 @@ func CreateTest() http.HandlerFunc {
 	}
 }
 
-func StopRecording() http.HandlerFunc {
+// StopRecording returns a http handler to stop the recording of the test given
+// by the request param "name". Closes the associated channel that is monitored
+// by the underlying recording process.
+func StopRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -108,13 +113,19 @@ func StopRecording() http.HandlerFunc {
 			return
 		}
 
+		// Notify recorder that recording is done
 		close(recordingDoneChannels[testname])
 		recordingDoneChannels[testname] = nil
+
+		// Wait until the recorder has gracefully stopped himself
 		<-recordingStoppedChannels[testname]
 		recordingStoppedChannels[testname] = nil
 	}
 }
 
+// AllTests returns a http handler that reads all .json files (except
+// config.json) in the current directory and returns them as json-encoded http
+// response.
 func AllTests() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		allTests := struct {
@@ -139,7 +150,7 @@ func AllTests() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(b)
+		_, _ = w.Write(b)
 	}
 }
 
@@ -148,7 +159,12 @@ func readTestcase(filename string) (domain.Testcase, error) {
 	if err != nil {
 		return domain.Testcase{}, err
 	}
-	defer jsonFile.Close()
+	defer func(jsonFile *os.File) {
+		err := jsonFile.Close()
+		if err != nil {
+			log.Printf("error closing file %s: %v", filename, err)
+		}
+	}(jsonFile)
 	b, _ := io.ReadAll(jsonFile)
 	var tc domain.Testcase
 	if err := json.Unmarshal(b, &tc); err != nil {
@@ -157,32 +173,37 @@ func readTestcase(filename string) (domain.Testcase, error) {
 	return tc, nil
 }
 
-func StartVerify(writer http.ResponseWriter, request *http.Request) {
-	if len(mux.Vars(request)["name"]) == 0 {
-		http.Error(writer, "name is required", http.StatusBadRequest)
-		return
-	}
+// StartVerify returns a http handler that starts a verification run of the test
+// given in the request param "name".
+func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if len(mux.Vars(request)["name"]) == 0 {
+			http.Error(writer, "name is required", http.StatusBadRequest)
+			return
+		}
 
-	testname := mux.Vars(request)["name"]
-	expectationSource, err := adapter.NewFileExpectationSource(testname)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusNotFound)
-		return
-	}
+		testname := mux.Vars(request)["name"]
+		expectationSource, err := adapter.NewFileExpectationSource(testname)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusNotFound)
+			return
+		}
 
-	c := config.NewConfig("config.json")
-	databaseLog := adapter.NewMYSQLLog(
-		c.Filename)
-	t := &adapter.UTCTimer{}
-	verifier = app.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
-	doneChannels[testname] = make(chan struct{})
-	stoppedChannels[testname] = make(chan struct{})
-	go verifier.Start(doneChannels[testname], stoppedChannels[testname])
-	writer.Header().Set("Access-Control-Allow-Origin", "*")
-	writer.WriteHeader(http.StatusAccepted)
+		c := config.NewConfig("config.json")
+		databaseLog := adapter.NewMYSQLLog(c.Filename)
+		t := &adapter.UTCTimer{}
+		verifier = app.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
+		verificationDoneChannels[testname] = make(chan struct{})
+		verificationStoppedChannels[testname] = make(chan struct{})
+		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.WriteHeader(http.StatusAccepted)
+	}
 }
 
-func StopVerify() http.HandlerFunc {
+// StopVerify returns a http handler to stop the verification run of the test
+// given in the request param "name".
+func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -193,10 +214,10 @@ func StopVerify() http.HandlerFunc {
 		}()
 
 		testname := mux.Vars(request)["name"]
-		close(doneChannels[testname])
-		doneChannels[testname] = nil
-		<-stoppedChannels[testname]
-		stoppedChannels[testname] = nil
+		close(verificationDoneChannels[testname])
+		verificationDoneChannels[testname] = nil
+		<-verificationStoppedChannels[testname]
+		verificationStoppedChannels[testname] = nil
 		report := verifier.ReportResults()
 
 		b, err := json.Marshal(report)
@@ -206,6 +227,6 @@ func StopVerify() http.HandlerFunc {
 		}
 		writer.Header().Set("Content-Type", "application/json")
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
-		writer.Write(b)
+		_, _ = writer.Write(b)
 	}
 }
