@@ -15,15 +15,23 @@ import (
 type Recorder struct {
 	config        config.Config
 	tokenizer     matcher.Tokenizer
-	databaseLog   ports.Log
+	log           ports.Log
 	recordingSink ports.RecordingSink
 	timer         ports.Timer
 	name          string
 }
 
 // NewRecorder creates a new Recorder.
-func NewRecorder(c config.Config, tokenizer matcher.Tokenizer, log ports.Log, sink ports.RecordingSink, timer ports.Timer, name string) *Recorder {
-	return &Recorder{config: c, tokenizer: tokenizer, databaseLog: log, recordingSink: sink, timer: timer, name: name}
+func NewRecorder(c config.Config, tokenizer matcher.Tokenizer,
+	log ports.Log, sink ports.RecordingSink, timer ports.Timer, name string) *Recorder {
+
+	return &Recorder{
+		config:        c,
+		tokenizer:     tokenizer,
+		log:           log,
+		recordingSink: sink,
+		timer:         timer,
+		name:          name}
 }
 
 // Start starts the recording process as endless loop. Every log entry that
@@ -40,20 +48,20 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 
 	// called when done channel is closed
 	defer func() {
-		r.writeExpectations(testcase)
+		r.write(testcase)
 		r.recordingSink.Close()
-		r.databaseLog.Close()
+		r.log.Close()
 	}()
 
 	for {
 		select {
 		default:
-			line, err := r.databaseLog.NextLine()
+			line, err := r.log.NextLine()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			ts, err := r.databaseLog.Timestamp(line)
+			ts, err := r.log.Timestamp(line)
 			if err != nil {
 				continue
 			}
@@ -66,6 +74,8 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 					log.Printf("new expectation: %s\n", e.Shorten(8))
 				}
 			}
+		// check if the caller (web, cli, ...) has closed the done channel to
+		// tell me that recoding has been finished
 		case <-done:
 			log.Println("Recording finished. Run verification now!")
 			return
@@ -73,9 +83,9 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	}
 }
 
-// writeExpectations writes initialExpectations as json to the recordingSink.
-// Existing exceptions are overridden.
-func (r *Recorder) writeExpectations(testcase domain.Testcase) {
+// write writes testcase as json to the recordingSink. Existing data is
+// overridden.
+func (r *Recorder) write(testcase domain.Testcase) {
 	b, err := json.Marshal(testcase)
 	if err != nil {
 		log.Fatal(err)
