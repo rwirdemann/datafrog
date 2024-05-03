@@ -12,12 +12,14 @@ import (
 
 func TestVerify(t *testing.T) {
 	var emptyDiff []int
+	var emptyExpectations []domain.Expectation
 	testCases := []struct {
-		desc                string
-		initialExpectations []domain.Expectation
-		updatedExpectations []domain.Expectation
-		logs                []string
-		patterns            []string
+		desc                   string
+		initialExpectations    []domain.Expectation
+		updatedExpectations    []domain.Expectation
+		additionalExpectations []domain.Expectation
+		logs                   []string
+		patterns               []string
 	}{
 		{
 			desc: "empty diff vector",
@@ -41,7 +43,8 @@ func TestVerify(t *testing.T) {
 					Verified:    1,
 				},
 			},
-			patterns: []string{"select *"},
+			additionalExpectations: emptyExpectations,
+			patterns:               []string{"select *"},
 		},
 		{
 			desc: "diff vector with one element",
@@ -65,7 +68,8 @@ func TestVerify(t *testing.T) {
 					Verified:    1,
 				},
 			},
-			patterns: []string{"select *"},
+			additionalExpectations: emptyExpectations,
+			patterns:               []string{"select *"},
 		},
 		{
 			desc: "miss matching pattern",
@@ -89,7 +93,8 @@ func TestVerify(t *testing.T) {
 					Verified:    0,
 				},
 			},
-			patterns: []string{"select *"},
+			additionalExpectations: emptyExpectations,
+			patterns:               []string{"select *"},
 		},
 		{
 			desc: "multiple expectations, different order",
@@ -139,7 +144,8 @@ func TestVerify(t *testing.T) {
 					Verified:    1,
 				},
 			},
-			patterns: []string{"select", "insert", "update"},
+			additionalExpectations: emptyExpectations,
+			patterns:               []string{"select", "insert", "update"},
 		},
 		{
 			desc: "verified > 0 but equals fails should continue with next expectation",
@@ -180,7 +186,42 @@ func TestVerify(t *testing.T) {
 					IgnoreDiffs: []int{8, 9},
 				},
 			},
-			patterns: []string{"insert"},
+			additionalExpectations: emptyExpectations,
+			patterns:               []string{"insert"},
+		},
+		{
+			desc: "additional pattern matching verifications",
+			initialExpectations: []domain.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Pattern:     "select *",
+					IgnoreDiffs: emptyDiff,
+				},
+			},
+			logs: []string{
+				"2024-04-08T09:39:15.070009Z	 2549 Query	insert into jobs;",
+				"2024-04-08T09:39:16.070009Z	 2550 Query	select * from jobs;",
+				"STOP",
+			},
+			updatedExpectations: []domain.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Pattern:     "select *",
+					IgnoreDiffs: emptyDiff,
+					Fulfilled:   true,
+					Verified:    1,
+				},
+			},
+			additionalExpectations: []domain.Expectation{
+				{
+					Tokens:      matcher.Tokenize("insert into jobs;"),
+					Pattern:     "insert into",
+					IgnoreDiffs: emptyDiff,
+					Fulfilled:   false,
+					Verified:    0,
+				},
+			},
+			patterns: []string{"select *", "insert into"},
 		},
 	}
 	for _, tC := range testCases {
@@ -202,6 +243,7 @@ func TestVerify(t *testing.T) {
 				assert.Equal(t, updatedExpectation.Fulfilled, e.Fulfilled)
 				assert.Equal(t, updatedExpectation.Verified, e.Verified)
 			}
+			assert.Equal(t, tC.additionalExpectations, tc.AdditionalExpectations)
 		})
 	}
 }

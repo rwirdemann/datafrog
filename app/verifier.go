@@ -75,13 +75,14 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				continue
 			}
 			if verifier.timer.MatchesRecordingPeriod(ts) {
-				matches, pattern := matcher.MatchesPattern(verifier.config, v)
+				matches, vPattern := matcher.MatchesPattern(verifier.config, v)
 				if !matches {
 					continue
 				}
 
+				expectationVerified := false
 				for i, e := range verifier.testcase.Expectations {
-					if e.Fulfilled || e.Pattern != pattern {
+					if e.Fulfilled || e.Pattern != vPattern {
 						continue // -> continue with next e
 					}
 
@@ -92,6 +93,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 						log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
 						verifier.testcase.Expectations[i].Fulfilled = true
 						verifier.testcase.Expectations[i].Verified = e.Verified + 1
+						expectationVerified = true
 						break // -> continue with next v
 					}
 
@@ -107,8 +109,18 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 						verifier.testcase.Expectations[i].IgnoreDiffs = diff
 						verifier.testcase.Expectations[i].Fulfilled = true
 						verifier.testcase.Expectations[i].Verified = 1
+						expectationVerified = true
 						break // -> continue with next v
 					}
+				}
+
+				// v matches pattern but no matching expectation was found
+				if !expectationVerified {
+					expectation := domain.Expectation{
+						Tokens: verifier.tokenizer.Tokenize(v, verifier.config.Patterns), Pattern: vPattern,
+					}
+					log.Printf("additional expectation found: %s\n", expectation.Shorten(6))
+					verifier.testcase.AdditionalExpectations = append(verifier.testcase.AdditionalExpectations, expectation)
 				}
 			}
 		case <-done:

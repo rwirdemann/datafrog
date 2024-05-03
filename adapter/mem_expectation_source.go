@@ -17,5 +17,6 @@ func (es MemExpectationSource) Get() domain.Testcase {
 }
 
 func (es *MemExpectationSource) Write(testcase domain.Testcase) error {
+	es.testcase = testcase
 	return nil
 }
