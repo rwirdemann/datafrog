@@ -29,6 +29,12 @@
         <td>{{.}}</td>
     </tr>
     {{end}}
+    {{range .Report.AdditionalExpectations}}
+    <tr>
+        <td>Additional expectation:</td>
+        <td>{{.}}</td>
+    </tr>
+    {{end}}
     </tbody>
 </table>
 <a href="/run?testname={{.Testname}}">Rerun...</a>

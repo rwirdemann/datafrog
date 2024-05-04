@@ -7,13 +7,14 @@ import (
 )
 
 type Report struct {
-	Testname         string    `json:"testname"`
-	LastExecution    time.Time `json:"last_execution"`
-	Verifications    int       `json:"verifications"`
-	Expectations     int       `json:"expectations"`
-	Fulfilled        int       `json:"fulfilled"`
-	Unfulfilled      []string  `json:"unfulfilled,omitempty"`
-	VerificationMean float32   `json:"verification_mean"`
+	Testname               string    `json:"testname"`
+	LastExecution          time.Time `json:"last_execution"`
+	Verifications          int       `json:"verifications"`
+	Expectations           int       `json:"expectations"`
+	Fulfilled              int       `json:"fulfilled"`
+	Unfulfilled            []string  `json:"unfulfilled,omitempty"`
+	VerificationMean       float32   `json:"verification_mean"`
+	AdditionalExpectations []string  `json:"additional_expectations,omitempty"`
 }
 
 func (r Report) String() string {

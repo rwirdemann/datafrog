@@ -80,42 +80,9 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 					continue
 				}
 
-				expectationVerified := false
-				for i, e := range verifier.testcase.Expectations {
-					if e.Fulfilled || e.Pattern != vPattern {
-						continue // -> continue with next e
-					}
+				if !verifier.verify(v, vPattern) {
 
-					vTokens := verifier.tokenizer.Tokenize(v, verifier.config.Patterns)
-
-					// Handle already verified expectations.
-					if e.Verified > 0 && e.Equal(vTokens) {
-						log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
-						verifier.testcase.Expectations[i].Fulfilled = true
-						verifier.testcase.Expectations[i].Verified = e.Verified + 1
-						expectationVerified = true
-						break // -> continue with next v
-					}
-
-					if len(e.Tokens) != len(vTokens) {
-						continue // -> continue with next e
-					}
-
-					// Not yet verified expectation e with same token lengths as
-					// v found. This expectation e becomes our references
-					// expectation.
-					if diff, err := e.Diff(vTokens); err == nil {
-						log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
-						verifier.testcase.Expectations[i].IgnoreDiffs = diff
-						verifier.testcase.Expectations[i].Fulfilled = true
-						verifier.testcase.Expectations[i].Verified = 1
-						expectationVerified = true
-						break // -> continue with next v
-					}
-				}
-
-				// v matches pattern but no matching expectation was found
-				if !expectationVerified {
+					// v matches pattern but no matching expectation was found
 					expectation := domain.Expectation{
 						Tokens: verifier.tokenizer.Tokenize(v, verifier.config.Patterns), Pattern: vPattern,
 					}
@@ -128,6 +95,39 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 			return
 		}
 	}
+}
+
+func (verifier *Verifier) verify(v string, vPattern string) bool {
+	for i, e := range verifier.testcase.Expectations {
+		if e.Fulfilled || e.Pattern != vPattern {
+			continue // -> continue with next e
+		}
+
+		vTokens := verifier.tokenizer.Tokenize(v, verifier.config.Patterns)
+
+		// Handle already verified expectations.
+		if e.Verified > 0 && e.Equal(vTokens) {
+			log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
+			verifier.testcase.Expectations[i].Fulfilled = true
+			verifier.testcase.Expectations[i].Verified = e.Verified + 1
+			return true // -> continue with next v
+		}
+
+		if len(e.Tokens) != len(vTokens) {
+			continue // -> continue with next e
+		}
+
+		// Not yet verified expectation e with same token lengths as v found.
+		// This expectation e becomes our references expectation.
+		if diff, err := e.Diff(vTokens); err == nil {
+			log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
+			verifier.testcase.Expectations[i].IgnoreDiffs = diff
+			verifier.testcase.Expectations[i].Fulfilled = true
+			verifier.testcase.Expectations[i].Verified = 1
+			return true // -> continue with next v
+		}
+	}
+	return false // -> expectation not verified
 }
 
 // allFulfilled checks all expectations, returns true if all fulfilled and false
@@ -163,6 +163,9 @@ func (verifier *Verifier) ReportResults() domain.Report {
 		if !e.Fulfilled {
 			report.Unfulfilled = append(report.Unfulfilled, fmt.Sprintf("%s. Verification quote: %d", e.Shorten(6), e.Verified))
 		}
+	}
+	for _, e := range verifier.testcase.AdditionalExpectations {
+		report.AdditionalExpectations = append(report.AdditionalExpectations, e.Shorten(6))
 	}
 	return report
 }
