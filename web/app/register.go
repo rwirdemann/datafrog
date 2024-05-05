@@ -29,4 +29,6 @@ func RegisterHandler(router *mux.Router) {
 	// show test
 	router.HandleFunc("/show", ShowHandler)
 
+	// fake progress handler
+	router.HandleFunc("/progress", ProgressHandler)
 }

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/web/templates"
 	log "github.com/sirupsen/logrus"
+	"html/template"
 	"io"
 	"net/http"
 	"time"
@@ -57,6 +59,20 @@ func ShowHandler(w http.ResponseWriter, request *http.Request) {
 		Message: m,
 		Error:   e,
 	}, Testname: request.FormValue("testname")})
+}
+
+var progress = 0
+
+func ProgressHandler(w http.ResponseWriter, _ *http.Request) {
+	t, err := template.ParseFS(templates.Templates, "progress.html")
+	if err != nil {
+		panic(err)
+	}
+	progress = progress + 1
+	data := struct {
+		Value int
+	}{Value: progress}
+	t.Execute(w, data)
 }
 
 func NewHandler(w http.ResponseWriter, _ *http.Request) {
@@ -112,6 +128,7 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 }
 
 func StartHandler(w http.ResponseWriter, request *http.Request) {
+	progress = 0
 	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)

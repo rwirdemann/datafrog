@@ -20,19 +20,19 @@
         <td>{{.Report.Verifications}}</td>
     </tr>
     <tr>
-        <td>Fulfilled:</td>
-        <td>{{.Report.Fulfilled}} of {{.Report.Expectations}}</td>
+        <td class="has-text-success">Fulfilled:</td>
+        <td class="has-text-success">{{.Report.Fulfilled}} of {{.Report.Expectations}}</td>
     </tr>
     {{range .Report.Unfulfilled}}
     <tr>
-        <td>Unfulfilled expectation:</td>
-        <td>{{.}}</td>
+        <td class="has-text-danger">Unfulfilled expectation:</td>
+        <td class="has-text-danger">{{.}}</td>
     </tr>
     {{end}}
     {{range .Report.AdditionalExpectations}}
     <tr>
-        <td>Additional expectation:</td>
-        <td>{{.}}</td>
+        <td class="has-text-warning">Additional expectation:</td>
+        <td class="has-text-warning">{{.}}</td>
     </tr>
     {{end}}
     </tbody>

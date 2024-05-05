@@ -1,21 +1,23 @@
 {{define "_content"}}
 <form action="/stop" method="POST" id="stop"></form>
-<table class="table">
-    <thead>
-    <tr>
-        <th>Testname</th>
-        <th>Action</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        <td>
-            {{.Testname}}
-        </td>
-        <td>
-            <a href="/stop?testname={{.Testname}}">Stop...</a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+
+<div class="columns">
+    <div class="column is-one-third">{{.Testname}}</div>
+    <div class="column">
+        <div id="progress-bar">
+            <progress class="progress is-primary" value="0" max="100"
+                      hx-get="/progress"
+                      hx-trigger="every 600ms"
+                      hx-target="#progress-bar"
+                      hx-swap="innerHTML">
+            </progress>
+        </div>
+    </div>
+</div>
+
+<a cl href="/stop?testname={{.Testname}}">Stop...</a>
+
+<div id="replace-me">
+
+</div>
 {{end}}
