@@ -5,8 +5,8 @@
     <div class="column is-one-third">{{.Testname}}</div>
     <div class="column">
         <div id="progress-bar">
-            <progress class="progress is-primary" value="0" max="100"
-                      hx-get="/progress"
+            <progress class="progress is-warning" value="0" max="100"
+                      hx-get="/progress?testname={{.Testname}}"
                       hx-trigger="every 600ms"
                       hx-target="#progress-bar"
                       hx-swap="innerHTML">
@@ -15,9 +15,5 @@
     </div>
 </div>
 
-<a cl href="/stop?testname={{.Testname}}">Stop...</a>
-
-<div id="replace-me">
-
-</div>
+<a href="/stop?testname={{.Testname}}">Stop...</a>
 {{end}}

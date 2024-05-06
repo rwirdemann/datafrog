@@ -63,15 +63,56 @@ func ShowHandler(w http.ResponseWriter, request *http.Request) {
 
 var progress = 0
 
-func ProgressHandler(w http.ResponseWriter, _ *http.Request) {
+func ProgressHandler(w http.ResponseWriter, r *http.Request) {
+	testname := r.URL.Query().Get("testname")
+	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, testname)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		log.Errorf("Error creating request: %v", err)
+		return
+	}
+	response, err := client.Do(req)
+	if err != nil {
+		log.Errorf("Error executing request: %v", err)
+		return
+	}
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Errorf("Error reading response: %v", err)
+		return
+	}
+	var tc domain.Testcase
+	if err := json.Unmarshal(body, &tc); err != nil {
+		log.Errorf("Error decoding response: %v", err)
+		return
+	}
+
+	fulfilled := 0
+	for _, e := range tc.Expectations {
+		if e.Fulfilled {
+			fulfilled++
+		}
+	}
+	log.Printf("Fulfilled: %d of %d", fulfilled, len(tc.Expectations))
+
 	t, err := template.ParseFS(templates.Templates, "progress.html")
 	if err != nil {
-		panic(err)
+		RedirectE(w, r, "/", err)
 	}
-	progress = progress + 1
+
+	color := "is-warning"
+	if fulfilled == len(tc.Expectations) {
+		color = "is-success"
+		progress = 100
+	} else {
+		progress = progress + 2
+	}
+
 	data := struct {
-		Value int
-	}{Value: progress}
+		Value    int
+		Testname string
+		Color    string
+	}{Value: progress, Testname: testname, Color: color}
 	t.Execute(w, data)
 }
 
@@ -147,8 +188,6 @@ func StartHandler(w http.ResponseWriter, request *http.Request) {
 	if !statusOK {
 		body, _ := io.ReadAll(response.Body)
 		MsgError = fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body)
-	} else {
-		MsgSuccess = fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop...' when you are done!", testname)
 	}
 	http.Redirect(w, request, fmt.Sprintf("/show?testname=%s", testname), http.StatusSeeOther)
 }

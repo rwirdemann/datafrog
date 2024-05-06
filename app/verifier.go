@@ -37,6 +37,9 @@ func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log,
 		name:              name,
 	}
 }
+func (verifier *Verifier) Testcase() domain.Testcase {
+	return verifier.testcase
+}
 
 // Start runs the verification loop. Stops when done channel was closed. Closes
 // stopped channel afterward in order to tell its caller (web, cli, ...) that

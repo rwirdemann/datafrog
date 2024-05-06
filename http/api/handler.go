@@ -38,11 +38,26 @@ func RegisterHandler(router *mux.Router,
 	// delete test
 	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
 
+	// get test
+	router.HandleFunc("/tests/{name}", GetTest()).Methods("GET")
+
 	// start verify
 	router.HandleFunc("/tests/{name}/verifications", StartVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("PUT")
 
 	// stop verify
 	router.HandleFunc("/tests/{name}/verifications", StopVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("DELETE")
+}
+
+func GetTest() http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		b, err := json.Marshal(verifier.Testcase())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Write(b)
+	}
 }
 
 // DeleteTest returns a http handler to delete the test given in the request
