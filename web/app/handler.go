@@ -109,10 +109,12 @@ func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Value    int
-		Testname string
-		Color    string
-	}{Value: progress, Testname: testname, Color: color}
+		Value        int
+		Testname     string
+		Color        string
+		Expectations int
+		Fulfilled    int
+	}{Value: progress, Testname: testname, Color: color, Expectations: len(tc.Expectations), Fulfilled: fulfilled}
 	t.Execute(w, data)
 }
 
