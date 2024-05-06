@@ -20,6 +20,7 @@ import (
 // should be persisted between test runs. Thus their Verified counter increases
 // over time and the overall test quality gains.
 type Expectation struct {
+	Uuid      string   `json:"uuid"`
 	Tokens    []string `json:"tokens"`
 	Pattern   string
 	Fulfilled bool

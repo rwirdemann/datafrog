@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/config"
 	"github.com/rwirdemann/datafrog/matcher"
@@ -69,7 +70,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 				matches, pattern := matcher.MatchesPattern(r.config, line)
 				if matches {
 					tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
-					e := domain.Expectation{Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
+					e := domain.Expectation{Uuid: uuid.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 					testcase.Expectations = append(testcase.Expectations, e)
 					log.Printf("new expectation: %s\n", e.Shorten(8))
 				}
