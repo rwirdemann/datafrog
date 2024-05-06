@@ -42,6 +42,9 @@ func (s FileExpectationSource) Write(testcase domain.Testcase) error {
 	defer f.Close()
 
 	writer := bufio.NewWriter(f)
+
+	// don't write additional expectations
+	testcase.AdditionalExpectations = nil
 	b, err := json.Marshal(testcase)
 	if err != nil {
 		log.Fatal(err)
