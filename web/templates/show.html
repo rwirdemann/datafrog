@@ -6,7 +6,7 @@
     <div class="column">
         <div id="progress-bar">
             <progress class="progress is-warning" value="0" max="100"
-                      hx-get="/progress?testname={{.Testname}}"
+                      hx-get="/progress?testname={{.Testname}}&progress=0"
                       hx-trigger="every 600ms"
                       hx-target="#progress-bar"
                       hx-swap="innerHTML">

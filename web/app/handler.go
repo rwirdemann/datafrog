@@ -10,6 +10,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -69,6 +70,7 @@ func ShowHandler(w http.ResponseWriter, request *http.Request) {
 	}, Testname: tc.Name, Expectations: len(tc.Expectations)})
 }
 
+// getTestcase fetches and returns test "name" from the api.
 func getTestcase(name string) (domain.Testcase, error) {
 	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, name)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -94,10 +96,12 @@ func getTestcase(name string) (domain.Testcase, error) {
 	return tc, nil
 }
 
-var progress = 0
-
 func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
+	progress, err := strconv.Atoi(r.URL.Query().Get("progress"))
+	if err != nil {
+		return
+	}
 	tc, err := getTestcase(testname)
 	if err != nil {
 		return
@@ -120,12 +124,12 @@ func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Value        int
+		Progress     int
 		Testname     string
 		Color        string
 		Expectations int
 		Fulfilled    int
-	}{Value: progress, Testname: testname, Color: color, Expectations: len(tc.Expectations), Fulfilled: fulfilled}
+	}{Progress: progress, Testname: testname, Color: color, Expectations: len(tc.Expectations), Fulfilled: fulfilled}
 	t.Execute(w, data)
 }
 
@@ -182,7 +186,6 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 }
 
 func StartHandler(w http.ResponseWriter, request *http.Request) {
-	progress = 0
 	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)

@@ -9,30 +9,38 @@
     <tbody>
     <tr>
         <td>Testname:</td>
-        <td>{{.Report.Testname}}</td>
+        <td colspan="2">{{.Report.Testname}}</td>
     </tr>
     <tr>
         <td>Last execution:</td>
-        <td>{{.Report.LastExecution.Format "2006-01-02 15:04:05"}}</td>
+        <td colspan="2">{{.Report.LastExecution.Format "2006-01-02 15:04:05"}}</td>
     </tr>
     <tr>
         <td>Verification runs:</td>
-        <td>{{.Report.Verifications}}</td>
+        <td colspan="2">{{.Report.Verifications}}</td>
     </tr>
     <tr>
         <td class="has-text-success">Fulfilled:</td>
-        <td class="has-text-success">{{.Report.Fulfilled}} of {{.Report.Expectations}}</td>
+        <td colspan="2" class="has-text-success">{{.Report.Fulfilled}} of {{.Report.Expectations}}</td>
     </tr>
     {{range .Report.Unfulfilled}}
     <tr>
         <td class="has-text-danger">Unfulfilled expectation:</td>
-        <td class="has-text-danger">{{.}}</td>
+        <td class="has-text-danger">
+            {{.}}
+        </td>
+        <td>
+            <a>[Remove from test]</a>
+        </td>
     </tr>
     {{end}}
     {{range .Report.AdditionalExpectations}}
     <tr>
         <td class="has-text-warning">Additional expectation:</td>
         <td class="has-text-warning">{{.}}</td>
+        <td>
+            <a>[Add to test]</a>
+        </td>
     </tr>
     {{end}}
     </tbody>
