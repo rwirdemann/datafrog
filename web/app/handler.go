@@ -48,53 +48,64 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 
 func ShowHandler(w http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		RedirectE(w, request, "/", err)
+		return
 	}
+	tc, err := getTestcase(request.FormValue("testname"))
+	if err != nil {
+		RedirectE(w, request, "/", err)
+		return
+	}
+
 	m, e := ClearMessages()
 	Render("show.html", w, struct {
 		ViewData
-		Testname string
+		Testname     string
+		Expectations int
 	}{ViewData: ViewData{
 		Title:   "Show",
 		Message: m,
 		Error:   e,
-	}, Testname: request.FormValue("testname")})
+	}, Testname: tc.Name, Expectations: len(tc.Expectations)})
+}
+
+func getTestcase(name string) (domain.Testcase, error) {
+	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, name)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		log.Errorf("Error creating request: %v", err)
+		return domain.Testcase{}, err
+	}
+	response, err := client.Do(req)
+	if err != nil {
+		log.Errorf("Error executing request: %v", err)
+		return domain.Testcase{}, err
+	}
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Errorf("Error reading response: %v", err)
+		return domain.Testcase{}, err
+	}
+	var tc domain.Testcase
+	if err := json.Unmarshal(body, &tc); err != nil {
+		log.Errorf("Error decoding response: %v", err)
+		return domain.Testcase{}, err
+	}
+	return tc, nil
 }
 
 var progress = 0
 
 func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, testname)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	tc, err := getTestcase(testname)
 	if err != nil {
-		log.Errorf("Error creating request: %v", err)
 		return
 	}
-	response, err := client.Do(req)
-	if err != nil {
-		log.Errorf("Error executing request: %v", err)
-		return
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Errorf("Error reading response: %v", err)
-		return
-	}
-	var tc domain.Testcase
-	if err := json.Unmarshal(body, &tc); err != nil {
-		log.Errorf("Error decoding response: %v", err)
-		return
-	}
-
-	fulfilled := 0
-	for _, e := range tc.Expectations {
-		if e.Fulfilled {
-			fulfilled++
-		}
-	}
+	fulfilled := tc.Fulfilled()
 	log.Printf("Fulfilled: %d of %d", fulfilled, len(tc.Expectations))
-
+	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
+	log.Printf("progess: %f", p)
 	t, err := template.ParseFS(templates.Templates, "progress.html")
 	if err != nil {
 		RedirectE(w, r, "/", err)
@@ -105,7 +116,7 @@ func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 		color = "is-success"
 		progress = 100
 	} else {
-		progress = progress + 2
+		progress = int(p)
 	}
 
 	data := struct {
