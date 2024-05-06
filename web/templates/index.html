@@ -14,7 +14,7 @@
             {{range .Tests}}
             <tr>
                 <td>
-                    {{.Name}}
+                    <a href="/show?testname={{.Name}}">{{.Name}}</a>
                 </td>
                 <td style="text-align:right;">
                     {{len .Expectations}}
@@ -34,11 +34,14 @@
     </div>
     <div class="column">
         <table class="table">
+            <thead>
             <tr>
                 <th colspan="2">
                     Settings
                 </th>
             </tr>
+            </thead>
+            <tbody>
             <tr>
                 <td>
                     Logfile:
@@ -81,6 +84,7 @@
                     Port: {{.Config.Api.Port}}
                 </td>
             </tr>
+            </tbody>
         </table>
     </div>
 </div>

@@ -95,7 +95,7 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		recordingSink := adapter.NewFileRecordingSink(testname)
-		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t, testname)
+		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t, testname, adapter.GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
@@ -233,15 +233,6 @@ func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels
 		verificationDoneChannels[testname] = nil
 		<-verificationStoppedChannels[testname]
 		verificationStoppedChannels[testname] = nil
-		report := verifier.ReportResults()
-
-		b, err := json.Marshal(report)
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		writer.Header().Set("Content-Type", "application/json")
-		writer.Header().Set("Access-Control-Allow-Origin", "*")
-		_, _ = writer.Write(b)
+		writer.WriteHeader(http.StatusNoContent)
 	}
 }

@@ -43,7 +43,7 @@ var recordCmd = &cobra.Command{
 		recordingSink := adapter.NewFileRecordingSink(out)
 		databaseLog := createLogAdapter(c)
 		t := &adapter.UTCTimer{}
-		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t, out)
+		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t, out, adapter.GoogleUUIDProvider{})
 		go checkExit()
 		go recorder.Start(recordingDone, recordingStopped)
 		<-recordingStopped

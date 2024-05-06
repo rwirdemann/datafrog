@@ -1,0 +1,20 @@
+{{define "_content"}}
+<form action="/stop" method="POST" id="stop"></form>
+
+<div class="columns">
+    <div class="column is-one-third">{{.Testname}}</div>
+    <div class="column">
+        <div id="progress-bar">
+            <progress class="progress is-warning" value="0" max="100"
+                      hx-get="/progress?testname={{.Testname}}&progress=0"
+                      hx-trigger="every 600ms"
+                      hx-target="#progress-bar"
+                      hx-swap="innerHTML">
+            </progress>
+            (0/{{.Expectations}})
+        </div>
+    </div>
+</div>
+
+<a href="/stop?testname={{.Testname}}">Stop...</a>
+{{end}}

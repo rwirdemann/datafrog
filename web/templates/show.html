@@ -1,20 +1,49 @@
 {{define "_content"}}
-<form action="/stop" method="POST" id="stop"></form>
-
-<div class="columns">
-    <div class="column is-one-third">{{.Testname}}</div>
-    <div class="column">
-        <div id="progress-bar">
-            <progress class="progress is-warning" value="0" max="100"
-                      hx-get="/progress?testname={{.Testname}}&progress=0"
-                      hx-trigger="every 600ms"
-                      hx-target="#progress-bar"
-                      hx-swap="innerHTML">
-            </progress>
-            (0/{{.Expectations}})
-        </div>
-    </div>
-</div>
-
-<a href="/stop?testname={{.Testname}}">Stop...</a>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Key</th>
+        <th>Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Testname:</td>
+        <td colspan="2">{{.Testcase.Name}}</td>
+    </tr>
+    <tr>
+        <td>Last execution:</td>
+        <td colspan="2">{{.Testcase.LastExecution.Format "2006-01-02 15:04:05"}}</td>
+    </tr>
+    <tr>
+        <td>Verification runs:</td>
+        <td colspan="2">{{.Testcase.Verifications}}</td>
+    </tr>
+    <tr>
+        <td class="has-text-success">Fulfilled:</td>
+        <td colspan="2" class="has-text-success">{{.Testcase.Fulfilled}} of {{len .Testcase.Expectations}}</td>
+    </tr>
+    {{range .Testcase.Unfulfilled}}
+    <tr>
+        <td class="has-text-danger">Unfulfilled:</td>
+        <td class="has-text-danger">
+            {{.}} (verifications: {{.Verified}})
+        </td>
+        <td>
+            <a href="/remove-expectation?testname={{$.Testcase.Name}}&expectation={{.Uuid}}">[Remove]</a>
+        </td>
+    </tr>
+    {{end}}
+    {{range .Testcase.AdditionalExpectations}}
+    <tr>
+        <td class="has-text-warning">Additional expectation:</td>
+        <td class="has-text-warning">{{.}}</td>
+        <td>
+            <a>[Add]</a>
+        </td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+<a href="/run?testname={{.Testcase.Name}}">Run...</a>
 {{end}}

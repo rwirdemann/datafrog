@@ -29,6 +29,7 @@ func TestRecord(t *testing.T) {
 		Verified:    0,
 		Fulfilled:   false,
 		Pattern:     "select job!publish_trials<1",
+		Uuid:        "023a6a95-6c8a-4483-bcfb-17b1c58c317f",
 	}
 
 	e2 := domain.Expectation{
@@ -37,6 +38,7 @@ func TestRecord(t *testing.T) {
 		Verified:    0,
 		Fulfilled:   false,
 		Pattern:     "insert",
+		Uuid:        "023a6a95-6c8a-4483-bcfb-17b1c58c317f",
 	}
 
 	expectedTestcase, _ := json.Marshal(domain.Testcase{
@@ -54,7 +56,7 @@ func TestRecord(t *testing.T) {
 	databaseLog := adapter.NewMemSQLLog(logs, recordingDone)
 	recordingSink := adapter.NewMemRecordingSink()
 	timer := adapter.MockTimer{}
-	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer, "create-job.json")
+	recorder := NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, timer, "create-job.json", adapter.StaticUUIDProvider{})
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped
 	assert.Len(t, recordingSink.Recorded, 1)

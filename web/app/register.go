@@ -1,6 +1,8 @@
 package app
 
-import "github.com/gorilla/mux"
+import (
+	"github.com/gorilla/mux"
+)
 
 func RegisterHandler(router *mux.Router) {
 	// home
@@ -26,9 +28,15 @@ func RegisterHandler(router *mux.Router) {
 	// stop verify
 	router.HandleFunc("/stop", StopHandler)
 
+	// show verify
+	router.HandleFunc("/verify", VerifyHandler)
+
 	// show test
 	router.HandleFunc("/show", ShowHandler)
 
-	// fake progress handler
+	// progress handler
 	router.HandleFunc("/progress", ProgressHandler)
+
+	// remove expectation from test
+	router.HandleFunc("/remove-expectation", RemoveExpectationHandler)
 }

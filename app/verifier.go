@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/config"
 	"github.com/rwirdemann/datafrog/matcher"
@@ -48,6 +47,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	verifier.timer.Start()
 	log.Printf("Verification started at %v. Press Enter to stop and save verification...", verifier.timer.GetStart())
 	verifier.testcase.Verifications = verifier.testcase.Verifications + 1
+	verifier.testcase.LastExecution = time.Now()
 	for i := range verifier.testcase.Expectations {
 		verifier.testcase.Expectations[i].Fulfilled = false
 	}
@@ -164,7 +164,7 @@ func (verifier *Verifier) ReportResults() domain.Report {
 	}
 	for _, e := range verifier.testcase.Expectations {
 		if !e.Fulfilled {
-			report.Unfulfilled = append(report.Unfulfilled, fmt.Sprintf("%s. Verification quote: %d", e.Shorten(6), e.Verified))
+			report.Unfulfilled = append(report.Unfulfilled, e)
 		}
 	}
 	for _, e := range verifier.testcase.AdditionalExpectations {

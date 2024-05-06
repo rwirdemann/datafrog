@@ -5,3 +5,4 @@ create-job.json
 delete-job.json
 edit-job.json
 config.json
+full.json

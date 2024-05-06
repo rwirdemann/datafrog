@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/config"
 	"github.com/rwirdemann/datafrog/matcher"
@@ -20,11 +19,13 @@ type Recorder struct {
 	recordingSink ports.RecordingSink
 	timer         ports.Timer
 	name          string
+	uuidProvider  ports.UUIDProvider
 }
 
 // NewRecorder creates a new Recorder.
 func NewRecorder(c config.Config, tokenizer matcher.Tokenizer,
-	log ports.Log, sink ports.RecordingSink, timer ports.Timer, name string) *Recorder {
+	log ports.Log, sink ports.RecordingSink, timer ports.Timer, name string,
+	uuidProvider ports.UUIDProvider) *Recorder {
 
 	return &Recorder{
 		config:        c,
@@ -32,7 +33,8 @@ func NewRecorder(c config.Config, tokenizer matcher.Tokenizer,
 		log:           log,
 		recordingSink: sink,
 		timer:         timer,
-		name:          name}
+		name:          name,
+		uuidProvider:  uuidProvider}
 }
 
 // Start starts the recording process as endless loop. Every log entry that
@@ -70,7 +72,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 				matches, pattern := matcher.MatchesPattern(r.config, line)
 				if matches {
 					tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
-					e := domain.Expectation{Uuid: uuid.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
+					e := domain.Expectation{Uuid: r.uuidProvider.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 					testcase.Expectations = append(testcase.Expectations, e)
 					log.Printf("new expectation: %s\n", e.Shorten(8))
 				}

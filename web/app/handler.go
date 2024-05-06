@@ -47,7 +47,25 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	}, Tests: allTests.Tests, Config: Conf})
 }
 
-func ShowHandler(w http.ResponseWriter, request *http.Request) {
+func ShowHandler(w http.ResponseWriter, r *http.Request) {
+	testname := r.URL.Query().Get("testname")
+	tc, err := getTestcase(testname)
+	if err != nil {
+		RedirectE(w, r, "/", err)
+		return
+	}
+	m, e := ClearMessages()
+	Render("show.html", w, struct {
+		ViewData
+		Testcase domain.Testcase
+	}{ViewData: ViewData{
+		Title:   "Show",
+		Message: m,
+		Error:   e,
+	}, Testcase: tc})
+}
+
+func VerifyHandler(w http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		RedirectE(w, request, "/", err)
 		return
@@ -59,12 +77,12 @@ func ShowHandler(w http.ResponseWriter, request *http.Request) {
 	}
 
 	m, e := ClearMessages()
-	Render("show.html", w, struct {
+	Render("verify.html", w, struct {
 		ViewData
 		Testname     string
 		Expectations int
 	}{ViewData: ViewData{
-		Title:   "Show",
+		Title:   "Verify",
 		Message: m,
 		Error:   e,
 	}, Testname: tc.Name, Expectations: len(tc.Expectations)})
@@ -205,7 +223,7 @@ func StartHandler(w http.ResponseWriter, request *http.Request) {
 		body, _ := io.ReadAll(response.Body)
 		MsgError = fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body)
 	}
-	http.Redirect(w, request, fmt.Sprintf("/show?testname=%s", testname), http.StatusSeeOther)
+	http.Redirect(w, request, fmt.Sprintf("/verify?testname=%s", testname), http.StatusSeeOther)
 }
 
 func StopHandler(w http.ResponseWriter, request *http.Request) {
@@ -229,29 +247,7 @@ func StopHandler(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		RedirectE(w, request, "/", err)
-		return
-	}
-	var report domain.Report
-	err = json.Unmarshal(body, &report)
-	if err != nil {
-		RedirectE(w, request, "/", err)
-		return
-	}
-
-	m, e := ClearMessages()
-	Render("result.html", w, struct {
-		ViewData
-		Testname string
-		Report   domain.Report
-	}{ViewData: ViewData{
-		Title:   "Result",
-		Message: m,
-		Error:   e,
-	}, Testname: testname, Report: report})
+	http.Redirect(w, request, "/show?testname="+testname, http.StatusSeeOther)
 }
 
 func CreateHandler(w http.ResponseWriter, request *http.Request) {
@@ -278,4 +274,7 @@ func StopRecording(w http.ResponseWriter, request *http.Request) {
 	}
 
 	http.Redirect(w, request, "/", http.StatusSeeOther)
+}
+
+func RemoveExpectationHandler(writer http.ResponseWriter, request *http.Request) {
 }
