@@ -56,7 +56,10 @@ func GetTest() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Write(b)
+		if _, err := w.Write(b); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

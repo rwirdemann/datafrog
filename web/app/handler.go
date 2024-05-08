@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/config"
 	"github.com/rwirdemann/datafrog/web/templates"
@@ -21,6 +22,43 @@ var apiBaseURL string
 func init() {
 	Conf = config.NewConfig("config.json")
 	apiBaseURL = fmt.Sprintf("http://localhost:%d", Conf.Api.Port)
+}
+
+func RegisterHandler(router *mux.Router) {
+	// home
+	router.HandleFunc("/", IndexHandler)
+
+	// show new form
+	router.HandleFunc("/new", NewHandler)
+
+	router.HandleFunc("/create", CreateHandler)
+
+	// delete test
+	router.HandleFunc("/delete", DeleteHandler)
+
+	// start recording
+	router.HandleFunc("/record", StartRecording)
+
+	// stop recording
+	router.HandleFunc("/stoprecording", StopRecording)
+
+	// start verifx
+	router.HandleFunc("/run", StartHandler)
+
+	// stop verify
+	router.HandleFunc("/stop", StopHandler)
+
+	// show verify
+	router.HandleFunc("/verify", VerifyHandler)
+
+	// show test
+	router.HandleFunc("/show", ShowHandler)
+
+	// progress handler
+	router.HandleFunc("/progress", ProgressHandler)
+
+	// remove expectation from test
+	router.HandleFunc("/remove-expectation", RemoveExpectationHandler)
 }
 
 func IndexHandler(w http.ResponseWriter, _ *http.Request) {
