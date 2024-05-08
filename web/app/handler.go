@@ -55,8 +55,11 @@ func RegisterHandler(router *mux.Router) {
 	// show test
 	router.HandleFunc("/show", ShowHandler)
 
-	// progress handler
-	router.HandleFunc("/progress", ProgressHandler)
+	// verification progress handler
+	router.HandleFunc("/progress", ProgressVerificationHandler)
+
+	// recording progress handler
+	router.HandleFunc("/progress-recording", ProgressRecordingHandler)
 
 	// remove expectation from test
 	router.HandleFunc("/remove-expectation", RemoveExpectationHandler)
@@ -88,7 +91,7 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 
 func ShowHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	tc, err := getTestcase(testname)
+	tc, err := getTestcase(testname, "verifier")
 	if err != nil {
 		RedirectE(w, r, "/", err)
 		return
@@ -105,11 +108,7 @@ func ShowHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Request) {
-	if err := request.ParseForm(); err != nil {
-		RedirectE(w, request, "/", err)
-		return
-	}
-	tc, err := getTestcase(request.FormValue("testname"))
+	tc, err := getTestcase(request.FormValue("testname"), "verifier")
 	if err != nil {
 		RedirectE(w, request, "/", err)
 		return
@@ -127,9 +126,9 @@ func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Reques
 	}, Testname: tc.Name, Expectations: len(tc.Expectations)})
 }
 
-// getTestcase fetches and returns test "name" from the api.
-func getTestcase(name string) (domain.Testcase, error) {
-	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, name)
+// getTestcase fetches and returns test "name" from the verifier or recorder.
+func getTestcase(name string, from string) (domain.Testcase, error) {
+	url := fmt.Sprintf("%s/tests/%s?from=%s", apiBaseURL, name, from)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		log.Errorf("Error creating request: %v", err)
@@ -153,19 +152,21 @@ func getTestcase(name string) (domain.Testcase, error) {
 	return tc, nil
 }
 
-func ProgressHandler(w http.ResponseWriter, r *http.Request) {
+// ProgressVerificationHandler renders the partial progress-verification.html
+// that shows the progress of the current verification run.
+func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
 	progress, err := strconv.Atoi(r.URL.Query().Get("progress"))
 	if err != nil {
 		return
 	}
-	tc, err := getTestcase(testname)
+	tc, err := getTestcase(testname, "verifier")
 	if err != nil {
 		return
 	}
 	fulfilled := tc.Fulfilled()
 	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
-	t, err := template.ParseFS(templates.Templates, "progress.html")
+	t, err := template.ParseFS(templates.Templates, "progress-verification.html")
 	if err != nil {
 		RedirectE(w, r, "/", err)
 	}
@@ -188,6 +189,32 @@ func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 	_ = t.Execute(w, data)
 }
 
+// ProgressRecordingHandler renders the partial progress-recording.html
+// that shows the progress of the current recording run.
+func ProgressRecordingHandler(w http.ResponseWriter, r *http.Request) {
+	testname := r.URL.Query().Get("testname")
+	progress, err := strconv.Atoi(r.URL.Query().Get("progress"))
+	if err != nil {
+		return
+	}
+	tc, err := getTestcase(testname, "recorder")
+	if err != nil {
+		return
+	}
+	t, err := template.ParseFS(templates.Templates, "progress-recording.html")
+	if err != nil {
+		RedirectE(w, r, "/", err)
+	}
+	progress = len(tc.Expectations) * 3
+	data := struct {
+		Progress     int
+		Testname     string
+		Expectations int
+	}{Progress: progress, Testname: testname, Expectations: len(tc.Expectations)}
+	_ = t.Execute(w, data)
+}
+
+// NewHandler renders the new templates
 func NewHandler(w http.ResponseWriter, _ *http.Request) {
 	RenderS("new.html", w, "New")
 }
@@ -214,6 +241,23 @@ func StartRecording(w http.ResponseWriter, request *http.Request) {
 		Message: m,
 		Error:   e,
 	}, Testname: testname})
+}
+
+func StopRecording(w http.ResponseWriter, request *http.Request) {
+	testname := request.URL.Query().Get("testname")
+	url := fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)
+	r, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		RedirectE(w, request, "/", err)
+		return
+	}
+	_, err = client.Do(r)
+	if err != nil {
+		RedirectE(w, request, "/", err)
+		return
+	}
+
+	http.Redirect(w, request, "/", http.StatusSeeOther)
 }
 
 func DeleteHandler(w http.ResponseWriter, request *http.Request) {
@@ -254,6 +298,8 @@ func StartVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	if !statusOK {
 		body, _ := io.ReadAll(response.Body)
 		MsgError = fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body)
+	} else {
+		MsgSuccess = fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop...' when you are done!", testname)
 	}
 	http.Redirect(w, request, fmt.Sprintf("/verify?testname=%s", testname), http.StatusSeeOther)
 }
@@ -280,23 +326,6 @@ func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	http.Redirect(w, request, "/show?testname="+testname, http.StatusSeeOther)
-}
-
-func StopRecording(w http.ResponseWriter, request *http.Request) {
-	testname := request.URL.Query().Get("testname")
-	url := fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)
-	r, err := http.NewRequest(http.MethodDelete, url, nil)
-	if err != nil {
-		RedirectE(w, request, "/", err)
-		return
-	}
-	_, err = client.Do(r)
-	if err != nil {
-		RedirectE(w, request, "/", err)
-		return
-	}
-
-	http.Redirect(w, request, "/", http.StatusSeeOther)
 }
 
 func RemoveExpectationHandler(http.ResponseWriter, *http.Request) {

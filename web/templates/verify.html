@@ -1,6 +1,4 @@
 {{define "_content"}}
-<form action="/stop" method="POST" id="stop"></form>
-
 <div class="columns">
     <div class="column is-one-third">{{.Testname}}</div>
     <div class="column">
@@ -11,7 +9,7 @@
                       hx-target="#progress-bar"
                       hx-swap="innerHTML">
             </progress>
-            (0/{{.Expectations}})
+            0 of {{.Expectations}} expectations verified
         </div>
     </div>
 </div>

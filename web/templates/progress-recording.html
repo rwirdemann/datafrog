@@ -1,0 +1,7 @@
+<progress class="progress is-warning" value="{{.Progress}}" max="100"
+          hx-get="/progress-recording?testname={{.Testname}}&progress={{.Progress}}"
+          hx-trigger="every 600ms"
+          hx-target="#progress-bar"
+          hx-swap="innerHTML">
+</progress>
+Recorded {{.Expectations}} expectations

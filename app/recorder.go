@@ -20,6 +20,7 @@ type Recorder struct {
 	timer         ports.Timer
 	name          string
 	uuidProvider  ports.UUIDProvider
+	testcase      domain.Testcase
 }
 
 // NewRecorder creates a new Recorder.
@@ -34,7 +35,8 @@ func NewRecorder(c config.Config, tokenizer matcher.Tokenizer,
 		recordingSink: sink,
 		timer:         timer,
 		name:          name,
-		uuidProvider:  uuidProvider}
+		uuidProvider:  uuidProvider,
+		testcase:      domain.Testcase{Name: name}}
 }
 
 // Start starts the recording process as endless loop. Every log entry that
@@ -44,14 +46,13 @@ func NewRecorder(c config.Config, tokenizer matcher.Tokenizer,
 func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	r.timer.Start()
 	log.Printf("Recording started at %v. Press Enter to stop and save recording...", r.timer.GetStart())
-	testcase := domain.Testcase{Name: r.name}
 
 	// tell caller that verification has been finished
 	defer close(stopped)
 
 	// called when done channel is closed
 	defer func() {
-		r.write(testcase)
+		r.write(r.testcase)
 		r.recordingSink.Close()
 		r.log.Close()
 	}()
@@ -73,7 +74,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 				if matches {
 					tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
 					e := domain.Expectation{Uuid: r.uuidProvider.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
-					testcase.Expectations = append(testcase.Expectations, e)
+					r.testcase.Expectations = append(r.testcase.Expectations, e)
 					log.Printf("new expectation: %s\n", e.Shorten(8))
 				}
 			}
@@ -101,4 +102,8 @@ func (r *Recorder) write(testcase domain.Testcase) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (r *Recorder) Testcase() domain.Testcase {
+	return r.testcase
 }

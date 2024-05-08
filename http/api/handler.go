@@ -49,8 +49,15 @@ func RegisterHandler(router *mux.Router,
 }
 
 func GetTest() http.HandlerFunc {
-	return func(w http.ResponseWriter, _ *http.Request) {
-		b, err := json.Marshal(verifier.Testcase())
+	return func(w http.ResponseWriter, r *http.Request) {
+		var tc domain.Testcase
+		from := r.URL.Query().Get("from")
+		if from == "verifier" {
+			tc = verifier.Testcase()
+		} else {
+			tc = recorder.Testcase()
+		}
+		b, err := json.Marshal(tc)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
