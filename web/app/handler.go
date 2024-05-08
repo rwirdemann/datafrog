@@ -24,32 +24,33 @@ func init() {
 	apiBaseURL = fmt.Sprintf("http://localhost:%d", Conf.Api.Port)
 }
 
+// RegisterHandler registers all known URLs and maps them to their associated
+// handlers.
 func RegisterHandler(router *mux.Router) {
+
 	// home
 	router.HandleFunc("/", IndexHandler)
 
 	// show new form
 	router.HandleFunc("/new", NewHandler)
 
-	router.HandleFunc("/create", CreateHandler)
-
-	// delete test
-	router.HandleFunc("/delete", DeleteHandler)
-
 	// start recording
-	router.HandleFunc("/record", StartRecording)
+	router.HandleFunc("/create", StartRecording)
 
 	// stop recording
 	router.HandleFunc("/stoprecording", StopRecording)
 
-	// start verifx
-	router.HandleFunc("/run", StartHandler)
+	// delete test
+	router.HandleFunc("/delete", DeleteHandler)
+
+	// start verify
+	router.HandleFunc("/run", StartVerifyHandler)
 
 	// stop verify
-	router.HandleFunc("/stop", StopHandler)
+	router.HandleFunc("/stop", StopVerifyHandler)
 
-	// show verify
-	router.HandleFunc("/verify", VerifyHandler)
+	// show verification progress
+	router.HandleFunc("/verify", ShowVerificationProgressHandler)
 
 	// show test
 	router.HandleFunc("/show", ShowHandler)
@@ -103,7 +104,7 @@ func ShowHandler(w http.ResponseWriter, r *http.Request) {
 	}, Testcase: tc})
 }
 
-func VerifyHandler(w http.ResponseWriter, request *http.Request) {
+func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		RedirectE(w, request, "/", err)
 		return
@@ -163,9 +164,7 @@ func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fulfilled := tc.Fulfilled()
-	log.Printf("Fulfilled: %d of %d", fulfilled, len(tc.Expectations))
 	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
-	log.Printf("progess: %f", p)
 	t, err := template.ParseFS(templates.Templates, "progress.html")
 	if err != nil {
 		RedirectE(w, r, "/", err)
@@ -186,27 +185,22 @@ func ProgressHandler(w http.ResponseWriter, r *http.Request) {
 		Expectations int
 		Fulfilled    int
 	}{Progress: progress, Testname: testname, Color: color, Expectations: len(tc.Expectations), Fulfilled: fulfilled}
-	t.Execute(w, data)
+	_ = t.Execute(w, data)
 }
 
 func NewHandler(w http.ResponseWriter, _ *http.Request) {
 	RenderS("new.html", w, "New")
 }
 
+// StartRecording creates / overrides the test form["testname"] and starts its
+// recording.
 func StartRecording(w http.ResponseWriter, request *http.Request) {
-	if err := request.ParseForm(); err != nil {
-		RedirectE(w, request, "/", err)
-		return
-	}
-	testname := request.FormValue("testname")
-	url := fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)
-	r, err := http.NewRequest(http.MethodPost, url, nil)
+	testname, err := FormValue(request, "testname")
 	if err != nil {
 		RedirectE(w, request, "/", err)
 		return
 	}
-	_, err = client.Do(r)
-	if err != nil {
+	if err := Post(fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)); err != nil {
 		RedirectE(w, request, "/", err)
 		return
 	}
@@ -241,7 +235,7 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
-func StartHandler(w http.ResponseWriter, request *http.Request) {
+func StartVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)
@@ -264,7 +258,7 @@ func StartHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, fmt.Sprintf("/verify?testname=%s", testname), http.StatusSeeOther)
 }
 
-func StopHandler(w http.ResponseWriter, request *http.Request) {
+func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -288,15 +282,6 @@ func StopHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, "/show?testname="+testname, http.StatusSeeOther)
 }
 
-func CreateHandler(w http.ResponseWriter, request *http.Request) {
-	err := request.ParseForm()
-	if err != nil {
-		RedirectE(w, request, "/", err)
-		return
-	}
-	http.Redirect(w, request, fmt.Sprintf("/record&testname=%s", request.FormValue("testname")), http.StatusSeeOther)
-}
-
 func StopRecording(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)
@@ -314,5 +299,5 @@ func StopRecording(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, "/", http.StatusSeeOther)
 }
 
-func RemoveExpectationHandler(writer http.ResponseWriter, request *http.Request) {
+func RemoveExpectationHandler(http.ResponseWriter, *http.Request) {
 }

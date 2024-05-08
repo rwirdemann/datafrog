@@ -48,6 +48,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	log.Printf("Verification started at %v. Press Enter to stop and save verification...", verifier.timer.GetStart())
 	verifier.testcase.Verifications = verifier.testcase.Verifications + 1
 	verifier.testcase.LastExecution = time.Now()
+	verifier.testcase.AdditionalExpectations = nil
 	for i := range verifier.testcase.Expectations {
 		verifier.testcase.Expectations[i].Fulfilled = false
 	}

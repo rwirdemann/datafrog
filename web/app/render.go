@@ -59,3 +59,11 @@ func ClearMessages() (string, string) {
 	MsgSuccess = ""
 	return m, e
 }
+
+// FormValue returns the value of key for POST and PUT requests.
+func FormValue(r *http.Request, key string) (string, error) {
+	if err := r.ParseForm(); err != nil {
+		return "", err
+	}
+	return r.FormValue(key), nil
+}
