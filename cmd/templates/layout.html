@@ -23,7 +23,18 @@
 <section class="section">
     <div class="container">
         <h1 class="title"><a style="color: inherit; text-decoration: inherit" href="/" title="zur Startseite">{{.Title}}</a></h1>
-        {{template "_messages" .}}
+        {{if hasInfo}}
+        <div class="notification is-success is-light">
+            <button class="delete"></button>
+            {{info}}
+        </div>
+        {{end}}
+        {{if hasError}}
+        <div class="notification is-danger is-light">
+            <button class="delete"></button>
+            {{error}}
+        </div>
+        {{end}}
         {{template "_content" .}}
     </div>
 </section>

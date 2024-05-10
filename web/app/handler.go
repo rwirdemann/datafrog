@@ -3,15 +3,12 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/config"
-	"github.com/rwirdemann/datafrog/web/templates"
+	"github.com/rwirdemann/simpleweb"
 	log "github.com/sirupsen/logrus"
-	"html/template"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -26,43 +23,42 @@ func init() {
 
 // RegisterHandler registers all known URLs and maps them to their associated
 // handlers.
-func RegisterHandler(router *mux.Router) {
-
+func RegisterHandler() {
 	// home
-	router.HandleFunc("/", IndexHandler)
+	simpleweb.Register("/", IndexHandler, "GET")
 
 	// show new form
-	router.HandleFunc("/new", NewHandler)
+	simpleweb.Register("/new", NewHandler, "GET")
 
 	// start recording
-	router.HandleFunc("/create", StartRecording)
+	simpleweb.Register("/create", StartRecording, "POST")
 
 	// stop recording
-	router.HandleFunc("/stoprecording", StopRecording)
+	simpleweb.Register("/stoprecording", StopRecording, "GET")
 
 	// delete test
-	router.HandleFunc("/delete", DeleteHandler)
+	simpleweb.Register("/delete", DeleteHandler, "GET")
 
 	// start verify
-	router.HandleFunc("/run", StartVerifyHandler)
+	simpleweb.Register("/run", StartVerifyHandler, "GET")
 
 	// stop verify
-	router.HandleFunc("/stop", StopVerifyHandler)
+	simpleweb.Register("/stop", StopVerifyHandler, "GET")
 
 	// show verification progress
-	router.HandleFunc("/verify", ShowVerificationProgressHandler)
+	simpleweb.Register("/verify", ShowVerificationProgressHandler, "GET")
 
 	// show test
-	router.HandleFunc("/show", ShowHandler)
+	simpleweb.Register("/show", ShowHandler, "GET")
 
 	// verification progress handler
-	router.HandleFunc("/progress", ProgressVerificationHandler)
+	simpleweb.Register("/progress", ProgressVerificationHandler, "GET")
 
 	// recording progress handler
-	router.HandleFunc("/progress-recording", ProgressRecordingHandler)
+	simpleweb.Register("/progress-recording", ProgressRecordingHandler, "GET")
 
 	// remove expectation from test
-	router.HandleFunc("/remove-expectation", RemoveExpectationHandler)
+	simpleweb.Register("/remove-expectation", RemoveExpectationHandler, "GET")
 }
 
 func IndexHandler(w http.ResponseWriter, _ *http.Request) {
@@ -70,60 +66,45 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 		Tests []domain.Testcase `json:"tests"`
 	}{}
 	if r, err := client.Get(fmt.Sprintf("%s/tests", apiBaseURL)); err != nil {
-		MsgError = err.Error()
+		simpleweb.Error(err.Error())
 	} else {
 		if err := json.NewDecoder(r.Body).Decode(&allTests); err != nil {
 			log.Errorf("Error decoding response: %v", err)
 		}
 	}
 
-	m, e := ClearMessages()
-	Render("index.html", w, struct {
-		ViewData
+	simpleweb.Render("templates/index.html", w, struct {
+		Title  string
 		Tests  []domain.Testcase
 		Config config.Config
-	}{ViewData: ViewData{
-		Message: m,
-		Title:   "Home",
-		Error:   e,
-	}, Tests: allTests.Tests, Config: Conf})
+	}{Title: "Home", Tests: allTests.Tests, Config: Conf})
 }
 
 func ShowHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
 	tc, err := getTestcase(testname, "verifier")
 	if err != nil {
-		RedirectE(w, r, "/", err)
+		simpleweb.RedirectE(w, r, "/", err)
 		return
 	}
-	m, e := ClearMessages()
-	Render("show.html", w, struct {
-		ViewData
+	simpleweb.Render("templates/show.html", w, struct {
+		Title    string
 		Testcase domain.Testcase
-	}{ViewData: ViewData{
-		Title:   "Show",
-		Message: m,
-		Error:   e,
-	}, Testcase: tc})
+	}{Title: "Show", Testcase: tc})
 }
 
 func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Request) {
 	tc, err := getTestcase(request.FormValue("testname"), "verifier")
 	if err != nil {
-		RedirectE(w, request, "/", err)
+		simpleweb.RedirectE(w, request, "/", err)
 		return
 	}
 
-	m, e := ClearMessages()
-	Render("verify.html", w, struct {
-		ViewData
+	simpleweb.Render("templates/verify.html", w, struct {
+		Title        string
 		Testname     string
 		Expectations int
-	}{ViewData: ViewData{
-		Title:   "Verify",
-		Message: m,
-		Error:   e,
-	}, Testname: tc.Name, Expectations: len(tc.Expectations)})
+	}{Title: "Verify", Testname: tc.Name, Expectations: len(tc.Expectations)})
 }
 
 // getTestcase fetches and returns test "name" from the verifier or recorder.
@@ -156,91 +137,73 @@ func getTestcase(name string, from string) (domain.Testcase, error) {
 // that shows the progress of the current verification run.
 func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	progress, err := strconv.Atoi(r.URL.Query().Get("progress"))
-	if err != nil {
-		return
-	}
 	tc, err := getTestcase(testname, "verifier")
 	if err != nil {
 		return
 	}
 	fulfilled := tc.Fulfilled()
-	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
-	t, err := template.ParseFS(templates.Templates, "progress-verification.html")
-	if err != nil {
-		RedirectE(w, r, "/", err)
-	}
-
-	color := "is-warning"
-	if fulfilled == len(tc.Expectations) {
-		color = "is-success"
-		progress = 100
-	} else {
-		progress = int(p)
-	}
-
-	data := struct {
+	p, c := calcProgressAndCssClass(tc)
+	simpleweb.RenderPartialE("templates/progress-verification.html", w, struct {
 		Progress     int
 		Testname     string
 		Color        string
 		Expectations int
 		Fulfilled    int
-	}{Progress: progress, Testname: testname, Color: color, Expectations: len(tc.Expectations), Fulfilled: fulfilled}
-	_ = t.Execute(w, data)
+	}{Progress: p, Testname: testname, Color: c, Expectations: len(tc.Expectations), Fulfilled: fulfilled})
+}
+
+func calcProgressAndCssClass(tc domain.Testcase) (int, string) {
+	fulfilled := tc.Fulfilled()
+	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
+	color := "is-warning"
+	progress := int(p)
+	if fulfilled == len(tc.Expectations) {
+		color = "is-success"
+		progress = 100
+	}
+	return progress, color
 }
 
 // ProgressRecordingHandler renders the partial progress-recording.html
 // that shows the progress of the current recording run.
 func ProgressRecordingHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	progress, err := strconv.Atoi(r.URL.Query().Get("progress"))
-	if err != nil {
-		return
-	}
 	tc, err := getTestcase(testname, "recorder")
 	if err != nil {
 		return
 	}
-	t, err := template.ParseFS(templates.Templates, "progress-recording.html")
-	if err != nil {
-		RedirectE(w, r, "/", err)
-	}
-	progress = len(tc.Expectations) * 3
-	data := struct {
+	progress := len(tc.Expectations) * 3
+	simpleweb.RenderPartialE("templates/progress-recording.html", w, struct {
 		Progress     int
 		Testname     string
 		Expectations int
-	}{Progress: progress, Testname: testname, Expectations: len(tc.Expectations)}
-	_ = t.Execute(w, data)
+	}{Progress: progress, Testname: testname, Expectations: len(tc.Expectations)})
 }
 
 // NewHandler renders the new templates
 func NewHandler(w http.ResponseWriter, _ *http.Request) {
-	RenderS("new.html", w, "New")
+	simpleweb.Render("templates/new.html", w, struct {
+		Title string
+	}{Title: "New Testcase"})
 }
 
 // StartRecording creates / overrides the test form["testname"] and starts its
 // recording.
 func StartRecording(w http.ResponseWriter, request *http.Request) {
-	testname, err := FormValue(request, "testname")
+	testname, err := simpleweb.FormValue(request, "testname")
 	if err != nil {
-		RedirectE(w, request, "/", err)
+		simpleweb.RedirectE(w, request, "/", err)
 		return
 	}
 	if err := Post(fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)); err != nil {
-		RedirectE(w, request, "/", err)
+		simpleweb.RedirectE(w, request, "/", err)
 		return
 	}
-	MsgSuccess = "Recording has been started. Run UI interactions and click 'Stop recording...' when finished"
-	m, e := ClearMessages()
-	Render("record.html", w, struct {
-		ViewData
+	simpleweb.Info("Recording has been started. Run UI interactions and click 'Stop recording...' when finished")
+	simpleweb.Render("templates/record.html", w, struct {
+		Title    string
 		Testname string
-	}{ViewData: ViewData{
-		Title:   "Record",
-		Message: m,
-		Error:   e,
-	}, Testname: testname})
+	}{Title: "Record", Testname: testname})
 }
 
 func StopRecording(w http.ResponseWriter, request *http.Request) {
@@ -248,12 +211,12 @@ func StopRecording(w http.ResponseWriter, request *http.Request) {
 	url := fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
-		RedirectE(w, request, "/", err)
+		simpleweb.RedirectE(w, request, "/", err)
 		return
 	}
 	_, err = client.Do(r)
 	if err != nil {
-		RedirectE(w, request, "/", err)
+		simpleweb.RedirectE(w, request, "/", err)
 		return
 	}
 
@@ -265,17 +228,17 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
-		MsgError = err.Error()
+		simpleweb.Error(err.Error())
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 	_, err = client.Do(r)
 	if err != nil {
-		MsgError = err.Error()
+		simpleweb.Error(err.Error())
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
-	MsgSuccess = fmt.Sprintf("Test '%s' successfully deleted", testname)
+	simpleweb.Info(fmt.Sprintf("Test '%s' successfully deleted", testname))
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
@@ -284,22 +247,22 @@ func StartVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
-		MsgError = err.Error()
+		simpleweb.Error(err.Error())
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 	response, err := client.Do(r)
 	if err != nil {
-		MsgError = err.Error()
+		simpleweb.Error(err.Error())
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
 	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
 	if !statusOK {
 		body, _ := io.ReadAll(response.Body)
-		MsgError = fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body)
+		simpleweb.Error(fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body))
 	} else {
-		MsgSuccess = fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop...' when you are done!", testname)
+		simpleweb.Info(fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop...' when you are done!", testname))
 	}
 	http.Redirect(w, request, fmt.Sprintf("/verify?testname=%s", testname), http.StatusSeeOther)
 }
@@ -309,19 +272,19 @@ func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
-		RedirectE(w, request, "/", err)
+		simpleweb.RedirectE(w, request, "/", err)
 		return
 	}
 	response, err := client.Do(r)
 	if err != nil {
-		RedirectE(w, request, "/", err)
+		simpleweb.RedirectE(w, request, "/", err)
 		return
 	}
 
 	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
 	if !statusOK {
 		body, _ := io.ReadAll(response.Body)
-		MsgError = fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body)
+		simpleweb.Error(fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body))
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}

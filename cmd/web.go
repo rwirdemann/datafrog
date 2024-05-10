@@ -1,28 +1,30 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/gorilla/mux"
+	"embed"
 	"github.com/rwirdemann/datafrog/web/app"
+	"github.com/rwirdemann/simpleweb"
 	"github.com/spf13/cobra"
 	"log"
-	"net/http"
 )
+
+// Expects all HTML templates in datafrog/cmd/templates
+//
+//go:embed all:templates
+var templates embed.FS
 
 func init() {
 	rootCmd.AddCommand(webCmd)
+	simpleweb.Init(templates, []string{"templates/layout.html"}, app.Conf.Web.Port)
 }
 
 var webCmd = &cobra.Command{
 	Use:   "web",
 	Short: "Starts local web application",
 	Run: func(cmd *cobra.Command, args []string) {
-		router := mux.NewRouter()
-		app.RegisterHandler(router)
+		app.RegisterHandler()
+		simpleweb.ShowRoutes()
 		log.Printf("Connecting backend: http://localhost:/%d", app.Conf.Api.Port)
-		log.Printf("Listening on :%d...", app.Conf.Web.Port)
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", app.Conf.Web.Port), router); err != nil {
-			log.Fatal(err)
-		}
+		simpleweb.Run()
 	},
 }
