@@ -230,6 +230,33 @@ func TestVerify(t *testing.T) {
 			patterns:                     []string{"select *", "insert into"},
 			reportAdditionalExpectations: true,
 		},
+		{
+			desc: "additional expecatations should not be reported",
+			initialExpectations: []domain.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Pattern:     "select *",
+					IgnoreDiffs: emptyDiff,
+				},
+			},
+			logs: []string{
+				"2024-04-08T09:39:15.070009Z	 2549 Query	insert into jobs;",
+				"2024-04-08T09:39:16.070009Z	 2550 Query	select * from jobs;",
+				"STOP",
+			},
+			updatedExpectations: []domain.Expectation{
+				{
+					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Pattern:     "select *",
+					IgnoreDiffs: emptyDiff,
+					Fulfilled:   true,
+					Verified:    1,
+				},
+			},
+			additionalExpectations:       emptyExpectations,
+			patterns:                     []string{"select *", "insert into"},
+			reportAdditionalExpectations: false,
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
