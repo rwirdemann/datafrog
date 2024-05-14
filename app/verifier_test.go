@@ -14,12 +14,13 @@ func TestVerify(t *testing.T) {
 	var emptyDiff []int
 	var emptyExpectations []domain.Expectation
 	testCases := []struct {
-		desc                   string
-		initialExpectations    []domain.Expectation
-		updatedExpectations    []domain.Expectation
-		additionalExpectations []domain.Expectation
-		logs                   []string
-		patterns               []string
+		desc                         string
+		initialExpectations          []domain.Expectation
+		updatedExpectations          []domain.Expectation
+		additionalExpectations       []domain.Expectation
+		logs                         []string
+		patterns                     []string
+		reportAdditionalExpectations bool
 	}{
 		{
 			desc: "empty diff vector",
@@ -43,8 +44,9 @@ func TestVerify(t *testing.T) {
 					Verified:    1,
 				},
 			},
-			additionalExpectations: emptyExpectations,
-			patterns:               []string{"select *"},
+			additionalExpectations:       emptyExpectations,
+			patterns:                     []string{"select *"},
+			reportAdditionalExpectations: true,
 		},
 		{
 			desc: "diff vector with one element",
@@ -68,8 +70,9 @@ func TestVerify(t *testing.T) {
 					Verified:    1,
 				},
 			},
-			additionalExpectations: emptyExpectations,
-			patterns:               []string{"select *"},
+			additionalExpectations:       emptyExpectations,
+			patterns:                     []string{"select *"},
+			reportAdditionalExpectations: true,
 		},
 		{
 			desc: "miss matching pattern",
@@ -93,8 +96,9 @@ func TestVerify(t *testing.T) {
 					Verified:    0,
 				},
 			},
-			additionalExpectations: emptyExpectations,
-			patterns:               []string{"select *"},
+			additionalExpectations:       emptyExpectations,
+			patterns:                     []string{"select *"},
+			reportAdditionalExpectations: true,
 		},
 		{
 			desc: "multiple expectations, different order",
@@ -144,8 +148,9 @@ func TestVerify(t *testing.T) {
 					Verified:    1,
 				},
 			},
-			additionalExpectations: emptyExpectations,
-			patterns:               []string{"select", "insert", "update"},
+			additionalExpectations:       emptyExpectations,
+			patterns:                     []string{"select", "insert", "update"},
+			reportAdditionalExpectations: true,
 		},
 		{
 			desc: "verified > 0 but equals fails should continue with next expectation",
@@ -186,8 +191,9 @@ func TestVerify(t *testing.T) {
 					IgnoreDiffs: []int{8, 9},
 				},
 			},
-			additionalExpectations: emptyExpectations,
-			patterns:               []string{"insert"},
+			additionalExpectations:       emptyExpectations,
+			patterns:                     []string{"insert"},
+			reportAdditionalExpectations: true,
 		},
 		{
 			desc: "additional pattern matching verifications",
@@ -221,13 +227,15 @@ func TestVerify(t *testing.T) {
 					Verified:    0,
 				},
 			},
-			patterns: []string{"select *", "insert into"},
+			patterns:                     []string{"select *", "insert into"},
+			reportAdditionalExpectations: true,
 		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			c := config.Config{}
 			c.Patterns = tC.patterns
+			c.Expectations.ReportAdditional = tC.reportAdditionalExpectations
 			doneChannel := make(chan struct{})
 			stoppedChannel := make(chan struct{})
 			databaseLog := adapter.NewMemSQLLog(tC.logs, doneChannel)

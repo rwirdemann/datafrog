@@ -13,10 +13,15 @@ import (
 // and exclude rule thus only statements that contain `select job` but not
 // `publish_trials<1` are considered.
 type Config struct {
-	Filename  string   `json:"filename"`  // full path of logfile to be used
-	Logformat string   `json:"logformat"` // format of log file, actual mysql | postgresql
-	Patterns  []string `json:"patterns"`  // list of patterns to consider
-	Web       struct {
+	Filename     string   `json:"filename"`  // full path of logfile to be used
+	Logformat    string   `json:"logformat"` // format of log file, actual mysql | postgresql
+	Patterns     []string `json:"patterns"`  // list of patterns to consider
+	Expectations struct {
+		// report additional expectations that are not port of the initial
+		// recording run
+		ReportAdditional bool `json:"report_additional"`
+	}
+	Web struct {
 		Port int `json:"port"` // web app http port
 	}
 	Api struct {
