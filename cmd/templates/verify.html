@@ -9,10 +9,17 @@
                       hx-target="#progress-bar"
                       hx-swap="innerHTML">
             </progress>
-            0 of {{.Expectations}} expectations verified
+            <div class="columns">
+                <div class="column">
+                    0 of {{.Expectations}} expectations verified
+                </div>
+                <div class="column">
+                    <span style="float:right;">
+                    <a href="/stop?testname={{.Testname}}">Abort Test</a>
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<a href="/stop?testname={{.Testname}}">Stop...</a>
 {{end}}

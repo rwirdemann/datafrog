@@ -4,4 +4,18 @@
           hx-target="#progress-bar"
           hx-swap="innerHTML">
 </progress>
-{{.Fulfilled}} of {{.Expectations}} expectations verified
+<div class="columns">
+    <div class="column">
+        {{.Fulfilled}} of {{.Expectations}} expectations verified
+    </div>
+    <div class="column">
+        <span style="float: right">
+        {{if eq .Fulfilled .Expectations}}
+            <a href="/stop?testname={{.Testname}}">Show Results</a>
+        {{else}}
+            <a href="/stop?testname={{.Testname}}">Abort Test</a>
+        {{end}}
+        </span>
+    </div>
+</div>
+
