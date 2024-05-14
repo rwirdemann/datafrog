@@ -65,6 +65,9 @@ format:
     "delete",
     "select job!publish_trials<1"
   ],
+  "expectations": {
+    "report_additional": true
+  },
   "web": {
     "port": 8081
   },
