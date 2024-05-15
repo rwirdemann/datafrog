@@ -1,10 +1,19 @@
 {
   "filename": "/usr/local/var/mysql/MacBook-Pro-von-Ralf.log",
   "logformat": "mysql",
+  "expectations": {
+    "report_additional": true
+  },
   "patterns": [
     "insert into job",
     "update job",
     "delete",
     "select job!publish_trials<1"
-  ]
+  ],
+  "web": {
+    "port": 8081
+  },
+  "api": {
+    "port": 3000
+  }
 }
