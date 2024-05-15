@@ -125,14 +125,16 @@ func (verifier *Verifier) verify(v string, vPattern string) bool {
 			continue // -> continue with next e
 		}
 
-		// Not yet verified expectation e with same token lengths as v found.
-		// This expectation e becomes our reference expectation.
-		if diff, err := e.Diff(vTokens); err == nil {
-			log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
-			verifier.testcase.Expectations[i].IgnoreDiffs = diff
-			verifier.testcase.Expectations[i].Fulfilled = true
-			verifier.testcase.Expectations[i].Verified = 1
-			return true // -> continue with next v
+		if e.Verified == 0 {
+			// Not yet verified expectation e with same token lengths as v
+			// found. This expectation e becomes our reference expectation.
+			if diff, err := e.Diff(vTokens); err == nil {
+				log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
+				verifier.testcase.Expectations[i].IgnoreDiffs = diff
+				verifier.testcase.Expectations[i].Fulfilled = true
+				verifier.testcase.Expectations[i].Verified = 1
+				return true // -> continue with next v
+			}
 		}
 	}
 	return false // -> expectation not verified

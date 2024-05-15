@@ -257,6 +257,39 @@ func TestVerify(t *testing.T) {
 			patterns:                     []string{"select *", "insert into"},
 			reportAdditionalExpectations: false,
 		},
+		{
+			// This test reproduces the following error situation:
+			// - we have an already verified expectation e1 (verified > 0)
+			// - e1 matches the pattern of the current v but isn't equal to v
+			// - e1 anbd v have the same token length
+			// => Bug: a new diff vector was build and stored for e1
+			desc: "fix diff building for already verfied expecation",
+			initialExpectations: []domain.Expectation{
+				{
+					Tokens:      matcher.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 3)"),
+					Pattern:     "insert",
+					Verified:    1,
+					Fulfilled:   true,
+					IgnoreDiffs: []int{12, 17},
+				},
+			},
+			logs: []string{
+				"2024-04-17T13:55:56.750174Z\t 2000 Query\tinsert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('Universe', '2024-04-17 15:56:56', 0, null, '', 'Yeah', 4)",
+				"STOP",
+			},
+			updatedExpectations: []domain.Expectation{
+				{
+					Tokens:      matcher.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 4)"),
+					Pattern:     "insert",
+					IgnoreDiffs: []int{12, 17},
+					Fulfilled:   false,
+					Verified:    1,
+				},
+			},
+			additionalExpectations:       emptyExpectations,
+			patterns:                     []string{"insert"},
+			reportAdditionalExpectations: false,
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {

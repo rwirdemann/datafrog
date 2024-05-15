@@ -262,7 +262,7 @@ func StartVerifyHandler(w http.ResponseWriter, request *http.Request) {
 		body, _ := io.ReadAll(response.Body)
 		simpleweb.Error(fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body))
 	} else {
-		simpleweb.Info(fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop...' when you are done!", testname))
+		simpleweb.Info(fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop Test' when you are done!", testname))
 	}
 	http.Redirect(w, request, fmt.Sprintf("/verify?testname=%s", testname), http.StatusSeeOther)
 }
