@@ -22,8 +22,10 @@ type Config struct {
 		ReportAdditional bool `json:"report_additional"`
 	}
 	Web struct {
-		Port int `json:"port"` // web app http port
+		Port    int `json:"port"`    // web app http port
+		Timeout int `json:"timeout"` // http timeout in seconds
 	}
+
 	Api struct {
 		Port int `json:"port"` // api http port
 	}

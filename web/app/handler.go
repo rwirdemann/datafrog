@@ -12,12 +12,13 @@ import (
 	"time"
 )
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var client *http.Client
 var Conf config.Config
 var apiBaseURL string
 
 func init() {
 	Conf = config.NewConfig("config.json")
+	client = &http.Client{Timeout: time.Duration(Conf.Web.Timeout) * time.Second}
 	apiBaseURL = fmt.Sprintf("http://localhost:%d", Conf.Api.Port)
 }
 
