@@ -1,9 +1,8 @@
 package matcher
 
 import (
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"strings"
-
-	"github.com/rwirdemann/datafrog/config"
 )
 
 type Pattern struct {
@@ -37,7 +36,7 @@ func (p Pattern) MatchesAllConditions(s string) bool {
 	return p.MatchesInclude(s) && !p.MatchesExclude(s)
 }
 
-func MatchesPattern(c config.Config, s string) (bool, string) {
+func MatchesPattern(c datafrog.Config, s string) (bool, string) {
 	for _, p := range c.Patterns {
 		if NewPattern(p).MatchesAllConditions(s) {
 			return true, p

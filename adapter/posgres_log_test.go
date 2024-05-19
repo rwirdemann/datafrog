@@ -2,7 +2,7 @@ package adapter
 
 import (
 	"fmt"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
@@ -18,7 +18,7 @@ func TestRegex(t *testing.T) {
 }
 
 func TestReadLine(t *testing.T) {
-	c := config.Config{}
+	c := datafrog.Config{}
 	c.Patterns = []string{"insert"}
 	pl := NewPostgresLog("postgres.log", c)
 	defer pl.Close()

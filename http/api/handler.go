@@ -7,7 +7,7 @@ import (
 	"github.com/rwirdemann/datafrog/adapter"
 	"github.com/rwirdemann/datafrog/app"
 	"github.com/rwirdemann/datafrog/app/domain"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/matcher"
 	"io"
 	"log"
@@ -101,7 +101,7 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		}
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
-		c := config.NewConfig("config.json")
+		c := datafrog.NewConfig("config.json")
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		recordingSink := adapter.NewFileRecordingSink(testname)
@@ -214,7 +214,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			return
 		}
 
-		c := config.NewConfig("config.json")
+		c := datafrog.NewConfig("config.json")
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		verifier = app.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)

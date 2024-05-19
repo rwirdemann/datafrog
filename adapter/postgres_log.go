@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/matcher"
 	"io"
 	"log"
@@ -17,10 +17,10 @@ import (
 type PostgresLog struct {
 	logfile *os.File
 	reader  *bufio.Reader
-	config  config.Config
+	config  datafrog.Config
 }
 
-func NewPostgresLog(logfileName string, config config.Config) PostgresLog {
+func NewPostgresLog(logfileName string, config datafrog.Config) PostgresLog {
 	logfile, err := os.Open(logfileName)
 	if err != nil {
 		log.Fatal(err)

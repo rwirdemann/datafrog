@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/ports"
 	"log"
 )
 
-func createLogAdapter(c config.Config) ports.Log {
+func createLogAdapter(c datafrog.Config) ports.Log {
 	switch c.Logformat {
 	case "mysql":
 		return adapter.NewMYSQLLog(c.Filename)

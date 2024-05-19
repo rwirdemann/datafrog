@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/ports"
 	"github.com/spf13/cobra"
 	"log"
@@ -27,7 +27,7 @@ var tailCmd = &cobra.Command{
 	Use:   "tail",
 	Short: "Tails log file",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := config.NewConfig("config.json")
+		c := datafrog.NewConfig("config.json")
 		databaseLog := adapter.NewPostgresLog(c.Filename, c)
 		defer databaseLog.Close()
 		return Start(databaseLog)

@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/rwirdemann/datafrog/app/domain"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/rwirdemann/datafrog/ports"
 	"log"
@@ -14,7 +14,7 @@ import (
 // updated expectation list is written back to expectationSource after the
 // verification run is done.
 type Verifier struct {
-	config            config.Config
+	config            datafrog.Config
 	tokenizer         matcher.Tokenizer
 	log               ports.Log
 	expectationSource ports.ExpectationSource
@@ -24,7 +24,7 @@ type Verifier struct {
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c config.Config, tokenizer matcher.Tokenizer, log ports.Log,
+func NewVerifier(c datafrog.Config, tokenizer matcher.Tokenizer, log ports.Log,
 	source ports.ExpectationSource, t ports.Timer, name string) *Verifier {
 	return &Verifier{
 		config:            c,

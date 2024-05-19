@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 	"github.com/rwirdemann/datafrog/app"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"log"
 	"os"
 
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/config"
 	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +31,7 @@ var recordCmd = &cobra.Command{
 	Short: "Starts recording",
 	Run: func(cmd *cobra.Command, args []string) {
 		out, _ := cmd.Flags().GetString("out")
-		c := config.NewConfig("config.json")
+		c := datafrog.NewConfig("config.json")
 		prompt, _ := cmd.Flags().GetBool("prompt")
 		if prompt {
 			log.Printf("Recording goes to '%s'. Hit enter when you are ready!", out)

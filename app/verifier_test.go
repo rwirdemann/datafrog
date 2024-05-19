@@ -2,10 +2,10 @@ package app
 
 import (
 	"github.com/rwirdemann/datafrog/app/domain"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"testing"
 
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/config"
 	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/stretchr/testify/assert"
 )
@@ -293,7 +293,7 @@ func TestVerify(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			c := config.Config{}
+			c := datafrog.Config{}
 			c.Patterns = tC.patterns
 			c.Expectations.ReportAdditional = tC.reportAdditionalExpectations
 			doneChannel := make(chan struct{})

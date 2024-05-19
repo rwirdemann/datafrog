@@ -3,7 +3,7 @@ package app
 import (
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/app/domain"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/rwirdemann/datafrog/ports"
 	"log"
@@ -13,7 +13,7 @@ import (
 // of the patterns specified in config. The recorded output is written to
 // recording sink.
 type Recorder struct {
-	config        config.Config
+	config        datafrog.Config
 	tokenizer     matcher.Tokenizer
 	log           ports.Log
 	recordingSink ports.RecordingSink
@@ -24,7 +24,7 @@ type Recorder struct {
 }
 
 // NewRecorder creates a new Recorder.
-func NewRecorder(c config.Config, tokenizer matcher.Tokenizer,
+func NewRecorder(c datafrog.Config, tokenizer matcher.Tokenizer,
 	log ports.Log, sink ports.RecordingSink, timer ports.Timer, name string,
 	uuidProvider ports.UUIDProvider) *Recorder {
 

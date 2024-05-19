@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rwirdemann/datafrog/app/domain"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/simpleweb"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -13,11 +13,11 @@ import (
 )
 
 var client *http.Client
-var Conf config.Config
+var Conf datafrog.Config
 var apiBaseURL string
 
 func init() {
-	Conf = config.NewConfig("config.json")
+	Conf = datafrog.NewConfig("config.json")
 	client = &http.Client{Timeout: time.Duration(Conf.Web.Timeout) * time.Second}
 	apiBaseURL = fmt.Sprintf("http://localhost:%d", Conf.Api.Port)
 }
@@ -77,7 +77,7 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	simpleweb.Render("templates/index.html", w, struct {
 		Title  string
 		Tests  []domain.Testcase
-		Config config.Config
+		Config datafrog.Config
 	}{Title: "Home", Tests: allTests.Tests, Config: Conf})
 }
 

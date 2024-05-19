@@ -3,10 +3,10 @@ package app
 import (
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/app/domain"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"testing"
 
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/config"
 	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/stretchr/testify/assert"
 )
@@ -48,7 +48,7 @@ func TestRecord(t *testing.T) {
 		Expectations:  []domain.Expectation{e1, e2},
 	})
 
-	c := config.Config{}
+	c := datafrog.Config{}
 	c.Patterns = []string{"insert", "select job!publish_trials<1"}
 
 	recordingDone := make(chan struct{})

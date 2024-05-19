@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/rwirdemann/datafrog/adapter"
 	"github.com/rwirdemann/datafrog/app"
-	"github.com/rwirdemann/datafrog/config"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/spf13/cobra"
 	"log"
@@ -30,7 +30,7 @@ var verifyCmd = &cobra.Command{
 	Short: "Starts verification",
 	Run: func(cmd *cobra.Command, args []string) {
 		expectationsFilename, _ := cmd.Flags().GetString("expectations")
-		c := config.NewConfig("config.json")
+		c := datafrog.NewConfig("config.json")
 		prompt, _ := cmd.Flags().GetBool("prompt")
 		if prompt {
 			log.Printf("Verifying '%s'. Hit enter when you are ready!", expectationsFilename)
