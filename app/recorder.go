@@ -2,9 +2,7 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
-	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/rwirdemann/datafrog/ports"
 	"log"
 )
@@ -14,17 +12,17 @@ import (
 // recording sink.
 type Recorder struct {
 	config        datafrog.Config
-	tokenizer     matcher.Tokenizer
+	tokenizer     datafrog.Tokenizer
 	log           ports.Log
 	recordingSink ports.RecordingSink
 	timer         ports.Timer
 	name          string
 	uuidProvider  ports.UUIDProvider
-	testcase      domain.Testcase
+	testcase      datafrog.Testcase
 }
 
 // NewRecorder creates a new Recorder.
-func NewRecorder(c datafrog.Config, tokenizer matcher.Tokenizer,
+func NewRecorder(c datafrog.Config, tokenizer datafrog.Tokenizer,
 	log ports.Log, sink ports.RecordingSink, timer ports.Timer, name string,
 	uuidProvider ports.UUIDProvider) *Recorder {
 
@@ -36,7 +34,7 @@ func NewRecorder(c datafrog.Config, tokenizer matcher.Tokenizer,
 		timer:         timer,
 		name:          name,
 		uuidProvider:  uuidProvider,
-		testcase:      domain.Testcase{Name: name}}
+		testcase:      datafrog.Testcase{Name: name}}
 }
 
 // Start starts the recording process as endless loop. Every log entry that
@@ -70,10 +68,10 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 				continue
 			}
 			if r.timer.MatchesRecordingPeriod(ts) {
-				matches, pattern := matcher.MatchesPattern(r.config, line)
+				matches, pattern := datafrog.MatchesPattern(r.config, line)
 				if matches {
 					tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
-					e := domain.Expectation{Uuid: r.uuidProvider.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
+					e := datafrog.Expectation{Uuid: r.uuidProvider.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 					r.testcase.Expectations = append(r.testcase.Expectations, e)
 					log.Printf("new expectation: %s\n", e.Shorten(8))
 				}
@@ -89,7 +87,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 
 // write writes testcase as json to the recordingSink. Existing data is
 // overridden.
-func (r *Recorder) write(testcase domain.Testcase) {
+func (r *Recorder) write(testcase datafrog.Testcase) {
 	b, err := json.Marshal(testcase)
 	if err != nil {
 		log.Fatal(err)
@@ -104,6 +102,6 @@ func (r *Recorder) write(testcase domain.Testcase) {
 	}
 }
 
-func (r *Recorder) Testcase() domain.Testcase {
+func (r *Recorder) Testcase() datafrog.Testcase {
 	return r.testcase
 }

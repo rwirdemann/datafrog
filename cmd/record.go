@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/rwirdemann/datafrog/app"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
+	"github.com/rwirdemann/datafrog/internal/datafrog/mysql"
 	"log"
 	"os"
 
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +43,7 @@ var recordCmd = &cobra.Command{
 		recordingSink := adapter.NewFileRecordingSink(out)
 		databaseLog := createLogAdapter(c)
 		t := &adapter.UTCTimer{}
-		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t, out, adapter.GoogleUUIDProvider{})
+		recorder = app.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, out, adapter.GoogleUUIDProvider{})
 		go checkExit()
 		go recorder.Start(recordingDone, recordingStopped)
 		<-recordingStopped

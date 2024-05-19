@@ -1,9 +1,7 @@
 package app
 
 import (
-	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
-	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/rwirdemann/datafrog/ports"
 	"log"
 	"time"
@@ -15,16 +13,16 @@ import (
 // verification run is done.
 type Verifier struct {
 	config            datafrog.Config
-	tokenizer         matcher.Tokenizer
+	tokenizer         datafrog.Tokenizer
 	log               ports.Log
 	expectationSource ports.ExpectationSource
-	testcase          domain.Testcase
+	testcase          datafrog.Testcase
 	timer             ports.Timer
 	name              string
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c datafrog.Config, tokenizer matcher.Tokenizer, log ports.Log,
+func NewVerifier(c datafrog.Config, tokenizer datafrog.Tokenizer, log ports.Log,
 	source ports.ExpectationSource, t ports.Timer, name string) *Verifier {
 	return &Verifier{
 		config:            c,
@@ -36,7 +34,7 @@ func NewVerifier(c datafrog.Config, tokenizer matcher.Tokenizer, log ports.Log,
 		name:              name,
 	}
 }
-func (verifier *Verifier) Testcase() domain.Testcase {
+func (verifier *Verifier) Testcase() datafrog.Testcase {
 	return verifier.testcase
 }
 
@@ -79,7 +77,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				continue
 			}
 			if verifier.timer.MatchesRecordingPeriod(ts) {
-				matches, vPattern := matcher.MatchesPattern(verifier.config, v)
+				matches, vPattern := datafrog.MatchesPattern(verifier.config, v)
 				if !matches {
 					continue
 				}
@@ -89,7 +87,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				if !verified && verifier.config.Expectations.ReportAdditional {
 
 					// v matches pattern but no matching expectation was found
-					expectation := domain.Expectation{
+					expectation := datafrog.Expectation{
 						Tokens: verifier.tokenizer.Tokenize(v, verifier.config.Patterns), Pattern: vPattern,
 					}
 					log.Printf("additional expectation found: %s\n", expectation.Shorten(6))
@@ -115,7 +113,7 @@ func (verifier *Verifier) verify(v string, vPattern string) bool {
 
 		// Handle already verified expectations (reference expectation)
 		if e.Verified > 0 && e.Equal(vTokens) {
-			log.Printf("expectation verified by: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
+			log.Printf("expectation verified by: %s\n", datafrog.Expectation{Tokens: vTokens}.Shorten(6))
 			verifier.testcase.Expectations[i].Fulfilled = true
 			verifier.testcase.Expectations[i].Verified = e.Verified + 1
 			return true // -> continue with next v
@@ -129,7 +127,7 @@ func (verifier *Verifier) verify(v string, vPattern string) bool {
 			// Not yet verified expectation e with same token lengths as v
 			// found. This expectation e becomes our reference expectation.
 			if diff, err := e.Diff(vTokens); err == nil {
-				log.Printf("reference expectation found: %s\n", domain.Expectation{Tokens: vTokens}.Shorten(6))
+				log.Printf("reference expectation found: %s\n", datafrog.Expectation{Tokens: vTokens}.Shorten(6))
 				verifier.testcase.Expectations[i].IgnoreDiffs = diff
 				verifier.testcase.Expectations[i].Fulfilled = true
 				verifier.testcase.Expectations[i].Verified = 1
@@ -142,7 +140,7 @@ func (verifier *Verifier) verify(v string, vPattern string) bool {
 
 // allFulfilled checks all expectations, returns true if all fulfilled and false
 // otherwise.
-func allFulfilled(expectations []domain.Expectation) bool {
+func allFulfilled(expectations []datafrog.Expectation) bool {
 	for _, e := range expectations {
 		if !e.Fulfilled {
 			return false
@@ -152,7 +150,7 @@ func allFulfilled(expectations []domain.Expectation) bool {
 }
 
 // ReportResults creates a [domain.Report] of the verification results.
-func (verifier *Verifier) ReportResults() domain.Report {
+func (verifier *Verifier) ReportResults() datafrog.Report {
 	fulfilled := 0
 	verifiedSum := 0
 	for _, e := range verifier.testcase.Expectations {
@@ -161,7 +159,7 @@ func (verifier *Verifier) ReportResults() domain.Report {
 			fulfilled = fulfilled + 1
 		}
 	}
-	report := domain.Report{
+	report := datafrog.Report{
 		Testname:         verifier.name,
 		LastExecution:    time.Now(),
 		Expectations:     len(verifier.testcase.Expectations),

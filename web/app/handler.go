@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/simpleweb"
 	log "github.com/sirupsen/logrus"
@@ -64,7 +63,7 @@ func RegisterHandler() {
 
 func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	allTests := struct {
-		Tests []domain.Testcase `json:"tests"`
+		Tests []datafrog.Testcase `json:"tests"`
 	}{}
 	if r, err := client.Get(fmt.Sprintf("%s/tests", apiBaseURL)); err != nil {
 		simpleweb.Error(err.Error())
@@ -76,7 +75,7 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 
 	simpleweb.Render("templates/index.html", w, struct {
 		Title  string
-		Tests  []domain.Testcase
+		Tests  []datafrog.Testcase
 		Config datafrog.Config
 	}{Title: "Home", Tests: allTests.Tests, Config: Conf})
 }
@@ -90,7 +89,7 @@ func ShowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	simpleweb.Render("templates/show.html", w, struct {
 		Title    string
-		Testcase domain.Testcase
+		Testcase datafrog.Testcase
 	}{Title: "Show", Testcase: tc})
 }
 
@@ -109,27 +108,27 @@ func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Reques
 }
 
 // getTestcase fetches and returns test "name" from the verifier or recorder.
-func getTestcase(name string, from string) (domain.Testcase, error) {
+func getTestcase(name string, from string) (datafrog.Testcase, error) {
 	url := fmt.Sprintf("%s/tests/%s?from=%s", apiBaseURL, name, from)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		log.Errorf("Error creating request: %v", err)
-		return domain.Testcase{}, err
+		return datafrog.Testcase{}, err
 	}
 	response, err := client.Do(req)
 	if err != nil {
 		log.Errorf("Error executing request: %v", err)
-		return domain.Testcase{}, err
+		return datafrog.Testcase{}, err
 	}
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Errorf("Error reading response: %v", err)
-		return domain.Testcase{}, err
+		return datafrog.Testcase{}, err
 	}
-	var tc domain.Testcase
+	var tc datafrog.Testcase
 	if err := json.Unmarshal(body, &tc); err != nil {
 		log.Errorf("Error decoding response: %v", err)
-		return domain.Testcase{}, err
+		return datafrog.Testcase{}, err
 	}
 	return tc, nil
 }
@@ -153,7 +152,7 @@ func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
 	}{Progress: p, Testname: testname, Color: c, Expectations: len(tc.Expectations), Fulfilled: fulfilled})
 }
 
-func calcProgressAndCssClass(tc domain.Testcase) (int, string) {
+func calcProgressAndCssClass(tc datafrog.Testcase) (int, string) {
 	fulfilled := tc.Fulfilled()
 	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
 	color := "is-warning"

@@ -1,22 +1,22 @@
 package adapter
 
 import (
-	"github.com/rwirdemann/datafrog/app/domain"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 )
 
 type MemExpectationSource struct {
-	testcase domain.Testcase
+	testcase datafrog.Testcase
 }
 
-func NewMemExpectationSource(expectations []domain.Expectation) *MemExpectationSource {
-	return &MemExpectationSource{testcase: domain.Testcase{Expectations: expectations}}
+func NewMemExpectationSource(expectations []datafrog.Expectation) *MemExpectationSource {
+	return &MemExpectationSource{testcase: datafrog.Testcase{Expectations: expectations}}
 }
 
-func (es MemExpectationSource) Get() domain.Testcase {
+func (es MemExpectationSource) Get() datafrog.Testcase {
 	return es.testcase
 }
 
-func (es *MemExpectationSource) Write(testcase domain.Testcase) error {
+func (es *MemExpectationSource) Write(testcase datafrog.Testcase) error {
 	es.testcase = testcase
 	return nil
 }

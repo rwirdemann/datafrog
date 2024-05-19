@@ -6,9 +6,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/adapter"
 	"github.com/rwirdemann/datafrog/app"
-	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
-	"github.com/rwirdemann/datafrog/matcher"
+	"github.com/rwirdemann/datafrog/internal/datafrog/mysql"
 	"io"
 	"log"
 	"net/http"
@@ -50,7 +49,7 @@ func RegisterHandler(router *mux.Router,
 
 func GetTest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var tc domain.Testcase
+		var tc datafrog.Testcase
 		from := r.URL.Query().Get("from")
 		if from == "verifier" {
 			tc = verifier.Testcase()
@@ -105,7 +104,7 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		recordingSink := adapter.NewFileRecordingSink(testname)
-		recorder = app.NewRecorder(c, matcher.MySQLTokenizer{}, databaseLog, recordingSink, t, testname, adapter.GoogleUUIDProvider{})
+		recorder = app.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, adapter.GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
@@ -154,7 +153,7 @@ func StopRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels Ch
 func AllTests() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		allTests := struct {
-			Tests []domain.Testcase `json:"tests"`
+			Tests []datafrog.Testcase `json:"tests"`
 		}{}
 
 		testfiles, err := os.ReadDir(".")
@@ -179,10 +178,10 @@ func AllTests() http.HandlerFunc {
 	}
 }
 
-func readTestcase(filename string) (domain.Testcase, error) {
+func readTestcase(filename string) (datafrog.Testcase, error) {
 	jsonFile, err := os.Open(filename)
 	if err != nil {
-		return domain.Testcase{}, err
+		return datafrog.Testcase{}, err
 	}
 	defer func(jsonFile *os.File) {
 		err := jsonFile.Close()
@@ -191,9 +190,9 @@ func readTestcase(filename string) (domain.Testcase, error) {
 		}
 	}(jsonFile)
 	b, _ := io.ReadAll(jsonFile)
-	var tc domain.Testcase
+	var tc datafrog.Testcase
 	if err := json.Unmarshal(b, &tc); err != nil {
-		return domain.Testcase{}, err
+		return datafrog.Testcase{}, err
 	}
 	return tc, nil
 }
@@ -217,7 +216,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 		c := datafrog.NewConfig("config.json")
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
-		verifier = app.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, testname)
+		verifier = app.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])

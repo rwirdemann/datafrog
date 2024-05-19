@@ -1,4 +1,4 @@
-package matcher
+package datafrog
 
 import (
 	"github.com/stretchr/testify/assert"

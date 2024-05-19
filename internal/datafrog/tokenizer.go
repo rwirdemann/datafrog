@@ -1,4 +1,4 @@
-package matcher
+package datafrog
 
 // A Tokenizer splits a raw string obtained from the log file of the monitored
 // API into a set of single tokens. The primary split character should be a

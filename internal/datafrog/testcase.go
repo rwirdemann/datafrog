@@ -1,6 +1,8 @@
-package domain
+package datafrog
 
-import "time"
+import (
+	"time"
+)
 
 type Testcase struct {
 	Name          string        `json:"name"`

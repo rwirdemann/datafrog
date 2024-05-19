@@ -5,7 +5,7 @@ import (
 	"github.com/rwirdemann/datafrog/adapter"
 	"github.com/rwirdemann/datafrog/app"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
-	"github.com/rwirdemann/datafrog/matcher"
+	"github.com/rwirdemann/datafrog/internal/datafrog/mysql"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -46,7 +46,7 @@ var verifyCmd = &cobra.Command{
 		databaseLog := createLogAdapter(c)
 		defer databaseLog.Close()
 		t := &adapter.UTCTimer{}
-		verifier = app.NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, t, expectationsFilename)
+		verifier = app.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, expectationsFilename)
 		go checkVerifyExit()
 		go verifier.Start(done, stopped)
 		<-stopped // wait until verifier signals its finish

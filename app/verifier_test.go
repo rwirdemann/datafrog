@@ -1,32 +1,31 @@
 package app
 
 import (
-	"github.com/rwirdemann/datafrog/app/domain"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
+	"github.com/rwirdemann/datafrog/internal/datafrog/mysql"
 	"testing"
 
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/matcher"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestVerify(t *testing.T) {
 	var emptyDiff []int
-	var emptyExpectations []domain.Expectation
+	var emptyExpectations []datafrog.Expectation
 	testCases := []struct {
 		desc                         string
-		initialExpectations          []domain.Expectation
-		updatedExpectations          []domain.Expectation
-		additionalExpectations       []domain.Expectation
+		initialExpectations          []datafrog.Expectation
+		updatedExpectations          []datafrog.Expectation
+		additionalExpectations       []datafrog.Expectation
 		logs                         []string
 		patterns                     []string
 		reportAdditionalExpectations bool
 	}{
 		{
 			desc: "empty diff vector",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Tokens:      datafrog.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
 					IgnoreDiffs: emptyDiff,
 				},
@@ -35,9 +34,9 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	select * from jobs;",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Tokens:      datafrog.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
 					IgnoreDiffs: emptyDiff,
 					Fulfilled:   true,
@@ -50,9 +49,9 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "diff vector with one element",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
+					Tokens:      datafrog.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
 					IgnoreDiffs: []int{},
 				},
@@ -61,9 +60,9 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	select * from jobs where id=2;",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
+					Tokens:      datafrog.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
 					IgnoreDiffs: []int{5},
 					Fulfilled:   true,
@@ -76,9 +75,9 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "miss matching pattern",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
+					Tokens:      datafrog.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
 					IgnoreDiffs: []int{},
 				},
@@ -87,9 +86,9 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	update job where id=2;",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs where id=1;"),
+					Tokens:      datafrog.Tokenize("select * from jobs where id=1;"),
 					Pattern:     "select *",
 					IgnoreDiffs: []int{},
 					Fulfilled:   false,
@@ -102,19 +101,19 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "multiple expectations, different order",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0"),
+					Tokens:      datafrog.Tokenize("select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0"),
 					Pattern:     "select",
 					IgnoreDiffs: []int{},
 				},
 				{
-					Tokens:      matcher.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 3)"),
+					Tokens:      datafrog.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 3)"),
 					Pattern:     "insert",
 					IgnoreDiffs: []int{},
 				},
 				{
-					Tokens:      matcher.Tokenize("update job set description='World, X', publish_at='2024-04-17 15:55:56', publish_trials=1, published_timestamp='2024-04-17 15:55:58.433346', tags='', title='Hello' where id=3"),
+					Tokens:      datafrog.Tokenize("update job set description='World, X', publish_at='2024-04-17 15:55:56', publish_trials=1, published_timestamp='2024-04-17 15:55:58.433346', tags='', title='Hello' where id=3"),
 					Pattern:     "update",
 					IgnoreDiffs: []int{},
 				},
@@ -125,23 +124,23 @@ func TestVerify(t *testing.T) {
 				"2024-04-17T13:55:57.090960Z\t 2001 Query\tselect job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_"),
+					Tokens:      datafrog.Tokenize("select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_"),
 					Pattern:     "select",
 					IgnoreDiffs: emptyDiff,
 					Fulfilled:   true,
 					Verified:    1,
 				},
 				{
-					Tokens:      matcher.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 4)"),
+					Tokens:      datafrog.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 4)"),
 					Pattern:     "insert",
 					IgnoreDiffs: []int{12, 17},
 					Fulfilled:   true,
 					Verified:    1,
 				},
 				{
-					Tokens:      matcher.Tokenize("update job set description='World, X', publish_at='2024-04-17 15:55:56', publish_trials=1, published_timestamp='2024-04-17 15:55:58.433346', tags='', title='Hello' where id=3"),
+					Tokens:      datafrog.Tokenize("update job set description='World, X', publish_at='2024-04-17 15:55:56', publish_trials=1, published_timestamp='2024-04-17 15:55:58.433346', tags='', title='Hello' where id=3"),
 					Pattern:     "update",
 					IgnoreDiffs: []int{6, 10},
 					Fulfilled:   true,
@@ -154,16 +153,16 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "verified > 0 but equals fails should continue with next expectation",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("insert into job (description, id) values ('Developer', 4)"),
+					Tokens:      datafrog.Tokenize("insert into job (description, id) values ('Developer', 4)"),
 					Pattern:     "insert",
 					Verified:    1,
 					Fulfilled:   true,
 					IgnoreDiffs: []int{7},
 				},
 				{
-					Tokens:      matcher.Tokenize("insert into application (name, job_id, id) values ('Ralf', 4, 1)"),
+					Tokens:      datafrog.Tokenize("insert into application (name, job_id, id) values ('Ralf', 4, 1)"),
 					Pattern:     "insert",
 					Verified:    1,
 					Fulfilled:   true,
@@ -175,16 +174,16 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:15.070009Z	 2549 Query	insert into job (description, id) values ('Developer', 5);",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("insert into job (description, id) values ('Developer', 4)"),
+					Tokens:      datafrog.Tokenize("insert into job (description, id) values ('Developer', 4)"),
 					Pattern:     "insert",
 					Verified:    2,
 					Fulfilled:   true,
 					IgnoreDiffs: []int{7},
 				},
 				{
-					Tokens:      matcher.Tokenize("insert into application (name, job_id, id) values ('Ralf', 4, 1)"),
+					Tokens:      datafrog.Tokenize("insert into application (name, job_id, id) values ('Ralf', 4, 1)"),
 					Pattern:     "insert",
 					Verified:    2,
 					Fulfilled:   true,
@@ -197,9 +196,9 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "additional pattern matching verifications",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Tokens:      datafrog.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
 					IgnoreDiffs: emptyDiff,
 				},
@@ -209,18 +208,18 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:16.070009Z	 2550 Query	select * from jobs;",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Tokens:      datafrog.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
 					IgnoreDiffs: emptyDiff,
 					Fulfilled:   true,
 					Verified:    1,
 				},
 			},
-			additionalExpectations: []domain.Expectation{
+			additionalExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("insert into jobs;"),
+					Tokens:      datafrog.Tokenize("insert into jobs;"),
 					Pattern:     "insert into",
 					IgnoreDiffs: emptyDiff,
 					Fulfilled:   false,
@@ -232,9 +231,9 @@ func TestVerify(t *testing.T) {
 		},
 		{
 			desc: "additional expecatations should not be reported",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Tokens:      datafrog.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
 					IgnoreDiffs: emptyDiff,
 				},
@@ -244,9 +243,9 @@ func TestVerify(t *testing.T) {
 				"2024-04-08T09:39:16.070009Z	 2550 Query	select * from jobs;",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("select * from jobs;"),
+					Tokens:      datafrog.Tokenize("select * from jobs;"),
 					Pattern:     "select *",
 					IgnoreDiffs: emptyDiff,
 					Fulfilled:   true,
@@ -264,9 +263,9 @@ func TestVerify(t *testing.T) {
 			// - e1 anbd v have the same token length
 			// => Bug: a new diff vector was build and stored for e1
 			desc: "fix diff building for already verfied expecation",
-			initialExpectations: []domain.Expectation{
+			initialExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 3)"),
+					Tokens:      datafrog.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 3)"),
 					Pattern:     "insert",
 					Verified:    1,
 					Fulfilled:   true,
@@ -277,9 +276,9 @@ func TestVerify(t *testing.T) {
 				"2024-04-17T13:55:56.750174Z\t 2000 Query\tinsert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('Universe', '2024-04-17 15:56:56', 0, null, '', 'Yeah', 4)",
 				"STOP",
 			},
-			updatedExpectations: []domain.Expectation{
+			updatedExpectations: []datafrog.Expectation{
 				{
-					Tokens:      matcher.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 4)"),
+					Tokens:      datafrog.Tokenize("insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-17 15:55:56', 0, null, '', 'Hello', 4)"),
 					Pattern:     "insert",
 					IgnoreDiffs: []int{12, 17},
 					Fulfilled:   false,
@@ -301,7 +300,7 @@ func TestVerify(t *testing.T) {
 			databaseLog := adapter.NewMemSQLLog(tC.logs, doneChannel)
 			expectationSource := adapter.NewMemExpectationSource(tC.initialExpectations)
 			timer := adapter.MockTimer{}
-			verifier := NewVerifier(c, matcher.MySQLTokenizer{}, databaseLog, expectationSource, timer, "")
+			verifier := NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, timer, "")
 			go verifier.Start(doneChannel, stoppedChannel)
 			<-stoppedChannel // wait till verifier is done
 			tc := expectationSource.Get()

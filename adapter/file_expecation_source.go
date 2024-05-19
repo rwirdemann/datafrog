@@ -3,7 +3,7 @@ package adapter
 import (
 	"bufio"
 	"encoding/json"
-	"github.com/rwirdemann/datafrog/app/domain"
+	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"log"
 	"os"
 )
@@ -11,7 +11,7 @@ import (
 // A FileExpectationSource reads expectations from a file in json format.
 type FileExpectationSource struct {
 	filename string
-	testcase domain.Testcase
+	testcase datafrog.Testcase
 }
 
 // NewFileExpectationSource creates a new NewFileExpectationSource that reads
@@ -30,11 +30,11 @@ func NewFileExpectationSource(filename string) (*FileExpectationSource, error) {
 }
 
 // Get returns the testcase.
-func (s FileExpectationSource) Get() domain.Testcase {
+func (s FileExpectationSource) Get() datafrog.Testcase {
 	return s.testcase
 }
 
-func (s FileExpectationSource) Write(testcase domain.Testcase) error {
+func (s FileExpectationSource) Write(testcase datafrog.Testcase) error {
 	f, err := os.Create(s.filename)
 	if err != nil {
 		log.Fatal(err)

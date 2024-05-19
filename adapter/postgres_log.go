@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
-	"github.com/rwirdemann/datafrog/matcher"
 	"io"
 	"log"
 	"os"
@@ -54,7 +53,7 @@ func (m PostgresLog) NextLine() (string, error) {
 			return "", err
 		}
 
-		matches, _ := matcher.MatchesPattern(m.config, line)
+		matches, _ := datafrog.MatchesPattern(m.config, line)
 		if matches {
 			line = m.mergeNext(line)
 		}
