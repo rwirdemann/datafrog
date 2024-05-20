@@ -2,7 +2,6 @@ package verify
 
 import (
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/rwirdemann/datafrog/ports"
 	"log"
 	"time"
 )
@@ -14,16 +13,16 @@ import (
 type Verifier struct {
 	config            df.Config
 	tokenizer         df.Tokenizer
-	log               ports.Log
+	log               df.Log
 	expectationSource ExpectationSource
 	testcase          df.Testcase
-	timer             ports.Timer
+	timer             df.Timer
 	name              string
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c df.Config, tokenizer df.Tokenizer, log ports.Log,
-	source ExpectationSource, t ports.Timer, name string) *Verifier {
+func NewVerifier(c df.Config, tokenizer df.Tokenizer, log df.Log,
+	source ExpectationSource, t df.Timer, name string) *Verifier {
 	return &Verifier{
 		config:            c,
 		tokenizer:         tokenizer,

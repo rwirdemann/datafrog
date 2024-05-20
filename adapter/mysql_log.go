@@ -3,12 +3,11 @@ package adapter
 import (
 	"bufio"
 	"errors"
+	"github.com/rwirdemann/datafrog/pkg/df"
 	"io"
 	"log"
 	"os"
 	"time"
-
-	"github.com/rwirdemann/datafrog/ports"
 )
 
 type MySQLLog struct {
@@ -16,7 +15,7 @@ type MySQLLog struct {
 	reader  *bufio.Reader
 }
 
-func NewMYSQLLog(logfileName string) ports.Log {
+func NewMYSQLLog(logfileName string) df.Log {
 	logfile, err := os.Open(logfileName)
 	if err != nil {
 		log.Fatal(err)

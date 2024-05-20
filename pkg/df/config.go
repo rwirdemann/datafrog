@@ -1,3 +1,7 @@
+// Package df provides usecase overlapping datatypes and functions, like
+// Expectation, Testcase or Tokenizer. Underlying desin guideline: if a type
+// belongs to an usecase it should live in the usecase package. If a type or
+// function is used by multiple usecase it should live in df.
 package df
 
 import (

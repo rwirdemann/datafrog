@@ -3,7 +3,6 @@ package record
 import (
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/rwirdemann/datafrog/ports"
 	"log"
 )
 
@@ -13,18 +12,18 @@ import (
 type Recorder struct {
 	config        df.Config
 	tokenizer     df.Tokenizer
-	log           ports.Log
+	log           df.Log
 	recordingSink RecordingSink
-	timer         ports.Timer
+	timer         df.Timer
 	name          string
-	uuidProvider  ports.UUIDProvider
+	uuidProvider  UUIDProvider
 	testcase      df.Testcase
 }
 
 // NewRecorder creates a new Recorder.
 func NewRecorder(c df.Config, tokenizer df.Tokenizer,
-	log ports.Log, sink RecordingSink, timer ports.Timer, name string,
-	uuidProvider ports.UUIDProvider) *Recorder {
+	log df.Log, sink RecordingSink, timer df.Timer, name string,
+	uuidProvider UUIDProvider) *Recorder {
 
 	return &Recorder{
 		config:        c,
