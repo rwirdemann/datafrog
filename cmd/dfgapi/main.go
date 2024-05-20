@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/rwirdemann/datafrog/http/api"
-	"github.com/rwirdemann/datafrog/web/app"
+	"github.com/rwirdemann/datafrog/pkg/api"
+	"github.com/rwirdemann/datafrog/pkg/api/web"
 	"log"
 	"net/http"
 )
@@ -28,8 +28,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Listening on :%d...", app.Conf.Api.Port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", app.Conf.Api.Port), router); err != nil {
+	log.Printf("Listening on :%d...", web.Conf.Api.Port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", web.Conf.Api.Port), router); err != nil {
 		log.Fatal(err)
 	}
 }

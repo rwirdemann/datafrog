@@ -2,7 +2,7 @@ package main
 
 import (
 	"embed"
-	"github.com/rwirdemann/datafrog/web/app"
+	"github.com/rwirdemann/datafrog/pkg/api/web"
 	"github.com/rwirdemann/simpleweb"
 	"log"
 )
@@ -13,12 +13,12 @@ import (
 var templates embed.FS
 
 func init() {
-	simpleweb.Init(templates, []string{"templates/layout.html"}, app.Conf.Web.Port)
+	simpleweb.Init(templates, []string{"templates/layout.html"}, web.Conf.Web.Port)
 }
 
 func main() {
-	app.RegisterHandler()
+	web.RegisterHandler()
 	simpleweb.ShowRoutes()
-	log.Printf("Connecting backend: http://localhost:/%d", app.Conf.Api.Port)
+	log.Printf("Connecting backend: http://localhost:/%d", web.Conf.Api.Port)
 	simpleweb.Run()
 }
