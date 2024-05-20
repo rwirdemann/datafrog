@@ -1,4 +1,4 @@
-package adapter
+package postgres
 
 import (
 	"bufio"
@@ -13,36 +13,36 @@ import (
 	"time"
 )
 
-type PostgresLog struct {
+type Log struct {
 	logfile *os.File
 	reader  *bufio.Reader
 	config  df.Config
 }
 
-func NewPostgresLog(logfileName string, config df.Config) PostgresLog {
+func NewPostgresLog(logfileName string, config df.Config) Log {
 	logfile, err := os.Open(logfileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return PostgresLog{logfile: logfile, reader: bufio.NewReader(logfile), config: config}
+	return Log{logfile: logfile, reader: bufio.NewReader(logfile), config: config}
 }
 
-func (m PostgresLog) Close() {
+func (m Log) Close() {
 	err := m.logfile.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (m PostgresLog) Timestamp(s string) (time.Time, error) {
-	t, err := timestamp(s, "[0-9]{4}-[0-9]{2}-[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}", time.DateTime)
+func (m Log) Timestamp(s string) (time.Time, error) {
+	t, err := df.Timestamp(s, "[0-9]{4}-[0-9]{2}-[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}", time.DateTime)
 	if err != nil {
-		return time.Time{}, errors.New("string contains no valid timestamp")
+		return time.Time{}, errors.New("string contains no valid Timestamp")
 	}
 	return t, nil
 }
 
-func (m PostgresLog) NextLine() (string, error) {
+func (m Log) NextLine() (string, error) {
 	for {
 		line, err := m.reader.ReadString('\n')
 		if err != nil {
@@ -62,7 +62,7 @@ func (m PostgresLog) NextLine() (string, error) {
 	}
 }
 
-func (m PostgresLog) mergeNext(line string) string {
+func (m Log) mergeNext(line string) string {
 	next, _ := m.reader.ReadString('\n')
 	if strings.Contains(next, "DETAIL") {
 		values := make(map[int]string)

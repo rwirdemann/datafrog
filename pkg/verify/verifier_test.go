@@ -6,7 +6,6 @@ import (
 	"github.com/rwirdemann/datafrog/pkg/mysql"
 	"testing"
 
-	"github.com/rwirdemann/datafrog/adapter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -298,9 +297,9 @@ func TestVerify(t *testing.T) {
 			c.Expectations.ReportAdditional = tC.reportAdditionalExpectations
 			doneChannel := make(chan struct{})
 			stoppedChannel := make(chan struct{})
-			databaseLog := adapter.NewMemSQLLog(tC.logs, doneChannel)
+			databaseLog := mocks.NewMemSQLLog(tC.logs, doneChannel)
 			expectationSource := mocks.NewExpectationSource(tC.initialExpectations)
-			timer := adapter.MockTimer{}
+			timer := mocks.Timer{}
 			verifier := NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, timer, "")
 			go verifier.Start(doneChannel, stoppedChannel)
 			<-stoppedChannel // wait till verifier is done

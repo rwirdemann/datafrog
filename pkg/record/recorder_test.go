@@ -7,7 +7,6 @@ import (
 	"github.com/rwirdemann/datafrog/pkg/mysql"
 	"testing"
 
-	"github.com/rwirdemann/datafrog/adapter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,9 +52,9 @@ func TestRecord(t *testing.T) {
 
 	recordingDone := make(chan struct{})
 	recordingStopped := make(chan struct{})
-	databaseLog := adapter.NewMemSQLLog(logs, recordingDone)
+	databaseLog := mocks.NewMemSQLLog(logs, recordingDone)
 	recordingSink := mocks.NewRecordingSink()
-	timer := adapter.MockTimer{}
+	timer := mocks.Timer{}
 	recorder := NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, timer, "create-job.json", mocks.StaticUUIDProvider{})
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped

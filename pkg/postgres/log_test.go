@@ -1,4 +1,4 @@
-package adapter
+package postgres
 
 import (
 	"fmt"
@@ -28,14 +28,14 @@ func TestReadLine(t *testing.T) {
 }
 
 func TestPostgresTimestamp(t *testing.T) {
-	pl := PostgresLog{}
+	pl := Log{}
 	actual, err := pl.Timestamp("2024-04-19 10:12:16.889 CEST [89718] LOG:  execute <unnamed>: insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-19 10:12:12', '0', NULL, '', 'Hello', '1')")
 	assert.Nil(t, err)
 	expected, _ := time.Parse(time.DateTime, "2024-04-19 10:12:16.889")
 	assert.Equal(t, expected, actual)
 }
 
-func readLine(t *testing.T, pl PostgresLog) string {
+func readLine(t *testing.T, pl Log) string {
 	l, err := pl.NextLine()
 	if err != nil {
 		t.Fatal(err)

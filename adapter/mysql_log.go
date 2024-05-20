@@ -31,9 +31,9 @@ func (m MySQLLog) Close() {
 }
 
 func (m MySQLLog) Timestamp(s string) (time.Time, error) {
-	t, err := timestamp(s, "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z", time.RFC3339Nano)
+	t, err := df.Timestamp(s, "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z", time.RFC3339Nano)
 	if err != nil {
-		return time.Time{}, errors.New("string contains no valid timestamp")
+		return time.Time{}, errors.New("string contains no valid Timestamp")
 	}
 	return t, nil
 }
