@@ -1,5 +1,6 @@
 build:
-	go build -o ${GOPATH}/bin/dfg main.go
+	go build -o ${GOPATH}/bin/dfgapi cmd/dfgapi/main.go
+	go build -o ${GOPATH}/bin/dfgweb cmd/dfgweb/main.go
 
 clean:
 	rm -rf ./bin
