@@ -2,7 +2,7 @@ package main
 
 import (
 	"embed"
-	"github.com/rwirdemann/datafrog/pkg/api/web"
+	"github.com/rwirdemann/datafrog/pkg/web"
 	"github.com/rwirdemann/simpleweb"
 	"log"
 )

@@ -1,4 +1,4 @@
-package adapter
+package mysql
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type MySQLLog struct {
+type Log struct {
 	logfile *os.File
 	reader  *bufio.Reader
 }
@@ -20,17 +20,17 @@ func NewMYSQLLog(logfileName string) df.Log {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return MySQLLog{logfile: logfile, reader: bufio.NewReader(logfile)}
+	return Log{logfile: logfile, reader: bufio.NewReader(logfile)}
 }
 
-func (m MySQLLog) Close() {
+func (m Log) Close() {
 	err := m.logfile.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (m MySQLLog) Timestamp(s string) (time.Time, error) {
+func (m Log) Timestamp(s string) (time.Time, error) {
 	t, err := df.Timestamp(s, "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z", time.RFC3339Nano)
 	if err != nil {
 		return time.Time{}, errors.New("string contains no valid Timestamp")
@@ -38,7 +38,7 @@ func (m MySQLLog) Timestamp(s string) (time.Time, error) {
 	return t, nil
 }
 
-func (m MySQLLog) NextLine() (string, error) {
+func (m Log) NextLine() (string, error) {
 	for {
 		line, err := m.reader.ReadString('\n')
 		if err != nil {

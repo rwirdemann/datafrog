@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/pkg/api"
-	"github.com/rwirdemann/datafrog/pkg/api/web"
+	"github.com/rwirdemann/datafrog/pkg/web"
 	"log"
 	"net/http"
 )

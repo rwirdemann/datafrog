@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/rwirdemann/datafrog/adapter"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/file"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
@@ -103,10 +102,10 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
 		c := df.NewConfig("config.json")
-		databaseLog := adapter.NewMYSQLLog(c.Filename)
-		t := &adapter.UTCTimer{}
+		databaseLog := mysql.NewMYSQLLog(c.Filename)
+		t := &UTCTimer{}
 		recordingSink := file.NewFileRecordingSink(testname)
-		recorder = record.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, adapter.GoogleUUIDProvider{})
+		recorder = record.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
@@ -216,8 +215,8 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 		}
 
 		c := df.NewConfig("config.json")
-		databaseLog := adapter.NewMYSQLLog(c.Filename)
-		t := &adapter.UTCTimer{}
+		databaseLog := mysql.NewMYSQLLog(c.Filename)
+		t := &UTCTimer{}
 		verifier = verify.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
