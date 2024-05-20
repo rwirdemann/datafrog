@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/app"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/internal/datafrog/mysql"
+	"github.com/rwirdemann/datafrog/internal/datafrog/verify"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -24,7 +24,7 @@ var done = make(chan struct{})
 // read from stopped channel to wait for the verifier to finish
 var stopped = make(chan struct{})
 
-var verifier *app.Verifier
+var verifier *verify.Verifier
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Starts verification",
@@ -46,7 +46,7 @@ var verifyCmd = &cobra.Command{
 		databaseLog := createLogAdapter(c)
 		defer databaseLog.Close()
 		t := &adapter.UTCTimer{}
-		verifier = app.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, expectationsFilename)
+		verifier = verify.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, expectationsFilename)
 		go checkVerifyExit()
 		go verifier.Start(done, stopped)
 		<-stopped // wait until verifier signals its finish

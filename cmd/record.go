@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/rwirdemann/datafrog/app"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/internal/datafrog/mysql"
+	"github.com/rwirdemann/datafrog/internal/datafrog/record"
 	"log"
 	"os"
 
@@ -25,7 +25,7 @@ var recordingDone = make(chan struct{})
 // read from stopped channel to wait for the recorder to finish
 var recordingStopped = make(chan struct{})
 
-var recorder *app.Recorder
+var recorder *record.Recorder
 var recordCmd = &cobra.Command{
 	Use:   "record",
 	Short: "Starts recording",
@@ -43,7 +43,7 @@ var recordCmd = &cobra.Command{
 		recordingSink := adapter.NewFileRecordingSink(out)
 		databaseLog := createLogAdapter(c)
 		t := &adapter.UTCTimer{}
-		recorder = app.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, out, adapter.GoogleUUIDProvider{})
+		recorder = record.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, out, adapter.GoogleUUIDProvider{})
 		go checkExit()
 		go recorder.Start(recordingDone, recordingStopped)
 		<-recordingStopped

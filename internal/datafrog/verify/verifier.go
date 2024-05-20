@@ -1,4 +1,4 @@
-package app
+package verify
 
 import (
 	"github.com/rwirdemann/datafrog/internal/datafrog"

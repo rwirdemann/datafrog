@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/adapter"
-	"github.com/rwirdemann/datafrog/app"
 	"github.com/rwirdemann/datafrog/internal/datafrog"
 	"github.com/rwirdemann/datafrog/internal/datafrog/mysql"
+	"github.com/rwirdemann/datafrog/internal/datafrog/record"
+	"github.com/rwirdemann/datafrog/internal/datafrog/verify"
 	"io"
 	"log"
 	"net/http"
@@ -15,8 +16,8 @@ import (
 	"strings"
 )
 
-var verifier *app.Verifier
-var recorder *app.Recorder
+var verifier *verify.Verifier
+var recorder *record.Recorder
 
 // ChannelMap represents a map of empty channels indexed by test names.
 type ChannelMap map[string]chan struct{}
@@ -104,7 +105,7 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
 		recordingSink := adapter.NewFileRecordingSink(testname)
-		recorder = app.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, adapter.GoogleUUIDProvider{})
+		recorder = record.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, adapter.GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
@@ -216,7 +217,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 		c := datafrog.NewConfig("config.json")
 		databaseLog := adapter.NewMYSQLLog(c.Filename)
 		t := &adapter.UTCTimer{}
-		verifier = app.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, testname)
+		verifier = verify.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])
