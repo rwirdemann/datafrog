@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/pkg/api"
-	"github.com/rwirdemann/datafrog/pkg/web"
+	"github.com/rwirdemann/datafrog/pkg/df"
 	"log"
 	"net/http"
 )
@@ -16,10 +16,14 @@ func main() {
 	recordingDoneChannels := make(api.ChannelMap)
 	recordingStoppedChannels := make(api.ChannelMap)
 
-	api.RegisterHandler(router,
+	config, err := df.NewDefaultConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	api.RegisterHandler(config, router,
 		verificationDoneChannels, verificationStoppedChannels,
 		recordingDoneChannels, recordingStoppedChannels)
-	err := router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		tpl, _ := route.GetPathTemplate()
 		met, _ := route.GetMethods()
 		log.Println(tpl, met)
@@ -28,8 +32,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Listening on :%d...", web.Conf.Api.Port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", web.Conf.Api.Port), router); err != nil {
+	log.Printf("Listening on :%d...", config.Api.Port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Api.Port), router); err != nil {
 		log.Fatal(err)
 	}
 }

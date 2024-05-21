@@ -12,18 +12,16 @@ import (
 )
 
 var client *http.Client
-var Conf df.Config
+var config df.Config
 var apiBaseURL string
-
-func init() {
-	Conf = df.NewConfig("config.json")
-	client = &http.Client{Timeout: time.Duration(Conf.Web.Timeout) * time.Second}
-	apiBaseURL = fmt.Sprintf("http://localhost:%d", Conf.Api.Port)
-}
 
 // RegisterHandler registers all known URLs and maps them to their associated
 // handlers.
-func RegisterHandler() {
+func RegisterHandler(c df.Config) {
+	config = c
+	client = &http.Client{Timeout: time.Duration(config.Web.Timeout) * time.Second}
+	apiBaseURL = fmt.Sprintf("http://localhost:%d", config.Api.Port)
+
 	// home
 	simpleweb.Register("/", IndexHandler, "GET")
 
@@ -77,7 +75,7 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 		Title  string
 		Tests  []df.Testcase
 		Config df.Config
-	}{Title: "Home", Tests: allTests.Tests, Config: Conf})
+	}{Title: "Home", Tests: allTests.Tests, Config: config})
 }
 
 func ShowHandler(w http.ResponseWriter, r *http.Request) {

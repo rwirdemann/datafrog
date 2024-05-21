@@ -6,6 +6,7 @@ package df
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -35,9 +36,30 @@ type Config struct {
 	}
 }
 
+// NewDefaultConfig creates a new Config instance by trying to find a file
+// config.json in the current or in the config subdirectory.
+func NewDefaultConfig() (Config, error) {
+	if exists("config.json") {
+		return NewConfig("config.json"), nil
+	}
+	if exists("config/config.json") {
+		return NewConfig("config/config.json"), nil
+	}
+
+	return Config{}, errors.New("config.json not found")
+}
+
+func exists(filename string) bool {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 // NewConfig creates a new instance given its settings from filename in json
 // format.
 func NewConfig(filename string) Config {
+	log.Printf("using config file '%s'", filename)
 	configfile, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)

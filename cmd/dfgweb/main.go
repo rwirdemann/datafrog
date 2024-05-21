@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/web"
 	"github.com/rwirdemann/simpleweb"
 	"log"
@@ -12,13 +13,14 @@ import (
 //go:embed all:templates
 var templates embed.FS
 
-func init() {
-	simpleweb.Init(templates, []string{"templates/layout.html"}, web.Conf.Web.Port)
-}
-
 func main() {
-	web.RegisterHandler()
+	config, err := df.NewDefaultConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	simpleweb.Init(templates, []string{"templates/layout.html"}, config.Web.Port)
+	web.RegisterHandler(config)
 	simpleweb.ShowRoutes()
-	log.Printf("Connecting backend: http://localhost:/%d", web.Conf.Api.Port)
+	log.Printf("Connecting backend: http://localhost:/%d", config.Api.Port)
 	simpleweb.Run()
 }

@@ -18,15 +18,14 @@ import (
 
 var verifier *verify.Verifier
 var recorder *record.Recorder
+var config df.Config
 
 // ChannelMap represents a map of empty channels indexed by test names.
 type ChannelMap map[string]chan struct{}
 
 // RegisterHandler registers http handler to record and verify testcases.
-func RegisterHandler(router *mux.Router,
-	verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap,
-	recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) {
-
+func RegisterHandler(c df.Config, router *mux.Router, verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap, recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) {
+	config = c
 	router.HandleFunc("/tests", AllTests()).Methods("GET")
 
 	// create new test and start recording
@@ -101,11 +100,10 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		}
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
-		c := df.NewConfig("config.json")
-		databaseLog := mysql.NewMYSQLLog(c.Filename)
+		databaseLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
 		recordingSink := file.NewFileRecordingSink(testname)
-		recorder = record.NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, GoogleUUIDProvider{})
+		recorder = record.NewRecorder(config, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
@@ -214,10 +212,9 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			return
 		}
 
-		c := df.NewConfig("config.json")
-		databaseLog := mysql.NewMYSQLLog(c.Filename)
+		databaseLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
-		verifier = verify.NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, t, testname)
+		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, expectationSource, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])
