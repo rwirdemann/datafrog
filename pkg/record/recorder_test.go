@@ -53,11 +53,11 @@ func TestRecord(t *testing.T) {
 	recordingDone := make(chan struct{})
 	recordingStopped := make(chan struct{})
 	databaseLog := mocks.NewMemSQLLog(logs, recordingDone)
-	recordingSink := mocks.NewRecordingSink()
+	writer := &mocks.MemWriter{}
 	timer := mocks.Timer{}
-	recorder := NewRecorder(c, mysql.Tokenizer{}, databaseLog, recordingSink, timer, "create-job.json", mocks.StaticUUIDProvider{})
+	recorder := NewRecorder(c, mysql.Tokenizer{}, databaseLog, writer, timer, "create-job.json", mocks.StaticUUIDProvider{})
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped
-	assert.Len(t, recordingSink.Recorded, 1)
-	assert.Equal(t, string(expectedTestcase), recordingSink.Recorded[0])
+	assert.Len(t, writer.Recorded, 1)
+	assert.Equal(t, string(expectedTestcase), writer.Recorded[0])
 }

@@ -3,6 +3,7 @@ package record
 import (
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
+	"io"
 	"log"
 )
 
@@ -10,30 +11,30 @@ import (
 // of the patterns specified in config. The recorded output is written to
 // recording sink.
 type Recorder struct {
-	config        df.Config
-	tokenizer     df.Tokenizer
-	log           df.Log
-	recordingSink RecordingSink
-	timer         df.Timer
-	name          string
-	uuidProvider  UUIDProvider
-	testcase      df.Testcase
+	config       df.Config
+	tokenizer    df.Tokenizer
+	log          df.Log
+	writer       io.Writer // destination of recorded testcase
+	timer        df.Timer
+	name         string
+	uuidProvider UUIDProvider
+	testcase     df.Testcase
 }
 
 // NewRecorder creates a new Recorder.
 func NewRecorder(c df.Config, tokenizer df.Tokenizer,
-	log df.Log, sink RecordingSink, timer df.Timer, name string,
+	log df.Log, w io.Writer, timer df.Timer, name string,
 	uuidProvider UUIDProvider) *Recorder {
 
 	return &Recorder{
-		config:        c,
-		tokenizer:     tokenizer,
-		log:           log,
-		recordingSink: sink,
-		timer:         timer,
-		name:          name,
-		uuidProvider:  uuidProvider,
-		testcase:      df.Testcase{Name: name}}
+		config:       c,
+		tokenizer:    tokenizer,
+		log:          log,
+		writer:       w,
+		timer:        timer,
+		name:         name,
+		uuidProvider: uuidProvider,
+		testcase:     df.Testcase{Name: name}}
 }
 
 // Start starts the recording process as endless loop. Every log entry that
@@ -42,15 +43,21 @@ func NewRecorder(c df.Config, tokenizer df.Tokenizer,
 // considered.
 func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	r.timer.Start()
-	log.Printf("Recording started at %v. Press Enter to stop and save recording...", r.timer.GetStart())
+	log.Printf("Recording started at %v...", r.timer.GetStart())
 
 	// tell caller that verification has been finished
 	defer close(stopped)
 
 	// called when done channel is closed
 	defer func() {
-		r.write(r.testcase)
-		r.recordingSink.Close()
+		b, err := json.Marshal(r.testcase)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = r.writer.Write(b)
+		if err != nil {
+			log.Fatal(err)
+		}
 		r.log.Close()
 	}()
 
@@ -81,23 +88,6 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 			log.Println("Recording finished. Run verification now!")
 			return
 		}
-	}
-}
-
-// write writes testcase as json to the recordingSink. Existing data is
-// overridden.
-func (r *Recorder) write(testcase df.Testcase) {
-	b, err := json.Marshal(testcase)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = r.recordingSink.WriteString(string(b))
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = r.recordingSink.Flush()
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 

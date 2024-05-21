@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -102,8 +103,14 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
 		databaseLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
-		recordingSink := file.NewFileRecordingSink(testname)
-		recorder = record.NewRecorder(config, mysql.Tokenizer{}, databaseLog, recordingSink, t, testname, GoogleUUIDProvider{})
+
+		f, err := os.Create(testname)
+		if err != nil {
+			log.Fatal(err)
+		}
+		writer := bufio.NewWriter(f)
+
+		recorder = record.NewRecorder(config, mysql.Tokenizer{}, databaseLog, writer, t, testname, GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
