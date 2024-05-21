@@ -21,14 +21,13 @@ type Verifier struct {
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c df.Config, tokenizer df.Tokenizer, log df.Log,
-	source ExpectationSource, t df.Timer, name string) *Verifier {
+func NewVerifier(c df.Config, tokenizer df.Tokenizer, log df.Log, tc df.Testcase, source ExpectationSource, t df.Timer, name string) *Verifier {
 	return &Verifier{
 		config:            c,
 		tokenizer:         tokenizer,
 		log:               log,
 		expectationSource: source,
-		testcase:          source.Get(),
+		testcase:          tc,
 		timer:             t,
 		name:              name,
 	}

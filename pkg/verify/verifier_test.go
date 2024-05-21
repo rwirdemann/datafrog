@@ -299,18 +299,18 @@ func TestVerify(t *testing.T) {
 			stoppedChannel := make(chan struct{})
 			databaseLog := mocks.NewMemSQLLog(tC.logs, doneChannel)
 			expectationSource := mocks.NewExpectationSource(tC.initialExpectations)
+			tc := df.Testcase{Expectations: tC.initialExpectations}
 			timer := mocks.Timer{}
-			verifier := NewVerifier(c, mysql.Tokenizer{}, databaseLog, expectationSource, timer, "")
+			verifier := NewVerifier(c, mysql.Tokenizer{}, databaseLog, tc, expectationSource, timer, "")
 			go verifier.Start(doneChannel, stoppedChannel)
 			<-stoppedChannel // wait till verifier is done
-			tc := expectationSource.Get()
-			for i, e := range tc.Expectations {
+			for i, e := range verifier.Testcase().Expectations {
 				updatedExpectation := tC.updatedExpectations[i]
 				assert.Equal(t, updatedExpectation.IgnoreDiffs, e.IgnoreDiffs)
 				assert.Equal(t, updatedExpectation.Fulfilled, e.Fulfilled)
 				assert.Equal(t, updatedExpectation.Verified, e.Verified)
 			}
-			assert.Equal(t, tC.additionalExpectations, tc.AdditionalExpectations)
+			assert.Equal(t, tC.additionalExpectations, verifier.Testcase().AdditionalExpectations)
 		})
 	}
 }

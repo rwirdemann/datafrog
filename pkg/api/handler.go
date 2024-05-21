@@ -213,6 +213,17 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 		}
 
 		testname := mux.Vars(request)["name"]
+		expectations, err := os.ReadFile(testname)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusNotFound)
+			return
+		}
+		tc := df.Testcase{}
+		if err := json.Unmarshal(expectations, &tc); err != nil {
+			http.Error(writer, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		expectationSource, err := file.NewFileExpectationSource(testname)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusNotFound)
@@ -221,7 +232,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 
 		databaseLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
-		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, expectationSource, t, testname)
+		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, tc, expectationSource, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])
