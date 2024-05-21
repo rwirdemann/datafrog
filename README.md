@@ -1,7 +1,7 @@
 # DataFrog (dfg)
 
-A simple command line tool to record and verify statement logged by external
-systems, e.g. databases.
+A simple API to record and verify statement logged by external systems, e.g.
+databases.
 
 The current version was tested with MySQL on MacOS.
 
@@ -24,27 +24,9 @@ algorithm requires to run the same usecase at least twice. The first run is
 called `recording`. The second and all succeeding runs are called
 `verification`.
 
-## Recording
-
-```
-dfg record --out create-job.json
-```
-
-Starts the recorder in the command line.  
-
-## Verification
-
-```
-dfg verify --expectations create-job.json
-```
-
-Starts the verifier in the command line to verify the expectations recorded
-during the previous run in `create-job.json`. The expectations file is updated
-according to the fulfilled expectations.
-
 ## Development
 
-Run `make` to create the `dfg` binary.
+Run `make` to create the `dfgapi` and `dfgweb` binaries.
 
 ```
 $ make 
@@ -52,8 +34,8 @@ $ make
 
 ## Configuration
 
-Expects a `config.json` file in the current directory according to the following
-format:
+Expects a `config.json` file in the current or config subdirectory according to
+the following format:
 
 ```json
 {
@@ -69,7 +51,8 @@ format:
     "report_additional": true
   },
   "web": {
-    "port": 8081
+    "port": 8081,
+    "timeout": 120
   },
   "api": {
     "port": 3000
@@ -77,7 +60,7 @@ format:
 }
 ```
 
-A database statement is only recorded if it contains one the configured
+A database statement is only recorded if it contains one of the configured
 patterns. The pattern format `select job!publish_trials<1` contains an exclude
 rule thus only statements that contain `select job` but not `publish_trials<1`
 are recorded.
@@ -86,7 +69,7 @@ Allowed logformat: mysql | postgres
 
 ## API
 
-Run `dfg api` to start the backend.
+Run `dfgapi` to start the backend.
 
 ```
 # List of avaiable tests
@@ -110,12 +93,4 @@ DELETE /tests/{name}/verifications
 
 ## Web UI
 
-Run `dfg web` to start the web frontend. Requires a running backend.
-
-## Further options
-
-See help to see recording and verfication options.
-
-```
-$ dfg --help
-```
+Run `dfgweb` to start the web frontend. Requires a running backend.
