@@ -74,6 +74,9 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if len(b) == 0 {
+			log.Fatal("Empty verification test")
+		}
 		_, err = verifier.writer.Write(b)
 		if err != nil {
 			log.Fatal(err)
