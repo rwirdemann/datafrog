@@ -49,11 +49,15 @@ func (verifier *Verifier) Testcase() df.Testcase {
 // stopped channel afterward in order to tell its caller (web, cli, ...) that
 // verification has been finished.
 func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
+
+	// create a save copy of the test to prevent data loss in cases the verifier
+	// run termines unexpected
+	verifier.write()
+
 	verifier.timer.Start()
-	log.Printf("Verification started at %v. Press Enter to stop and save verification...", verifier.timer.GetStart())
+	log.Printf("Verification started at %v...", verifier.timer.GetStart())
 	verifier.testcase.Verifications = verifier.testcase.Verifications + 1
 	verifier.testcase.LastExecution = time.Now()
-	verifier.testcase.AdditionalExpectations = nil
 	for i := range verifier.testcase.Expectations {
 		verifier.testcase.Expectations[i].Fulfilled = false
 	}
@@ -63,24 +67,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 	// called when done channel is closed
 	defer func() {
-		// create a write copy of the testcase to make sure no addtional
-		// expectations are saved but kept for reporting reasons
-		tc := verifier.testcase
-
-		// don't write additional expectations
-		tc.AdditionalExpectations = nil
-
-		b, err := json.Marshal(tc)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if len(b) == 0 {
-			log.Fatal("Empty verification test")
-		}
-		_, err = verifier.writer.Write(b)
-		if err != nil {
-			log.Fatal(err)
-		}
+		verifier.write()
 	}()
 
 	for {
@@ -122,6 +109,25 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 			log.Printf("Channel close: Verification done")
 			return
 		}
+	}
+}
+
+func (verifier *Verifier) write() {
+	// create a write copy of the testcase to make sure no addtional
+	// expectations are saved but kept for reporting reasons
+	tc := verifier.testcase
+
+	// don't write additional expectations
+	tc.AdditionalExpectations = nil
+
+	b, err := json.Marshal(tc)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = verifier.writer.Write(b)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
