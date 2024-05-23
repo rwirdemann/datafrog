@@ -49,11 +49,6 @@ func (verifier *Verifier) Testcase() df.Testcase {
 // stopped channel afterward in order to tell its caller (web, cli, ...) that
 // verification has been finished.
 func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
-
-	// create a save copy of the test to prevent data loss in cases the verifier
-	// run termines unexpected
-	verifier.write()
-
 	verifier.timer.Start()
 	log.Printf("Verification started at %v...", verifier.timer.GetStart())
 	verifier.testcase.Verifications = verifier.testcase.Verifications + 1

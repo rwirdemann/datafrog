@@ -83,7 +83,8 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 
 func ShowHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	tc, err := getTestcase(testname, "verifier")
+	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, testname)
+	tc, err := getTestcase(url)
 	if err != nil {
 		simpleweb.RedirectE(w, r, "/", err)
 		return
@@ -95,7 +96,8 @@ func ShowHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Request) {
-	tc, err := getTestcase(request.FormValue("testname"), "verifier")
+	url := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, request.FormValue("testname"))
+	tc, err := getTestcase(url)
 	if err != nil {
 		simpleweb.RedirectE(w, request, "/", err)
 		return
@@ -108,9 +110,8 @@ func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Reques
 	}{Title: "Verify", Testname: tc.Name, Expectations: len(tc.Expectations)})
 }
 
-// getTestcase fetches and returns test "name" from the verifier or recorder.
-func getTestcase(name string, from string) (df.Testcase, error) {
-	url := fmt.Sprintf("%s/tests/%s?from=%s", apiBaseURL, name, from)
+// getTestcase fetches and returns test "name".
+func getTestcase(url string) (df.Testcase, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		log.Errorf("Error creating request: %v", err)
@@ -138,7 +139,8 @@ func getTestcase(name string, from string) (df.Testcase, error) {
 // that shows the progress of the current verification run.
 func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	tc, err := getTestcase(testname, "verifier")
+	url := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, testname)
+	tc, err := getTestcase(url)
 	if err != nil {
 		return
 	}
@@ -169,7 +171,8 @@ func calcProgressAndCssClass(tc df.Testcase) (int, string) {
 // that shows the progress of the current recording run.
 func ProgressRecordingHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	tc, err := getTestcase(testname, "recorder")
+	url := fmt.Sprintf("%s/tests/%s/recordings/progress", apiBaseURL, testname)
+	tc, err := getTestcase(url)
 	if err != nil {
 		return
 	}
@@ -294,7 +297,8 @@ func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
 
 func NoiseHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	tc, err := getTestcase(testname, "verifier")
+	url := fmt.Sprintf("%s/tests/%s", apiBaseURL, testname)
+	tc, err := getTestcase(url)
 	if err != nil {
 		simpleweb.RedirectE(w, r, "/", err)
 		return

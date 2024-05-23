@@ -40,6 +40,12 @@ func RegisterHandler(c df.Config, router *mux.Router, verificationDoneChannels C
 	// get test
 	router.HandleFunc("/tests/{name}", GetTest()).Methods("GET")
 
+	// get recording progress
+	router.HandleFunc("/tests/{name}/recordings/progress", GetRecordingProgress()).Methods("GET")
+
+	// get verification progress
+	router.HandleFunc("/tests/{name}/verifications/progress", GetVerificationProgress()).Methods("GET")
+
 	// start verify
 	router.HandleFunc("/tests/{name}/verifications", StartVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("PUT")
 
@@ -47,14 +53,48 @@ func RegisterHandler(c df.Config, router *mux.Router, verificationDoneChannels C
 	router.HandleFunc("/tests/{name}/verifications", StopVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("DELETE")
 }
 
+func GetRecordingProgress() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tc := recorder.Testcase()
+		b, err := json.Marshal(tc)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if _, err := w.Write(b); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func GetVerificationProgress() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tc := verifier.Testcase()
+		b, err := json.Marshal(tc)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if _, err := w.Write(b); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func GetTest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var tc df.Testcase
-		from := r.URL.Query().Get("from")
-		if from == "verifier" {
-			tc = verifier.Testcase()
-		} else {
-			tc = recorder.Testcase()
+		if len(mux.Vars(r)["name"]) == 0 {
+			http.Error(w, "name is required", http.StatusBadRequest)
+			return
+		}
+		tc, err := readTestcase(mux.Vars(r)["name"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		b, err := json.Marshal(tc)
 		if err != nil {
@@ -260,6 +300,7 @@ func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels
 		verificationDoneChannels[testname] = nil
 		<-verificationStoppedChannels[testname]
 		verificationStoppedChannels[testname] = nil
+		verifier = nil
 		writer.WriteHeader(http.StatusNoContent)
 	}
 }
