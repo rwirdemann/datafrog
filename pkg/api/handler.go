@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/rwirdemann/datafrog/pkg/file"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
 	"github.com/rwirdemann/datafrog/pkg/record"
 	"github.com/rwirdemann/datafrog/pkg/verify"
@@ -212,6 +211,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			return
 		}
 
+		// read the test from file
 		testname := mux.Vars(request)["name"]
 		expectations, err := os.ReadFile(testname)
 		if err != nil {
@@ -224,15 +224,17 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			return
 		}
 
-		expectationSource, err := file.NewFileExpectationSource(testname)
+		// create a writer to save the test results
+		f, err := os.Create(testname)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return
 		}
+		w := bufio.NewWriter(f)
 
 		databaseLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
-		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, tc, expectationSource, t, testname)
+		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, tc, w, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])

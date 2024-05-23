@@ -1,7 +1,9 @@
 package verify
 
 import (
+	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
+	"io"
 	"log"
 	"time"
 )
@@ -11,25 +13,32 @@ import (
 // updated expectation list is written back to expectationSource after the
 // verification run is done.
 type Verifier struct {
-	config            df.Config
-	tokenizer         df.Tokenizer
-	log               df.Log
-	expectationSource ExpectationSource
-	testcase          df.Testcase
-	timer             df.Timer
-	name              string
+	config    df.Config
+	tokenizer df.Tokenizer
+	log       df.Log
+	writer    io.Writer // to write the verfied and updated testscase
+	testcase  df.Testcase
+	timer     df.Timer
+	name      string
 }
 
 // NewVerifier creates a new Verifier.
-func NewVerifier(c df.Config, tokenizer df.Tokenizer, log df.Log, tc df.Testcase, source ExpectationSource, t df.Timer, name string) *Verifier {
+func NewVerifier(
+	c df.Config,
+	tokenizer df.Tokenizer,
+	log df.Log,
+	tc df.Testcase,
+	w io.Writer,
+	t df.Timer,
+	name string) *Verifier {
 	return &Verifier{
-		config:            c,
-		tokenizer:         tokenizer,
-		log:               log,
-		expectationSource: source,
-		testcase:          tc,
-		timer:             t,
-		name:              name,
+		config:    c,
+		tokenizer: tokenizer,
+		log:       log,
+		writer:    w,
+		testcase:  tc,
+		timer:     t,
+		name:      name,
 	}
 }
 func (verifier *Verifier) Testcase() df.Testcase {
@@ -54,7 +63,21 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 	// called when done channel is closed
 	defer func() {
-		_ = verifier.expectationSource.Write(verifier.testcase)
+		// create a write copy of the testcase to make sure no addtional
+		// expectations are saved but kept for reporting reasons
+		tc := verifier.testcase
+
+		// don't write additional expectations
+		tc.AdditionalExpectations = nil
+
+		b, err := json.Marshal(tc)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = verifier.writer.Write(b)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}()
 
 	for {
