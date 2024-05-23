@@ -292,41 +292,44 @@ func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, "/show?testname="+testname, http.StatusSeeOther)
 }
 
-type Noise struct {
-	Verifications int
-	Expectations  []Data
-}
-type Data struct {
-	Name     string
-	Verified int
-}
-
 func NoiseHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
-	var noise Noise
 	tc, err := getTestcase(testname, "verifier")
-	noise.Verifications = tc.Verifications
-	for i, e := range tc.Expectations {
-		noise.Expectations = append(noise.Expectations, Data{
-			Name:     fmt.Sprintf("E%d: %s", i, e.Shorten(8)),
-			Verified: e.Verified,
-		})
-	}
-	sort.Sort(ByVerifications(noise.Expectations))
 	if err != nil {
 		simpleweb.RedirectE(w, r, "/", err)
 		return
 	}
 	simpleweb.Render("templates/noise.html", w, struct {
 		Title string
-		Noise Noise
-	}{Title: "Noise Sample: " + testname, Noise: noise})
+		Noise noise
+	}{Title: "Noise Sample: " + testname, Noise: buildNoiseData(tc)})
 }
 
 func RemoveExpectationHandler(http.ResponseWriter, *http.Request) {
 }
 
-type ByVerifications []Data
+type noise struct {
+	Verifications int
+	EE            []E
+}
+type E struct {
+	Name     string
+	Verified int
+}
+
+func buildNoiseData(tc df.Testcase) noise {
+	noise := noise{Verifications: tc.Verifications}
+	for i, e := range tc.Expectations {
+		noise.EE = append(noise.EE, E{
+			Name:     fmt.Sprintf("E%d: %s", i, e.Shorten(8)),
+			Verified: e.Verified,
+		})
+	}
+	sort.Sort(ByVerifications(noise.EE))
+	return noise
+}
+
+type ByVerifications []E
 
 func (a ByVerifications) Len() int           { return len(a) }
 func (a ByVerifications) Less(i, j int) bool { return a[i].Verified > a[j].Verified }

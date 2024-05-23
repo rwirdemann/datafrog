@@ -33,7 +33,7 @@
             .style("text-anchor", "end");
 
         // Y axis
-        var ee = {{.Noise.Expectations}}
+        var ee = {{.Noise.EE}}
         const y = d3.scaleBand()
             .range([0, height])
             .domain(ee.map(t => t.Name))
@@ -42,7 +42,7 @@
             .call(d3.axisLeft(y))
 
         svg.selectAll("myRect")
-            .data({{.Noise.Expectations}})
+            .data({{.Noise.EE}})
             .join("rect")
             .attr("x", x(0))
             .attr("y", d => y(d.Name))
