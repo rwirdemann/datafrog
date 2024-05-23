@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"sort"
 	"time"
 )
 
@@ -57,6 +58,8 @@ func RegisterHandler(c df.Config) {
 
 	// remove expectation from test
 	simpleweb.Register("/remove-expectation", RemoveExpectationHandler, "GET")
+
+	simpleweb.Register("/noise", NoiseHandler, "GET")
 }
 
 func IndexHandler(w http.ResponseWriter, _ *http.Request) {
@@ -289,5 +292,42 @@ func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, "/show?testname="+testname, http.StatusSeeOther)
 }
 
+type Noise struct {
+	Verifications int
+	Expectations  []Data
+}
+type Data struct {
+	Name     string
+	Verified int
+}
+
+func NoiseHandler(w http.ResponseWriter, r *http.Request) {
+	testname := r.URL.Query().Get("testname")
+	var noise Noise
+	tc, err := getTestcase(testname, "verifier")
+	noise.Verifications = tc.Verifications
+	for i, e := range tc.Expectations {
+		noise.Expectations = append(noise.Expectations, Data{
+			Name:     fmt.Sprintf("E%d: %s", i, e.Shorten(8)),
+			Verified: e.Verified,
+		})
+	}
+	sort.Sort(ByVerifications(noise.Expectations))
+	if err != nil {
+		simpleweb.RedirectE(w, r, "/", err)
+		return
+	}
+	simpleweb.Render("templates/noise.html", w, struct {
+		Title string
+		Noise Noise
+	}{Title: "Noise Sample: " + testname, Noise: noise})
+}
+
 func RemoveExpectationHandler(http.ResponseWriter, *http.Request) {
 }
+
+type ByVerifications []Data
+
+func (a ByVerifications) Len() int           { return len(a) }
+func (a ByVerifications) Less(i, j int) bool { return a[i].Verified > a[j].Verified }
+func (a ByVerifications) Swap(i, j int)      { a[i].Verified, a[j].Verified = a[j].Verified, a[i].Verified }

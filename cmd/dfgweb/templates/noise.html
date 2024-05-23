@@ -1,0 +1,53 @@
+{{define "_content"}}
+<div id="noise"></div>
+
+<script>
+
+    // set the dimensions and margins of the graph
+    const margin = {top: 20, right: 30, bottom: 40, left: 350},
+        width = 800 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    const svg = d3.select("#noise")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Parse the Data
+        // Add X axis
+        var w = {{.Noise.Verifications}}
+        if(w < 10) {
+            w = 10
+        }
+        const x = d3.scaleLinear()
+            .domain([0, w])
+            .range([0, width]);
+        svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "translate(-10,0)rotate(-45)")
+            .style("text-anchor", "end");
+
+        // Y axis
+        var ee = {{.Noise.Expectations}}
+        const y = d3.scaleBand()
+            .range([0, height])
+            .domain(ee.map(t => t.Name))
+            .padding(.1);
+        svg.append("g")
+            .call(d3.axisLeft(y))
+
+        svg.selectAll("myRect")
+            .data({{.Noise.Expectations}})
+            .join("rect")
+            .attr("x", x(0))
+            .attr("y", d => y(d.Name))
+            .attr("width", d => x(d.Verified))
+            .attr("height", y.bandwidth())
+            .attr("fill", "#69b3a2")
+</script>
+{{end}}
