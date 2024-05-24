@@ -50,7 +50,7 @@ func (verifier *Verifier) Testcase() df.Testcase {
 // verification has been finished.
 func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	verifier.timer.Start()
-	log.Printf("Verification started at %v...", verifier.timer.GetStart())
+	log.Printf("verification started at %v...", verifier.timer.GetStart())
 	verifier.testcase.Verifications = verifier.testcase.Verifications + 1
 	verifier.testcase.LastExecution = time.Now()
 	for i := range verifier.testcase.Expectations {
@@ -68,11 +68,6 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	for {
 		select {
 		default:
-			if allFulfilled(verifier.testcase.Expectations) {
-				log.Printf("All verifications fulfilled. Verification done")
-				return
-			}
-
 			v, err := verifier.log.NextLine()
 			if err != nil {
 				log.Fatal(err)
@@ -101,7 +96,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				}
 			}
 		case <-done:
-			log.Printf("Channel close: Verification done")
+			log.Printf("verifier: done channel closed")
 			return
 		}
 	}
@@ -120,10 +115,15 @@ func (verifier *Verifier) write() {
 		log.Fatal(err)
 	}
 
+	if len(b) == 0 {
+		log.Fatal("testcase is empty. skip writing")
+	}
+
 	_, err = verifier.writer.Write(b)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("verifier: testcase successfully written back")
 }
 
 // verify tries to verify one of the testcases expectations. Returns true if an
@@ -161,17 +161,6 @@ func (verifier *Verifier) verify(v string, vPattern string) bool {
 		}
 	}
 	return false // -> expectation not verified
-}
-
-// allFulfilled checks all expectations, returns true if all fulfilled and false
-// otherwise.
-func allFulfilled(expectations []df.Expectation) bool {
-	for _, e := range expectations {
-		if !e.Fulfilled {
-			return false
-		}
-	}
-	return true
 }
 
 // ReportResults creates a [domain.Report] of the verification results.
