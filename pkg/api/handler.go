@@ -289,16 +289,22 @@ func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels
 	return func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Println("Recovered:", r)
+				log.Println("recovered:", r)
 				http.Error(writer, fmt.Sprintf("%v", r), http.StatusInternalServerError)
 				return
 			}
 		}()
 
 		testname := mux.Vars(request)["name"]
+
+		// closing done channel forces the verifier to save its testcase
+		log.Printf("api: closing done channel")
 		close(verificationDoneChannels[testname])
+
 		verificationDoneChannels[testname] = nil
+		log.Printf("api: waiting for stopped channel to be closed")
 		<-verificationStoppedChannels[testname]
+		log.Printf("api: stopped channel closed")
 		verificationStoppedChannels[testname] = nil
 		verifier = nil
 		writer.WriteHeader(http.StatusNoContent)

@@ -287,8 +287,7 @@ func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
 
 	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
 	if !statusOK {
-		body, _ := io.ReadAll(response.Body)
-		simpleweb.Error(fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body))
+		simpleweb.Error("Something went wrong. Please reload page and click on the test to show test results.")
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
