@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 )
 
 var verifier *verify.Verifier
@@ -265,7 +266,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 		}
 
 		// create a writer to save the test results
-		f, err := os.Create(testname)
+		f, err := os.Create(fmt.Sprintf("%s.running", testname))
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return
@@ -302,11 +303,53 @@ func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels
 		close(verificationDoneChannels[testname])
 
 		verificationDoneChannels[testname] = nil
+
+		// wait till verifier has finished its saving
 		log.Printf("api: waiting for stopped channel to be closed")
 		<-verificationStoppedChannels[testname]
 		log.Printf("api: stopped channel closed")
+
+		// copy .running testfile to original file
+		if err := copy(fmt.Sprintf("%s.running", testname), testname); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// delete .running file
+		if err := deleteFile(fmt.Sprintf("%s.running", testname)); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		verificationStoppedChannels[testname] = nil
 		verifier = nil
 		writer.WriteHeader(http.StatusNoContent)
 	}
+}
+
+var mutex = &sync.Mutex{}
+
+func deleteFile(testname string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	log.Printf("api: deleting test file %s", testname)
+	return os.Remove(testname)
+}
+
+func copy(src string, dst string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	log.Printf("api: copying %s to %s", src, dst)
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
+	return err
 }
