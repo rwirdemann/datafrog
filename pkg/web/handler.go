@@ -336,4 +336,4 @@ type ByVerifications []E
 
 func (a ByVerifications) Len() int           { return len(a) }
 func (a ByVerifications) Less(i, j int) bool { return a[i].Verified > a[j].Verified }
-func (a ByVerifications) Swap(i, j int)      { a[i].Verified, a[j].Verified = a[j].Verified, a[i].Verified }
+func (a ByVerifications) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
