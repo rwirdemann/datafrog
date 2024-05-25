@@ -61,6 +61,11 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 		r.log.Close()
 	}()
 
+	// jump to log file end
+	if err := r.log.Tail(); err != nil {
+		log.Fatal(err)
+	}
+
 	for {
 		select {
 		default:

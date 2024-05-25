@@ -66,7 +66,9 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	}()
 
 	// jump to log file end
-	verifier.log.Tail()
+	if err := verifier.log.Tail(); err != nil {
+		log.Fatal(err)
+	}
 
 	for {
 		select {
