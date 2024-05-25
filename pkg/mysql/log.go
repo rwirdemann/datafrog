@@ -15,12 +15,28 @@ type Log struct {
 	reader  *bufio.Reader
 }
 
-func NewMYSQLLog(logfileName string) df.Log {
+func NewMYSQLLog(logfileName string) Log {
 	logfile, err := os.Open(logfileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return Log{logfile: logfile, reader: bufio.NewReader(logfile)}
+}
+
+// Tail sets the read cursor of the log file to its end.
+func (m Log) Tail() error {
+	log.Printf("tailing %s...", m.logfile.Name())
+	defer log.Printf("tailing successful!")
+	for {
+		_, err := m.reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			} else {
+				return err
+			}
+		}
+	}
 }
 
 func (m Log) Close() {

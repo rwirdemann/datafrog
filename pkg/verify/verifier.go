@@ -65,6 +65,9 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 		verifier.write()
 	}()
 
+	// jump to log file end
+	verifier.log.Tail()
+
 	for {
 		select {
 		default:

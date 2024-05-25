@@ -42,6 +42,22 @@ func (m Log) Timestamp(s string) (time.Time, error) {
 	return t, nil
 }
 
+// Tail sets the read cursor of the log file to its end.
+func (m Log) Tail() error {
+	log.Printf("tailing %s...", m.logfile.Name())
+	defer log.Printf("tailing successful!")
+	for {
+		_, err := m.reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			} else {
+				return err
+			}
+		}
+	}
+}
+
 func (m Log) NextLine() (string, error) {
 	for {
 		line, err := m.reader.ReadString('\n')
