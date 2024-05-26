@@ -16,15 +16,15 @@ type Testcase struct {
 	AdditionalExpectations []Expectation `json:"additional_expectations"`
 }
 
-// Fulfilled returns the number of fulfilled expectations.
-func (t Testcase) Fulfilled() int {
-	fulfilled := 0
+// Fulfilled returns the fulfilled expectations.
+func (t Testcase) Fulfilled() []Expectation {
+	var unfulfilled []Expectation
 	for _, e := range t.Expectations {
 		if e.Fulfilled {
-			fulfilled++
+			unfulfilled = append(unfulfilled, e)
 		}
 	}
-	return fulfilled
+	return unfulfilled
 }
 
 // Unfulfilled returns the unfulfilled expectations.

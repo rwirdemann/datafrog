@@ -144,7 +144,7 @@ func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	fulfilled := tc.Fulfilled()
+	fulfilled := len(tc.Fulfilled())
 	p, c := calcProgressAndCssClass(tc)
 	simpleweb.RenderPartialE("templates/progress-verification.html", w, struct {
 		Progress     int
@@ -156,7 +156,7 @@ func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func calcProgressAndCssClass(tc df.Testcase) (int, string) {
-	fulfilled := tc.Fulfilled()
+	fulfilled := len(tc.Fulfilled())
 	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
 	color := "is-warning"
 	progress := int(p)

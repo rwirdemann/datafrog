@@ -20,9 +20,17 @@
         <td colspan="2">{{.Testcase.Verifications}}</td>
     </tr>
     <tr>
-        <td class="has-text-success">Fulfilled:</td>
-        <td colspan="2" class="has-text-success">{{.Testcase.Fulfilled}} of {{len .Testcase.Expectations}}</td>
+        <td>Fulfilled:</td>
+        <td>{{len .Testcase.Fulfilled}} of {{len .Testcase.Expectations}}</td>
     </tr>
+    {{range .Testcase.Fulfilled}}
+    <tr>
+        <td class="has-text-success">Fulfilled:</td>
+        <td class="has-text-success">
+            {{.}} (verifications: {{.Verified}})
+        </td>
+    </tr>
+    {{end}}
     {{range .Testcase.Unfulfilled}}
     <tr>
         <td class="has-text-danger">Unfulfilled:</td>
