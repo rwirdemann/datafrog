@@ -236,6 +236,9 @@ func readTestcase(filename string) (df.Testcase, error) {
 		}
 	}(jsonFile)
 	b, _ := io.ReadAll(jsonFile)
+	if len(b) == 0 {
+		return df.Testcase{}, fmt.Errorf("testfile '%s' contains no data", filename)
+	}
 	var tc df.Testcase
 	if err := json.Unmarshal(b, &tc); err != nil {
 		return df.Testcase{}, err
