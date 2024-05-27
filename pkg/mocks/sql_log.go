@@ -12,6 +12,10 @@ type SQLLog struct {
 	doneChannel chan struct{} // close this channel to notify verification loop to stop
 }
 
+func (l *SQLLog) Tail() error {
+	return nil
+}
+
 func NewMemSQLLog(logs []string, doneChannel chan struct{}) *SQLLog {
 	return &SQLLog{logs: logs, index: 0, doneChannel: doneChannel}
 }

@@ -3,7 +3,6 @@ package verify
 import (
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"io"
 	"log"
 	"time"
 )
@@ -16,7 +15,7 @@ type Verifier struct {
 	config    df.Config
 	tokenizer df.Tokenizer
 	log       df.Log
-	writer    io.Writer // to write the verfied and updated testscase
+	writer    df.TestWriter // to write the verfied and updated testscase
 	testcase  df.Testcase
 	timer     df.Timer
 	name      string
@@ -28,7 +27,7 @@ func NewVerifier(
 	tokenizer df.Tokenizer,
 	log df.Log,
 	tc df.Testcase,
-	w io.Writer,
+	w df.TestWriter,
 	t df.Timer,
 	name string) *Verifier {
 	return &Verifier{
@@ -126,6 +125,9 @@ func (verifier *Verifier) write() {
 
 	_, err = verifier.writer.Write(b)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err := verifier.writer.Close(); err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("verifier: testcase successfully written back")

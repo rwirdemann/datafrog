@@ -1,8 +1,6 @@
 package verify
 
 import (
-	"bytes"
-	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/mocks"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
@@ -300,7 +298,7 @@ func TestVerify(t *testing.T) {
 			doneChannel := make(chan struct{})
 			stoppedChannel := make(chan struct{})
 			databaseLog := mocks.NewMemSQLLog(tC.logs, doneChannel)
-			writer := new(bytes.Buffer)
+			writer := &mocks.MemWriter{}
 			tc := df.Testcase{Expectations: tC.initialExpectations}
 			timer := mocks.Timer{}
 			verifier := NewVerifier(c, mysql.Tokenizer{}, databaseLog, tc, writer, timer, "")
@@ -317,12 +315,8 @@ func TestVerify(t *testing.T) {
 			assert.Equal(t, tC.additionalExpectations, verifier.Testcase().AdditionalExpectations)
 
 			// check if the updated testcase was written back (without eventually added expectations)
-			actual := df.Testcase{}
-			if err := json.Unmarshal(writer.Bytes(), &actual); err != nil {
-				assert.Fail(t, err.Error())
-			}
-			assert.Equal(t, actual.Verifications, 1)
-			assert.Nil(t, actual.AdditionalExpectations)
+			assert.Equal(t, writer.Testcase.Verifications, 1)
+			assert.Nil(t, writer.Testcase.AdditionalExpectations)
 		})
 	}
 }

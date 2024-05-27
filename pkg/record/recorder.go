@@ -3,7 +3,6 @@ package record
 import (
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"io"
 	"log"
 )
 
@@ -14,7 +13,7 @@ type Recorder struct {
 	config       df.Config
 	tokenizer    df.Tokenizer
 	log          df.Log
-	writer       io.Writer // destination of recorded testcase
+	writer       df.TestWriter // destination of recorded testcase
 	timer        df.Timer
 	name         string
 	uuidProvider UUIDProvider
@@ -23,7 +22,7 @@ type Recorder struct {
 
 // NewRecorder creates a new Recorder.
 func NewRecorder(c df.Config, tokenizer df.Tokenizer,
-	log df.Log, w io.Writer, timer df.Timer, name string,
+	log df.Log, w df.TestWriter, timer df.Timer, name string,
 	uuidProvider UUIDProvider) *Recorder {
 
 	return &Recorder{
@@ -56,6 +55,9 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 		}
 		_, err = r.writer.Write(b)
 		if err != nil {
+			log.Fatal(err)
+		}
+		if err := r.writer.Close(); err != nil {
 			log.Fatal(err)
 		}
 		r.log.Close()

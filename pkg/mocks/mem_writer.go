@@ -1,10 +1,21 @@
 package mocks
 
+import (
+	"encoding/json"
+	"github.com/rwirdemann/datafrog/pkg/df"
+)
+
 type MemWriter struct {
-	Recorded []string
+	Testcase df.Testcase
+}
+
+func (ms *MemWriter) Close() error {
+	return nil
 }
 
 func (ms *MemWriter) Write(p []byte) (n int, err error) {
-	ms.Recorded = append(ms.Recorded, string(p))
+	if err := json.Unmarshal(p, &ms.Testcase); err != nil {
+		return 0, err
+	}
 	return len(p), nil
 }

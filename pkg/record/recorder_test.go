@@ -1,7 +1,6 @@
 package record
 
 import (
-	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/mocks"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
@@ -40,12 +39,12 @@ func TestRecord(t *testing.T) {
 		Uuid:        "023a6a95-6c8a-4483-bcfb-17b1c58c317f",
 	}
 
-	expectedTestcase, _ := json.Marshal(df.Testcase{
+	expectedTestcase := df.Testcase{
 		Name:          "create-job.json",
 		Running:       false,
 		Verifications: 0,
 		Expectations:  []df.Expectation{e1, e2},
-	})
+	}
 
 	c := df.Config{}
 	c.Patterns = []string{"insert", "select job!publish_trials<1"}
@@ -58,6 +57,6 @@ func TestRecord(t *testing.T) {
 	recorder := NewRecorder(c, mysql.Tokenizer{}, databaseLog, writer, timer, "create-job.json", mocks.StaticUUIDProvider{})
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped
-	assert.Len(t, writer.Recorded, 1)
-	assert.Equal(t, string(expectedTestcase), writer.Recorded[0])
+	assert.Len(t, writer.Testcase.Expectations, 2)
+	assert.Equal(t, expectedTestcase, writer.Testcase)
 }
