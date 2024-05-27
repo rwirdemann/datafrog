@@ -127,6 +127,9 @@ func DeleteTest() http.HandlerFunc {
 	}
 }
 
+var writer *bufio.Writer
+var f *os.File
+
 // StartRecording returns a http handler to start the recording of the test
 // given in the request params "name". Adds new channels to
 // recordingDoneChannels and recordingStoppedChannels. Both channels are used to
@@ -144,11 +147,12 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		databaseLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
 
-		f, err := os.Create(testname)
+		var err error
+		f, err = os.Create(testname)
 		if err != nil {
 			log.Fatal(err)
 		}
-		writer := bufio.NewWriter(f)
+		writer = bufio.NewWriter(f)
 
 		recorder = record.NewRecorder(config, mysql.Tokenizer{}, databaseLog, writer, t, testname, GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
@@ -190,6 +194,9 @@ func StopRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels Ch
 		// Wait until the recorder has gracefully stopped himself
 		<-recordingStoppedChannels[testname]
 		recordingStoppedChannels[testname] = nil
+
+		writer.Flush()
+		f.Close()
 	}
 }
 
