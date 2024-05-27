@@ -253,6 +253,9 @@ func readTestcase(filename string) (df.Testcase, error) {
 	return tc, nil
 }
 
+var fRunning *os.File
+var wRunning *bufio.Writer
+
 // StartVerify returns a http handler that starts a verification run of the test
 // given in the request param "name".
 func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap) http.HandlerFunc {
@@ -276,16 +279,16 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 		}
 
 		// create a writer to save the test results
-		f, err := os.Create(fmt.Sprintf("%s.running", testname))
+		fRunning, err = os.Create(fmt.Sprintf("%s.running", testname))
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return
 		}
-		w := bufio.NewWriter(f)
+		wRunning = bufio.NewWriter(fRunning)
 
 		databaseLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
-		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, tc, w, t, testname)
+		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, tc, wRunning, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])
@@ -318,6 +321,9 @@ func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels
 		log.Printf("api: waiting for stopped channel to be closed")
 		<-verificationStoppedChannels[testname]
 		log.Printf("api: stopped channel closed")
+
+		wRunning.Flush()
+		fRunning.Close()
 
 		// copy .running testfile to original file
 		if err := copy(fmt.Sprintf("%s.running", testname), testname); err != nil {
