@@ -6,7 +6,7 @@ import "time"
 // to extract its timestamp.
 type Log interface {
 	Timestamp(s string) (time.Time, error)
-	NextLine() (string, error)
+	NextLine(chan struct{}) (string, error)
 	Close()
 	Tail() error
 }

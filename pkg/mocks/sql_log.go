@@ -28,7 +28,7 @@ func (l *SQLLog) Timestamp(s string) (time.Time, error) {
 	return t, nil
 }
 
-func (l *SQLLog) NextLine() (string, error) {
+func (l *SQLLog) NextLine(chan struct{}) (string, error) {
 	if l.index >= len(l.logs) {
 		return "", nil
 	}

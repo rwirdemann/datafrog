@@ -2,9 +2,10 @@ package verify
 
 import (
 	"encoding/json"
-	"github.com/rwirdemann/datafrog/pkg/df"
 	"log"
 	"time"
+
+	"github.com/rwirdemann/datafrog/pkg/df"
 )
 
 // The Verifier verifies the expectations in expectationSource. It monitors the
@@ -72,7 +73,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 	for {
 		select {
 		default:
-			v, err := verifier.log.NextLine()
+			v, err := verifier.log.NextLine(done)
 			if err != nil {
 				log.Fatal(err)
 			}

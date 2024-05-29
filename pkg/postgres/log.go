@@ -58,7 +58,7 @@ func (m Log) Tail() error {
 	}
 }
 
-func (m Log) NextLine() (string, error) {
+func (m Log) NextLine(chan struct{}) (string, error) {
 	for {
 		line, err := m.reader.ReadString('\n')
 		if err != nil {

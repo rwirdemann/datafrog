@@ -2,11 +2,12 @@ package postgres
 
 import (
 	"fmt"
-	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/rwirdemann/datafrog/pkg/df"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRegex(t *testing.T) {
@@ -36,7 +37,7 @@ func TestPostgresTimestamp(t *testing.T) {
 }
 
 func readLine(t *testing.T, pl Log) string {
-	l, err := pl.NextLine()
+	l, err := pl.NextLine(make(chan struct{}))
 	if err != nil {
 		t.Fatal(err)
 	}

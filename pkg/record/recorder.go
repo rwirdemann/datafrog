@@ -71,7 +71,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	for {
 		select {
 		default:
-			line, err := r.log.NextLine()
+			line, err := r.log.NextLine(done)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -92,7 +92,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 		// check if the caller (web, cli, ...) has closed the done channel to
 		// tell me that recoding has been finished
 		case <-done:
-			log.Println("Recording finished. Run verification now!")
+			log.Println("recorder: done channel closed")
 			return
 		}
 	}

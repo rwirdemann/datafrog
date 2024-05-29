@@ -3,11 +3,12 @@ package mysql
 import (
 	"bufio"
 	"errors"
-	"github.com/rwirdemann/datafrog/pkg/df"
 	"io"
 	"log"
 	"os"
 	"time"
+
+	"github.com/rwirdemann/datafrog/pkg/df"
 )
 
 type Log struct {
@@ -54,16 +55,25 @@ func (m Log) Timestamp(s string) (time.Time, error) {
 	return t, nil
 }
 
-func (m Log) NextLine() (string, error) {
+// Reads the next line terminated by the delimiter \n from the log file. Waits
+// until a new line becomes available. Returns with an empty line and a nil
+// error if the done channel was close.
+func (m Log) NextLine(done chan struct{}) (string, error) {
 	for {
-		line, err := m.reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				time.Sleep(500 * time.Millisecond)
-				continue
+		select {
+		default:
+			line, err := m.reader.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				return "", err
 			}
-			return "", err
+			return line, nil
+		case <-done:
+			log.Printf("nextline: done channel closed")
+			return "", nil
 		}
-		return line, nil
 	}
 }
