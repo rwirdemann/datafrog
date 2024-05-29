@@ -23,23 +23,23 @@ func NewPattern(s string) Pattern {
 	}
 }
 
-func (p Pattern) MatchesInclude(s string) bool {
-	return strings.Contains(s, p.Include)
-}
-
-func (p Pattern) MatchesExclude(s string) bool {
-	return len(p.Exclude) > 0 && strings.Contains(s, p.Exclude)
-}
-
-func (p Pattern) MatchesAllConditions(s string) bool {
-	return p.MatchesInclude(s) && !p.MatchesExclude(s)
-}
-
 func MatchesPattern(c Config, s string) (bool, string) {
 	for _, p := range c.Patterns {
-		if NewPattern(p).MatchesAllConditions(s) {
+		if NewPattern(p).matches(s) {
 			return true, p
 		}
 	}
 	return false, ""
+}
+
+func (p Pattern) matchesInclude(s string) bool {
+	return strings.Contains(s, p.Include)
+}
+
+func (p Pattern) matchesExclude(s string) bool {
+	return len(p.Exclude) > 0 && strings.Contains(s, p.Exclude)
+}
+
+func (p Pattern) matches(s string) bool {
+	return p.matchesInclude(s) && !p.matchesExclude(s)
 }
