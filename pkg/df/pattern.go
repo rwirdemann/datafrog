@@ -33,11 +33,11 @@ func MatchesPattern(c Config, s string) (bool, string) {
 }
 
 func (p Pattern) matchesInclude(s string) bool {
-	return strings.Contains(s, p.Include)
+	return strings.Contains(strings.ToUpper(s), strings.ToUpper(p.Include))
 }
 
 func (p Pattern) matchesExclude(s string) bool {
-	return len(p.Exclude) > 0 && strings.Contains(s, p.Exclude)
+	return len(p.Exclude) > 0 && strings.Contains(strings.ToUpper(s), strings.ToUpper(p.Exclude))
 }
 
 func (p Pattern) matches(s string) bool {
