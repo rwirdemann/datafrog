@@ -4,4 +4,13 @@
           hx-target="#progress-bar"
           hx-swap="innerHTML">
 </progress>
-Recorded {{.Expectations}} expectation(s)
+<div class="columns">
+    <div class="column">
+        Recorded {{.Expectations}} expectation(s)
+    </div>
+    <div class="column">
+        <span style="float: right">
+            <a href="/stoprecording?testname={{.Testname}}">Stop Recording</a>
+        </span>
+    </div>
+</div>

@@ -4,14 +4,20 @@
     <div class="column">
         <div id="progress-bar">
             <progress class="progress is-warning" value="0" max="100"
-                      hx-get="/progress-recording?testname={{.Testname}}"
-                      hx-trigger="every 600ms"
-                      hx-target="#progress-bar"
-                      hx-swap="innerHTML">
+                hx-get="/progress-recording?testname={{.Testname}}" hx-trigger="every 600ms"
+                hx-target="#progress-bar" hx-swap="innerHTML">
             </progress>
-            Recorded 0 expectation(s)
+            <div class="columns">
+                <div class="column">
+                    Recorded 0 expectation(s)
+                </div>
+                <div class="column">
+                    <span style="float:right;">
+                    <a href="/stoprecording?testname={{.Testname}}">Stop Recording</a>
+                    </span>
+                </div>
+            </div>        
         </div>
     </div>
 </div>
-<a href="/stoprecording?testname={{.Testname}}">Stop recording...</a>
 {{end}}
