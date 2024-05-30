@@ -308,8 +308,8 @@ func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels
 		<-verificationStoppedChannels[testname]
 		log.Printf("api: stopped channel closed")
 
-		// copy .running testfile to original file
-		if err := copy(fmt.Sprintf("%s.running", testname), testname); err != nil {
+		// copFile .running testfile to original file
+		if err := copFile(fmt.Sprintf("%s.running", testname), testname); err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -334,7 +334,7 @@ func deleteFile(testname string) error {
 	return os.Remove(testname)
 }
 
-func copy(src string, dst string) error {
+func copFile(src string, dst string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 	log.Printf("api: copying %s to %s", src, dst)
