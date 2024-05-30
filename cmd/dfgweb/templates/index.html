@@ -25,11 +25,7 @@
                 <td>
                     <a href="/delete?testname={{.Name}}">Delete</a> |
                     <a href="/noise?testname={{.Name}}">Noise</a> |
-                    {{if eq .Verifications 0}}
-                    <a href="/run?testname={{.Name}}">Verify</a>
-                    {{else}}
-                    <a href="/run?testname={{.Name}}">Start</a>
-                    {{end}}
+                    <a href="/run?testname={{.Name}}">Run</a>
                 </td>
             </tr>
             {{end}}
