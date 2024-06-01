@@ -48,7 +48,7 @@ func RegisterHandler(c df.Config) {
 	simpleweb.Register("/show", ShowHandler, "GET")
 
 	// verification progress handler
-	simpleweb.Register("/progress", ProgressVerificationHandler, "GET")
+	simpleweb.Register("/progress-verification", ProgressVerificationHandler, "GET")
 
 	// recording progress handler
 	simpleweb.Register("/progress-recording", ProgressRecordingHandler, "GET")

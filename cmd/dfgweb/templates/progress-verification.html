@@ -1,5 +1,5 @@
 <progress class="progress {{.Color}}" value="{{.Progress}}" max="100"
-          hx-get="/progress?testname={{.Testname}}"
+          hx-get="/progress-verification?testname={{.Testname}}"
           hx-trigger="every 600ms"
           hx-target="#progress-bar"
           hx-swap="innerHTML">
