@@ -38,14 +38,11 @@ func RegisterHandler(c df.Config) {
 	// delete test
 	simpleweb.Register("/delete", DeleteHandler, "GET")
 
-	// start verify
-	simpleweb.Register("/run", StartVerifyHandler, "GET")
+	// start test
+	simpleweb.Register("/run", StartHandler, "GET")
 
-	// stop verify
-	simpleweb.Register("/stop", StopVerifyHandler, "GET")
-
-	// show verification progress
-	simpleweb.Register("/verify", ShowVerificationProgressHandler, "GET")
+	// stop test
+	simpleweb.Register("/stop", StopHandler, "GET")
 
 	// show test
 	simpleweb.Register("/show", ShowHandler, "GET")
@@ -93,21 +90,6 @@ func ShowHandler(w http.ResponseWriter, r *http.Request) {
 		Title    string
 		Testcase df.Testcase
 	}{Title: "Show", Testcase: tc})
-}
-
-func ShowVerificationProgressHandler(w http.ResponseWriter, request *http.Request) {
-	url := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, request.FormValue("testname"))
-	tc, err := getTestcase(url)
-	if err != nil {
-		simpleweb.RedirectE(w, request, "/", err)
-		return
-	}
-
-	simpleweb.Render("templates/verify.html", w, struct {
-		Title        string
-		Testname     string
-		Expectations int
-	}{Title: "Verify", Testname: tc.Name, Expectations: len(tc.Expectations)})
 }
 
 // getTestcase fetches and returns test "name".
@@ -246,8 +228,10 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
-func StartVerifyHandler(w http.ResponseWriter, request *http.Request) {
+func StartHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
+
+	// start the test
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
@@ -268,10 +252,23 @@ func StartVerifyHandler(w http.ResponseWriter, request *http.Request) {
 	} else {
 		simpleweb.Info(fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop Test' when you are done!", testname))
 	}
-	http.Redirect(w, request, fmt.Sprintf("/verify?testname=%s", testname), http.StatusSeeOther)
+
+	// get test progress
+	progressUrl := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, request.FormValue("testname"))
+	tc, err := getTestcase(progressUrl)
+	if err != nil {
+		simpleweb.RedirectE(w, request, "/", err)
+		return
+	}
+
+	simpleweb.Render("templates/verify.html", w, struct {
+		Title        string
+		Testname     string
+		Expectations int
+	}{Title: "Verify", Testname: tc.Name, Expectations: len(tc.Expectations)})
 }
 
-func StopVerifyHandler(w http.ResponseWriter, request *http.Request) {
+func StopHandler(w http.ResponseWriter, request *http.Request) {
 	testname := request.URL.Query().Get("testname")
 	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
 	r, err := http.NewRequest(http.MethodDelete, url, nil)
