@@ -1,8 +1,4 @@
 .idea
-*.rt
-*.rt.verify
-create-job.json
-delete-job.json
-edit-job.json
+*.json
+*.running
 config/config.json
-full.json

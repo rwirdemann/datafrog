@@ -6,6 +6,13 @@
             "workingDir": "$PROJECT_DIR$",
             "goExecPath": "/usr/local/go/bin/go",
             "buildParams": ["github.com/rwirdemann/datafrog/cmd/dfgapi"]
+        },
+        {
+            "name": "dfgweb",
+            "type": "go",
+            "workingDir": "$PROJECT_DIR$",
+            "goExecPath": "/usr/local/go/bin/go",
+            "buildParams": ["github.com/rwirdemann/datafrog/cmd/dfgweb"]
         }
     ]
 }
