@@ -41,7 +41,7 @@ func RegisterHandler(c df.Config) {
 	// start test
 	simpleweb.Register("/run", StartHandler, "GET")
 
-	// stop test
+	// Quit
 	simpleweb.Register("/stop", StopHandler, "GET")
 
 	// show test
@@ -206,7 +206,7 @@ func StopRecording(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	http.Redirect(w, request, "/", http.StatusSeeOther)
+	http.Redirect(w, request, fmt.Sprintf("/run?testname=%s.json", testname), http.StatusSeeOther)
 }
 
 func DeleteHandler(w http.ResponseWriter, request *http.Request) {
@@ -249,8 +249,6 @@ func StartHandler(w http.ResponseWriter, request *http.Request) {
 	if !statusOK {
 		body, _ := io.ReadAll(response.Body)
 		simpleweb.Error(fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body))
-	} else {
-		simpleweb.Info(fmt.Sprintf("Test '%s' has been started. Run test script and click 'Stop Test' when you are done!", testname))
 	}
 
 	// get test progress
@@ -265,7 +263,7 @@ func StartHandler(w http.ResponseWriter, request *http.Request) {
 		Title        string
 		Testname     string
 		Expectations int
-	}{Title: "Verify", Testname: tc.Name, Expectations: len(tc.Expectations)})
+	}{Title: fmt.Sprintf("Verifying '%s'...", testname), Testname: tc.Name, Expectations: len(tc.Expectations)})
 }
 
 func StopHandler(w http.ResponseWriter, request *http.Request) {
