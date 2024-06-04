@@ -7,6 +7,7 @@ package df
 import (
 	"encoding/json"
 	"errors"
+	"github.com/rwirdemann/datafrog/pkg/file"
 	"io"
 	"log"
 	"os"
@@ -26,6 +27,12 @@ type Config struct {
 		// recording run
 		ReportAdditional bool `json:"report_additional"`
 	}
+	// run verification automatically after recording
+	AutoVerification bool `json:"auto_verification"`
+	Playwright       struct {
+		BaseDir string `json:"base_dir"` // base directory of playwright project
+		TestDir string `json:"test_dir"` // subdirectory in BaseDir where the tests are stored
+	}
 	Web struct {
 		Port    int `json:"port"`    // web app http port
 		Timeout int `json:"timeout"` // http timeout in seconds
@@ -39,21 +46,14 @@ type Config struct {
 // NewDefaultConfig creates a new Config instance by trying to find a file
 // config.json in the current or in the config subdirectory.
 func NewDefaultConfig() (Config, error) {
-	if exists("config.json") {
+	if file.Exists("config.json") {
 		return NewConfig("config.json"), nil
 	}
-	if exists("config/config.json") {
+	if file.Exists("config/config.json") {
 		return NewConfig("config/config.json"), nil
 	}
 
 	return Config{}, errors.New("config.json not found")
-}
-
-func exists(filename string) bool {
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
 
 // NewConfig creates a new instance given its settings from filename in json

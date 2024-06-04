@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rwirdemann/datafrog/pkg/df"
+	"github.com/rwirdemann/datafrog/pkg/driver"
 	"github.com/rwirdemann/simpleweb"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -39,7 +40,7 @@ func RegisterHandler(c df.Config) {
 	simpleweb.Register("/delete", DeleteHandler, "GET")
 
 	// start test
-	simpleweb.Register("/run", StartHandler, "GET")
+	simpleweb.Register("/run", StartHandler(driver.NewPlaywrightRunner(config)), "GET")
 
 	// Quit
 	simpleweb.Register("/stop", StopHandler, "GET")
@@ -228,42 +229,59 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
-func StartHandler(w http.ResponseWriter, request *http.Request) {
-	testname := request.URL.Query().Get("testname")
+func StartHandler(runner driver.PlaywrightRunner) http.HandlerFunc {
+	return func(w http.ResponseWriter, request *http.Request) {
+		testname := request.URL.Query().Get("testname")
 
-	// start the test
-	url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
-	r, err := http.NewRequest(http.MethodPut, url, nil)
-	if err != nil {
-		simpleweb.Error(err.Error())
-		http.Redirect(w, request, "/", http.StatusSeeOther)
-		return
-	}
-	response, err := client.Do(r)
-	if err != nil {
-		simpleweb.Error(err.Error())
-		http.Redirect(w, request, "/", http.StatusSeeOther)
-		return
-	}
-	statusOK := response.StatusCode >= 200 && response.StatusCode < 300
-	if !statusOK {
-		body, _ := io.ReadAll(response.Body)
-		simpleweb.Error(fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body))
-	}
+		// start the test on the api site
+		url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
+		r, err := http.NewRequest(http.MethodPut, url, nil)
+		if err != nil {
+			simpleweb.Error(err.Error())
+			http.Redirect(w, request, "/", http.StatusSeeOther)
+			return
+		}
+		response, err := client.Do(r)
+		if err != nil {
+			simpleweb.Error(err.Error())
+			http.Redirect(w, request, "/", http.StatusSeeOther)
+			return
+		}
+		statusOK := response.StatusCode >= 200 && response.StatusCode < 300
+		if !statusOK {
+			body, _ := io.ReadAll(response.Body)
+			simpleweb.Error(fmt.Sprintf("HTTP Status: %d => %s", response.StatusCode, body))
+		}
 
-	// get test progress
-	progressUrl := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, request.FormValue("testname"))
-	tc, err := getTestcase(progressUrl)
-	if err != nil {
-		simpleweb.RedirectE(w, request, "/", err)
-		return
-	}
+		// start test via driver if configured
+		if config.AutoVerification {
+			if runner.Exists(testname) {
+				simpleweb.Info(fmt.Sprintf("Running auto verfication of test '%s'", testname))
+				go runner.Run(testname)
+			} else {
+				d := fmt.Sprintf("%s/%s", config.Playwright.BaseDir, config.Playwright.TestDir)
+				n := runner.ToPlaywright(testname)
+				simpleweb.Info(fmt.Sprintf("Playwright test '%s/%s' not found. You have two options:<br>"+
+					"1. Create test '%s' in '%s'or <br>2. Run UI interactions manually", d, n, n, d))
+			}
+		} else {
+			simpleweb.Info(fmt.Sprintf("Verification of '%s' started. Run recorded test or execute UI interactions again.", testname))
+		}
 
-	simpleweb.Render("templates/verify.html", w, struct {
-		Title        string
-		Testname     string
-		Expectations int
-	}{Title: fmt.Sprintf("Verifying '%s'...", testname), Testname: tc.Name, Expectations: len(tc.Expectations)})
+		// get test progress
+		progressUrl := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, request.FormValue("testname"))
+		tc, err := getTestcase(progressUrl)
+		if err != nil {
+			simpleweb.RedirectE(w, request, "/", err)
+			return
+		}
+
+		simpleweb.Render("templates/verify.html", w, struct {
+			Title        string
+			Testname     string
+			Expectations int
+		}{Title: fmt.Sprintf("Verifying '%s'...", testname), Testname: tc.Name, Expectations: len(tc.Expectations)})
+	}
 }
 
 func StopHandler(w http.ResponseWriter, request *http.Request) {

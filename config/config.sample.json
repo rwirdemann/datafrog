@@ -10,6 +10,7 @@
     "delete",
     "select job!publish_trials<1"
   ],
+  "auto_verification": false,
   "web": {
     "port": 8081,
     "timeout": 30
