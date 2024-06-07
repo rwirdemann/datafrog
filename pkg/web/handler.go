@@ -27,6 +27,9 @@ func RegisterHandler(c df.Config) {
 	// home
 	simpleweb.Register("/", IndexHandler, "GET")
 
+	// settings
+	simpleweb.Register("/settings", SettingsHandler, "GET")
+
 	// show new form
 	simpleweb.Register("/new", NewHandler, "GET")
 
@@ -73,10 +76,16 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	simpleweb.Render("templates/index.html", w, struct {
+		Title string
+		Tests []df.Testcase
+	}{Title: "Home", Tests: allTests.Tests})
+}
+
+func SettingsHandler(w http.ResponseWriter, _ *http.Request) {
+	simpleweb.Render("templates/settings.html", w, struct {
 		Title  string
-		Tests  []df.Testcase
 		Config df.Config
-	}{Title: "Home", Tests: allTests.Tests, Config: config})
+	}{Title: "Settings", Config: config})
 }
 
 func ShowHandler(w http.ResponseWriter, r *http.Request) {

@@ -1,0 +1,75 @@
+{{define "_content"}}
+<div class="column">
+    <table class="table">
+        <thead>
+        <tr>
+            <th colspan="2">
+                Settings
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>
+                Logfile:
+            </td>
+            <td>
+                {{.Config.Filename}}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Logformat:
+            </td>
+            <td>
+                {{.Config.Logformat}}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Patterns:
+            </td>
+            <td>
+                {{range .Config.Patterns}}
+                {{.}}<br/>
+                {{end}}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Report additional expectations:
+            </td>
+            <td>
+                {{.Config.Expectations.ReportAdditional}}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Auto verification:
+            </td>
+            <td>
+                {{.Config.AutoVerification}}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Web:
+            </td>
+            <td>
+                Port: {{.Config.Web.Port}}<br>
+                Timeout: {{.Config.Web.Timeout}}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                API Port:
+            </td>
+            <td>
+                Port: {{.Config.Api.Port}}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p><a>Check Settings</a> tests if the API is available and if the monitored log file is continuously updated.</p>
+</div>
+{{end}}

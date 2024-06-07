@@ -1,110 +1,33 @@
 {{define "_content"}}
-<div class="columns">
-    <div class="column">
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Test</th>
-                <th>Expectations</th>
-                <th>Runs</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{range .Tests}}
-            <tr>
-                <td>
-                    <a href="/show?testname={{.Name}}">{{.Name}}</a>
-                </td>
-                <td style="text-align:right;">
-                    {{len .Expectations}}
-                </td>
-                <td style="text-align:right;">
-                    {{.Verifications}}
-                </td>
-                <td>
-                    <a href="/delete?testname={{.Name}}">Delete</a> |
-                    <a href="/noise?testname={{.Name}}">Noise</a> |
-                    <a href="/run?testname={{.Name}}">Run</a>
-                </td>
-            </tr>
-            {{end}}
-            </tbody>
-        </table>
-        <a href="/new">Create new test...</a>
-    </div>
-    <div class="column">
-        <table class="table">
-            <thead>
-            <tr>
-                <th colspan="2">
-                    Settings
-                </th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>
-                    Logfile:
-                </td>
-                <td>
-                    {{.Config.Filename}}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Logformat:
-                </td>
-                <td>
-                    {{.Config.Logformat}}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Patterns:
-                </td>
-                <td>
-                    {{range .Config.Patterns}}
-                    {{.}}<br/>
-                    {{end}}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Report additional expectations:
-                </td>
-                <td>
-                    {{.Config.Expectations.ReportAdditional}}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Auto verification:
-                </td>
-                <td>
-                    {{.Config.AutoVerification}}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Web:
-                </td>
-                <td>
-                    Port: {{.Config.Web.Port}}<br>
-                    Timeout: {{.Config.Web.Timeout}}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    API Port:
-                </td>
-                <td>
-                    Port: {{.Config.Api.Port}}
-                </td>
-            </tr>
-            </tbody>
-        </table>
-        <p><a>Check Settings</a> tests if the API is available and if the monitored log file is continuously updated.</p>
-    </div>
-</div>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Test</th>
+        <th>Expectations</th>
+        <th>Runs</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .Tests}}
+    <tr>
+        <td>
+            <a href="/show?testname={{.Name}}">{{.Name}}</a>
+        </td>
+        <td style="text-align:right;">
+            {{len .Expectations}}
+        </td>
+        <td style="text-align:right;">
+            {{.Verifications}}
+        </td>
+        <td>
+            <a href="/delete?testname={{.Name}}">Delete</a> |
+            <a href="/noise?testname={{.Name}}">Noise</a> |
+            <a href="/run?testname={{.Name}}">Run</a>
+        </td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+<a href="/new">Create new test...</a>
 {{end}}
