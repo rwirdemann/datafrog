@@ -346,7 +346,7 @@ func buildNoiseData(tc df.Testcase) noise {
 	noise := noise{Verifications: tc.Verifications}
 	for i, e := range tc.Expectations {
 		noise.EE = append(noise.EE, E{
-			Name:     fmt.Sprintf("E%d: %s", i, e.Shorten(8)),
+			Name:     fmt.Sprintf("E%d: %s", i, e.Shorten(7)),
 			Verified: e.Verified,
 		})
 	}
