@@ -5,6 +5,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Tokenize splits s into tokens separated by spaces. Spaces in nested quotes
+// strings are not split, thus 'Java Dev Hamburg' becomes one token.
 func Tokenize(s string) []string {
 	var tokens []string
 	t := ""

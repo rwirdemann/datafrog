@@ -24,8 +24,14 @@ var config df.Config
 type ChannelMap map[string]chan struct{}
 
 // RegisterHandler registers http handler to record and verify testcases.
-func RegisterHandler(c df.Config, router *mux.Router, verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap, recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) {
+func RegisterHandler(c df.Config, router *mux.Router,
+	verificationDoneChannels ChannelMap,
+	verificationStoppedChannels ChannelMap,
+	recordingDoneChannels ChannelMap,
+	recordingStoppedChannels ChannelMap) {
 	config = c
+
+	// get all tests
 	router.HandleFunc("/tests", AllTests()).Methods("GET")
 
 	// create new test and start recording
@@ -140,14 +146,14 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		}
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
-		databaseLog := mysql.NewMYSQLLog(config.Filename)
+		dbLog := mysql.NewMYSQLLog(config.Filename)
 		t := &UTCTimer{}
-
 		writer, err := df.NewFileTestWriter(testname)
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
-		recorder = record.NewRecorder(config, mysql.Tokenizer{}, databaseLog, writer, t, testname, GoogleUUIDProvider{})
+		recorder = record.NewRecorder(config, mysql.Tokenizer{}, dbLog, writer, t, testname, GoogleUUIDProvider{})
 		recordingDoneChannels[testname] = make(chan struct{})
 		recordingStoppedChannels[testname] = make(chan struct{})
 		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
@@ -190,8 +196,8 @@ func StopRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels Ch
 	}
 }
 
-// AllTests returns a http handler that reads all .json files (except
-// config.json) in the current directory and returns them as json-encoded http
+// AllTests returns a HTTP handler that reads all .json files (except
+// config.json) in the current directory and returns them as json-encoded HTTP
 // response.
 func AllTests() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
