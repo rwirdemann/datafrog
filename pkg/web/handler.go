@@ -17,10 +17,17 @@ var client *http.Client
 var config df.Config
 var apiBaseURL string
 
+// Map of channels to synchronize Playwright recording process with data frog web
+// app. Map of channels to synchronize Playwright recording process with data
+// frog web app. Map of channels to synchronize Playwright recording process with
+// data frog web app.
+var recordingDoneChannels map[string]chan struct{}
+
 // RegisterHandler registers all known URLs and maps them to their associated
 // handlers.
 func RegisterHandler(c df.Config) {
 	config = c
+	recordingDoneChannels = make(map[string]chan struct{})
 	client = &http.Client{Timeout: time.Duration(config.Web.Timeout) * time.Second}
 	apiBaseURL = fmt.Sprintf("http://localhost:%d", config.Api.Port)
 
@@ -34,7 +41,7 @@ func RegisterHandler(c df.Config) {
 	simpleweb.Register("/new", NewHandler, "GET")
 
 	// start recording
-	simpleweb.Register("/create", StartRecording, "POST")
+	simpleweb.Register("/create", StartRecording(driver.NewPlaywrightRunner(config)), "POST")
 
 	// stop recording
 	simpleweb.Register("/stoprecording", StopRecording, "GET")
@@ -138,13 +145,15 @@ func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fulfilled := len(tc.Fulfilled())
 	p, c := calcProgressAndCssClass(tc)
-	simpleweb.RenderPartialE("templates/progress-verification.html", w, struct {
+	if err := simpleweb.RenderPartialE("templates/progress-verification.html", w, struct {
 		Progress     int
 		Testname     string
 		Color        string
 		Expectations int
 		Fulfilled    int
-	}{Progress: p, Testname: testname, Color: c, Expectations: len(tc.Expectations), Fulfilled: fulfilled})
+	}{Progress: p, Testname: testname, Color: c, Expectations: len(tc.Expectations), Fulfilled: fulfilled}); err != nil {
+		log.Errorf("Error rendering partial %v", err)
+	}
 }
 
 func calcProgressAndCssClass(tc df.Testcase) (int, string) {
@@ -159,21 +168,39 @@ func calcProgressAndCssClass(tc df.Testcase) (int, string) {
 	return progress, color
 }
 
-// ProgressRecordingHandler renders the partial progress-recording.html
-// that shows the progress of the current recording run.
+// ProgressRecordingHandler renders the partial progress-recording.html that
+// shows the progress of the current recording run.
 func ProgressRecordingHandler(w http.ResponseWriter, r *http.Request) {
 	testname := r.URL.Query().Get("testname")
 	url := fmt.Sprintf("%s/tests/%s/recordings/progress", apiBaseURL, testname)
 	tc, err := getTestcase(url)
 	if err != nil {
+		log.Errorf("Error getting testcase for progresss from api: %v", err)
 		return
 	}
-	progress := len(tc.Expectations) * 3
-	simpleweb.RenderPartialE("templates/progress-recording.html", w, struct {
+
+	// Determine color and value of progress bar. The bar becomes green and 100% when
+	// the recordingDoneChannels[testname] channel was closed. This happens when the
+	// user closes the playwright web browser see [driver.PlaywrightRunner.Record].
+	var color string
+	var progress int
+	select {
+	default:
+		color = "is-warning"
+		progress = len(tc.Expectations) * 3
+	case <-recordingDoneChannels[testname]:
+		color = "is-success"
+		progress = 100
+	}
+
+	if err := simpleweb.RenderPartialE("templates/progress-recording.html", w, struct {
 		Progress     int
 		Testname     string
+		Color        string
 		Expectations int
-	}{Progress: progress, Testname: testname, Expectations: len(tc.Expectations)})
+	}{Progress: progress, Testname: testname, Color: color, Expectations: len(tc.Expectations)}); err != nil {
+		log.Errorf("Error rendering partial %v", err)
+	}
 }
 
 // NewHandler renders the new templates
@@ -185,21 +212,31 @@ func NewHandler(w http.ResponseWriter, _ *http.Request) {
 
 // StartRecording creates / overrides the test form["testname"] and starts its
 // recording.
-func StartRecording(w http.ResponseWriter, request *http.Request) {
-	testname, err := simpleweb.FormValue(request, "testname")
-	if err != nil {
-		simpleweb.RedirectE(w, request, "/", err)
-		return
+func StartRecording(runner driver.PlaywrightRunner) http.HandlerFunc {
+	return func(w http.ResponseWriter, request *http.Request) {
+		testname, err := simpleweb.FormValue(request, "testname")
+		if err != nil {
+			simpleweb.RedirectE(w, request, "/", err)
+			return
+		}
+		if err := Post(fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)); err != nil {
+			simpleweb.RedirectE(w, request, "/", err)
+			return
+		}
+
+		if config.AutoVerification {
+			simpleweb.Info("Recording has been started. Run UI interactions and close SUT browser when finished.")
+			recordingDoneChannels[testname] = make(chan struct{})
+			go runner.Record(testname, recordingDoneChannels[testname])
+		} else {
+			simpleweb.Info("Recording has been started. Run UI interactions and click 'Stop and verification...' when finished")
+		}
+
+		simpleweb.Render("templates/record.html", w, struct {
+			Title    string
+			Testname string
+		}{Title: "Record", Testname: testname})
 	}
-	if err := Post(fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)); err != nil {
-		simpleweb.RedirectE(w, request, "/", err)
-		return
-	}
-	simpleweb.Info("Recording has been started. Run UI interactions and click 'Stop recording...' when finished")
-	simpleweb.Render("templates/record.html", w, struct {
-		Title    string
-		Testname string
-	}{Title: "Record", Testname: testname})
 }
 
 func StopRecording(w http.ResponseWriter, request *http.Request) {

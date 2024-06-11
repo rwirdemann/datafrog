@@ -57,3 +57,20 @@ func (r PlaywrightRunner) Exists(testname string) bool {
 func (r PlaywrightRunner) ToPlaywright(testname string) string {
 	return strings.Split(testname, ".")[0] + ".spec.ts"
 }
+
+// Record starts the Playwright test recorder in its own browser and blocks until
+// the browser was closed.
+func (r PlaywrightRunner) Record(testname string, done chan struct{}) {
+	defer close(done)
+
+	fn := r.ToPlaywright(testname)
+	path := fmt.Sprintf("%s/%s/%s", r.config.Playwright.BaseDir, r.config.Playwright.TestDir, fn)
+	log.Printf("PlaywrightRunner: recording test '%s'", path)
+	cmd := exec.Command("npx", "playwright", "codegen", "localhost:8080", "-o", fmt.Sprintf("%s/%s", r.config.Playwright.TestDir, fn))
+	cmd.Dir = r.config.Playwright.BaseDir
+	if err := cmd.Run(); err != nil {
+		log.Errorf("PlaywrightRunner: error running command: %v", err)
+	} else {
+		log.Printf("PlaywrightRunner: playwright codegen was successful")
+	}
+}

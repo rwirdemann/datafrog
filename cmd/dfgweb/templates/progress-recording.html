@@ -1,4 +1,4 @@
-<progress class="progress is-warning" value="{{.Progress}}" max="100"
+<progress class="progress {{.Color}}" value="{{.Progress}}" max="100"
           hx-get="/progress-recording?testname={{.Testname}}"
           hx-trigger="every 600ms"
           hx-target="#progress-bar"
