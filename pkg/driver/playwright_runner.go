@@ -2,7 +2,8 @@ package driver
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
+
 	"os/exec"
 	"strings"
 
@@ -22,32 +23,22 @@ func NewPlaywrightRunner(c df.Config) PlaywrightRunner {
 }
 
 // Run runs testname by converting the name to its playwright format (full.json
-// becomes full.spec.ts) and passing the playwright version to
-// scripts/playwright.sh.
+// becomes full.spec.ts)
 func (r PlaywrightRunner) Run(testname string) {
 	if !r.Exists(testname) {
-		log.Printf("PlaywrightRunner: test file '%s' not found", testname)
+		log.Errorf("PlaywrightRunner: test file '%s' not found", testname)
 		return
 	}
 
 	fn := r.ToPlaywright(testname)
-	log.Printf("driver: running test '%s'", fn)
-
-	// change into playwright project directory
-	_, err := exec.Command("cd", r.config.Playwright.BaseDir).Output()
-	if err != nil {
-		fmt.Printf("could not run command: %v", err)
-		return
-	}
+	log.Printf("PlaywrightRunner: running test '%s' in '%s'", fn, r.config.Playwright.BaseDir)
 
 	// run playwright test
-	out, err := exec.Command("scripts/playwright.sh", fn).Output()
-	if err != nil {
-		fmt.Println("output: ", string(out))
-		fmt.Printf("error: %v", err)
-		return
+	cmd := exec.Command("npx", "playwright", "test", fn, "--project=chromium")
+	cmd.Dir = r.config.Playwright.BaseDir
+	if err := cmd.Run(); err != nil {
+		log.Errorf("error running command: %v", err)
 	}
-	fmt.Println("Output: ", string(out))
 }
 
 // Exists converts testname to its corresponding playwright format and returns
