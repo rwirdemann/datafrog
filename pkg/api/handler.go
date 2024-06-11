@@ -35,7 +35,7 @@ func RegisterHandler(c df.Config, router *mux.Router,
 	router.HandleFunc("/tests", AllTests()).Methods("GET")
 
 	// create new test and start recording
-	router.HandleFunc("/tests/{name}/recordings", StartRecording(recordingDoneChannels, recordingStoppedChannels)).Methods("POST")
+	router.HandleFunc("/tests/{name}/recordings", StartRecording(recordingDoneChannels, recordingStoppedChannels, mysql.LogFactory{})).Methods("POST")
 
 	// stop recording
 	router.HandleFunc("/tests/{name}/recordings", StopRecording(recordingDoneChannels, recordingStoppedChannels)).Methods("DELETE")
@@ -138,7 +138,10 @@ func DeleteTest() http.HandlerFunc {
 // stop the recording (recordingDoneChannels, see StopRecording) and to wait for
 // the recorder to gracefully finish its recording loop
 // (recordingStoppedChannels see [app.Recorder]).
-func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) http.HandlerFunc {
+func StartRecording(
+	recordingDoneChannels ChannelMap,
+	recordingStoppedChannels ChannelMap,
+	logFactory df.LogFactory) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
@@ -146,7 +149,7 @@ func StartRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels C
 		}
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
-		dbLog := mysql.NewMYSQLLog(config.Filename)
+		dbLog := logFactory.Create(config.Filename)
 		t := &UTCTimer{}
 		writer, err := df.NewFileTestWriter(testname)
 		if err != nil {
