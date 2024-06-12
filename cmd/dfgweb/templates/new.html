@@ -1,9 +1,21 @@
 {{define "_content"}}
 <form action="/create" method="post">
     <div class="field">
-        <label class="label">Name</label>
+        <label class="label" for="testname">Name</label>
         <div class="control">
-            <input class="input" type="text" name="testname" placeholder="e.g. create-job (no suffix!)" required autofocus>
+            <input class="input" id="testname" type="text" name="testname" placeholder="e.g. create-job (no suffix!)"
+                   required autofocus>
+        </div>
+    </div>
+    <div class="field">
+        <label class="label" for="driver">Driver</label>
+        <div class="control">
+            <div class="select">
+                <select id="driver">
+                    <option>Playwright</option>
+                    <option>Selenium</option>
+                </select>
+            </div>
         </div>
     </div>
     <div class="field">
