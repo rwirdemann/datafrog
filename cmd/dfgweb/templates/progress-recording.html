@@ -10,11 +10,7 @@
     </div>
     <div class="column">
         <span style="float: right">
-            {{if eq .Progress 100}}
-                <a href="/stoprecording?testname={{.Testname}}">Run verification</a>
-            {{else}}
-                <a href="/stoprecording?testname={{.Testname}}">Stop and run verification</a>
-            {{end}}
+            <a href="/stoprecording?testname={{.Testname}}">Finish recording</a>
         </span>
     </div>
 </div>
