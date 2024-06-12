@@ -1,0 +1,37 @@
+{{define "_content"}}
+<table class="table">
+    <thead>
+    <tr>
+        <th colspan="2">
+            Playwright
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>
+            Base dir:
+        </td>
+        <td>
+            {{.Config.Playwright.BaseDir}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Test dir:
+        </td>
+        <td>
+            {{.Config.Playwright.TestDir}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Record cmd:
+        </td>
+        <td>
+            npx playwright codegen localhost:8080 -o TEST_NAME
+        </td>
+    </tr>
+    </tbody>
+</table>
+{{end}}

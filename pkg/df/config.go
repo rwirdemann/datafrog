@@ -27,9 +27,9 @@ type Config struct {
 		// recording run
 		ReportAdditional bool `json:"report_additional"`
 	}
-	// run verification automatically after recording
-	AutoVerification bool `json:"auto_verification"`
-	Playwright       struct {
+	// which ui driver: Playwright | none
+	UIDriver   string `json:"ui_driver"`
+	Playwright struct {
 		BaseDir string `json:"base_dir"` // base directory of playwright project
 		TestDir string `json:"test_dir"` // subdirectory in BaseDir where the tests are stored
 	}

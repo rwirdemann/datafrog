@@ -50,6 +50,7 @@ the following format:
   "expectations": {
     "report_additional": true
   },
+  "ui_driver": "none",
   "web": {
     "port": 8081,
     "timeout": 120

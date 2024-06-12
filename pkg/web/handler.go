@@ -37,6 +37,9 @@ func RegisterHandler(c df.Config) {
 	// settings
 	simpleweb.Register("/settings", SettingsHandler, "GET")
 
+	// playwright
+	simpleweb.Register("/playwright", PlaywrightHandler, "GET")
+
 	// show new form
 	simpleweb.Register("/new", NewHandler, "GET")
 
@@ -90,6 +93,13 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 
 func SettingsHandler(w http.ResponseWriter, _ *http.Request) {
 	simpleweb.Render("templates/settings.html", w, struct {
+		Title  string
+		Config df.Config
+	}{Title: "Settings", Config: config})
+}
+
+func PlaywrightHandler(w http.ResponseWriter, _ *http.Request) {
+	simpleweb.Render("templates/playwright.html", w, struct {
 		Title  string
 		Config df.Config
 	}{Title: "Settings", Config: config})
@@ -224,7 +234,7 @@ func StartRecording(runner driver.PlaywrightRunner) http.HandlerFunc {
 			return
 		}
 
-		if config.AutoVerification {
+		if config.UIDriver == "Playwright" {
 			recordingDoneChannels[testname] = make(chan struct{})
 			go runner.Record(testname, recordingDoneChannels[testname])
 		}
@@ -297,9 +307,8 @@ func StartHandler(runner driver.PlaywrightRunner) http.HandlerFunc {
 		}
 
 		// start test via driver if configured
-		if config.AutoVerification {
+		if config.UIDriver == "Playwright" {
 			if runner.Exists(testname) {
-				simpleweb.Info(fmt.Sprintf("Running auto verfication of test '%s'", testname))
 				go runner.Run(testname)
 			} else {
 				d := fmt.Sprintf("%s/%s", config.Playwright.BaseDir, config.Playwright.TestDir)
