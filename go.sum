@@ -9,6 +9,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rwirdemann/simpleweb v0.0.0-20240510100014-283104e2ec16 h1:FarqkVkKSlRADi50GYMk6zNZ0kvHoH4wccwQ/qNazcM=
 github.com/rwirdemann/simpleweb v0.0.0-20240510100014-283104e2ec16/go.mod h1:u9ia46XUoKDuF7QXWdOG3wQXy5woPdR9wnEIhylK9xs=
+github.com/rwirdemann/simpleweb v0.0.0-20240612085705-92e249a34422 h1:bMIZ6irSWRilBPPeMDBPX15rbMnRO6Ko+aCjIkp18jE=
+github.com/rwirdemann/simpleweb v0.0.0-20240612085705-92e249a34422/go.mod h1:u9ia46XUoKDuF7QXWdOG3wQXy5woPdR9wnEIhylK9xs=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

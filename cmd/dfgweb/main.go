@@ -4,7 +4,7 @@ import (
 	"embed"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/web"
-	"github.com/rwirdemann/simpleweb"
+	"github.com/rwirdemann/simpleweb/pkg/simpleweb"
 	"log"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/driver"
-	"github.com/rwirdemann/simpleweb"
+	"github.com/rwirdemann/simpleweb/pkg/simpleweb"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -225,11 +225,8 @@ func StartRecording(runner driver.PlaywrightRunner) http.HandlerFunc {
 		}
 
 		if config.AutoVerification {
-			simpleweb.Info("Recording has been started. Run UI interactions and close SUT browser when finished.")
 			recordingDoneChannels[testname] = make(chan struct{})
 			go runner.Record(testname, recordingDoneChannels[testname])
-		} else {
-			simpleweb.Info("Recording has been started. Run UI interactions and click 'Stop and verification...' when finished")
 		}
 
 		simpleweb.Render("templates/record.html", w, struct {
