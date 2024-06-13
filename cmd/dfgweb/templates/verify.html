@@ -1,24 +1,20 @@
 {{define "_content"}}
-<div class="columns">
-    <div class="column is-one-fifth">{{.Testname}}</div>
-    <div class="column">
-        <div id="progress-bar">
-            <progress class="progress is-warning" value="0" max="100"
-                      hx-get="/progress-verification?testname={{.Testname}}"
-                      hx-trigger="every 600ms"
-                      hx-target="#progress-bar"
-                      hx-swap="innerHTML">
-            </progress>
-            <div class="columns">
-                <div class="column">
-                    0 of {{.Expectations}} expectations verified
-                </div>
-                <div class="column">
+<div class="mt-2 mb-4">Running {{.Testname}}...</div>
+<div id="progress-bar">
+    <progress class="progress is-warning" value="0" max="100"
+              hx-get="/progress-verification?testname={{.Testname}}"
+              hx-trigger="every 600ms"
+              hx-target="#progress-bar"
+              hx-swap="innerHTML">
+    </progress>
+    <div class="columns">
+        <div class="column">
+            0 of {{.Expectations}} expectations verified
+        </div>
+        <div class="column">
                     <span style="float:right;">
                     <a href="/stop?testname={{.Testname}}">Quit</a>
                     </span>
-                </div>
-            </div>
         </div>
     </div>
 </div>

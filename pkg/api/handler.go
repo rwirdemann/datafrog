@@ -132,12 +132,12 @@ func DeleteTest() http.HandlerFunc {
 	}
 }
 
-// StartRecording returns a http handler to start the recording of the test
-// given in the request params "name". Adds new channels to
-// recordingDoneChannels and recordingStoppedChannels. Both channels are used to
-// stop the recording (recordingDoneChannels, see StopRecording) and to wait for
-// the recorder to gracefully finish its recording loop
-// (recordingStoppedChannels see [app.Recorder]).
+// StartRecording returns a http handler to start the recording of the test given
+// in the request params "name". Adds new channels to recordingDoneChannels and
+// recordingStoppedChannels. Both channels are used to stop the recording
+// (recordingDoneChannels, see StopRecording) and to wait for the recorder to
+// gracefully finish its recording loop (recordingStoppedChannels see
+// [app.Recorder]).
 func StartRecording(
 	recordingDoneChannels ChannelMap,
 	recordingStoppedChannels ChannelMap,

@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script src="https://unpkg.com/htmx.org@1.9.12"
             integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
             crossorigin="anonymous"></script>
@@ -34,9 +35,30 @@
         <div class="column is-one-fifth">
             <aside class="menu">
                 <ul class="menu-list">
-                    <li><a href="/">Tests</a></li>
-                    <li><a href="/playwright">Playwright</a></li>
-                    <li><a href="/settings">Settings</a></li>
+                    <li>
+                        <a href="/">
+                            <span class="icon is-right">
+                                <i class="fa fa-list"></i>
+                            </span>
+                            Tests
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/playwright">
+                            <span class="icon is-right">
+                                <i class="fa fa-chrome"></i>
+                            </span>
+                            Playwright
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/settings">
+                            <span class="icon is-right">
+                                <i class="fa fa-sliders"></i>
+                            </span>
+                            Settings
+                        </a>
+                    </li>
                 </ul>
             </aside>
         </div>
@@ -57,5 +79,14 @@
         </div>
     </div>
 </div>
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>
+            <strong>DataFrog</strong> by <a href="https://codekeepers.de">CodeKeepers</a>.
+            The source code is licensed by
+            <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.
+        </p>
+    </div>
+</footer>
 </body>
 </html>

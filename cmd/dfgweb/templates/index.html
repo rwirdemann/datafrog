@@ -21,13 +21,30 @@
             {{.Verifications}}
         </td>
         <td>
-            <a href="/delete?testname={{.Name}}">Delete</a> |
-            <a href="/noise?testname={{.Name}}">Noise</a> |
-            <a href="/run?testname={{.Name}}">Run</a>
+            <a href="/delete?testname={{.Name}}">
+                <span class="icon is-right">
+                    <i class="fa fa-trash"></i>
+                </span>
+            </a>
+            <a href="/noise?testname={{.Name}}">
+                <span class="icon is-right">
+                    <i class="fa fa-bar-chart"></i>
+                </span>
+            </a>
+            <a href="/run?testname={{.Name}}">
+                <span class="icon is-right">
+                    <i class="fa fa-play"></i>
+                </span>
+            </a>
         </td>
     </tr>
     {{end}}
     </tbody>
 </table>
-<a class="button is-small" href="/new">Record test...</a>
+<a href="/new">
+    <span class="icon is-right">
+        <i class="fa fa-microphone"></i>
+    </span>
+    Record test...
+</a>
 {{end}}
