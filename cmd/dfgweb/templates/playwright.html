@@ -10,7 +10,7 @@
     <tbody>
     <tr>
         <td>
-            Base dir:
+            Project directory:
         </td>
         <td>
             {{.Config.Playwright.BaseDir}}
@@ -18,7 +18,7 @@
     </tr>
     <tr>
         <td>
-            Test dir:
+            Test directory:
         </td>
         <td>
             {{.Config.Playwright.TestDir}}
@@ -26,10 +26,18 @@
     </tr>
     <tr>
         <td>
-            Record cmd:
+            Record command:
         </td>
         <td>
             npx playwright codegen localhost:8080 -o TEST_NAME
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Replay command:
+        </td>
+        <td>
+            npx playwright test TEST_NAME
         </td>
     </tr>
     </tbody>

@@ -88,7 +88,7 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 	simpleweb.Render("templates/index.html", w, struct {
 		Title string
 		Tests []df.Testcase
-	}{Title: "Home", Tests: allTests.Tests})
+	}{Title: "Tests", Tests: allTests.Tests})
 }
 
 func SettingsHandler(w http.ResponseWriter, _ *http.Request) {
@@ -102,7 +102,7 @@ func PlaywrightHandler(w http.ResponseWriter, _ *http.Request) {
 	simpleweb.Render("templates/playwright.html", w, struct {
 		Title  string
 		Config df.Config
-	}{Title: "Settings", Config: config})
+	}{Title: "Playwright", Config: config})
 }
 
 func ShowHandler(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +217,7 @@ func ProgressRecordingHandler(w http.ResponseWriter, r *http.Request) {
 func NewHandler(w http.ResponseWriter, _ *http.Request) {
 	simpleweb.Render("templates/new.html", w, struct {
 		Title string
-	}{Title: "New Testcase"})
+	}{Title: "Record"})
 }
 
 // StartRecording creates / overrides the test form["testname"] and starts its
@@ -332,7 +332,7 @@ func StartHandler(runner driver.PlaywrightRunner) http.HandlerFunc {
 			Title        string
 			Testname     string
 			Expectations int
-		}{Title: fmt.Sprintf("Verifying '%s'...", testname), Testname: tc.Name, Expectations: len(tc.Expectations)})
+		}{Title: "Verify", Testname: tc.Name, Expectations: len(tc.Expectations)})
 	}
 }
 

@@ -22,71 +22,86 @@
             });
         });
     </script>
+    <style>
+        .wrapper-root {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .wrapper-content {
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
-<section class="hero is-link">
-    <div class="hero-body">
-        <p class="title">DataFrog Cockpit</p>
-        <p class="subtitle">{{.Title}}</p>
-    </div>
-</section>
-<div class="section">
-    <div class="columns">
-        <div class="column is-one-fifth">
-            <aside class="menu">
-                <ul class="menu-list">
-                    <li>
-                        <a href="/">
+<div class="wrapper-root">
+    <div class="wrapper-content">
+        <section class="hero is-link">
+            <div class="hero-body">
+                <a href="/" class="title">DataFrog Cockpit</a>
+                <p class="subtitle">{{.Title}}</p>
+            </div>
+        </section>
+        <div class="section">
+            <div class="columns">
+                <div class="column is-one-fifth">
+                    <aside class="menu">
+                        <ul class="menu-list">
+                            <li>
+                                <a href="/">
                             <span class="icon is-right">
                                 <i class="fa fa-list"></i>
                             </span>
-                            Tests
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/playwright">
+                                    Tests
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/playwright">
                             <span class="icon is-right">
                                 <i class="fa fa-chrome"></i>
                             </span>
-                            Playwright
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/settings">
+                                    Playwright
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/settings">
                             <span class="icon is-right">
                                 <i class="fa fa-sliders"></i>
                             </span>
-                            Settings
-                        </a>
-                    </li>
-                </ul>
-            </aside>
-        </div>
-        <div class="column">
-            {{if hasInfo}}
-            <div class="notification is-success is-light">
-                <button class="delete"></button>
-                {{info}}
+                                    Settings
+                                </a>
+                            </li>
+                        </ul>
+                    </aside>
+                </div>
+                <div class="column">
+                    {{if hasInfo}}
+                    <div class="notification is-success is-light">
+                        <button class="delete"></button>
+                        {{info}}
+                    </div>
+                    {{end}}
+                    {{if hasError}}
+                    <div class="notification is-danger is-light">
+                        <button class="delete"></button>
+                        {{error}}
+                    </div>
+                    {{end}}
+                    {{template "_content" .}}
+                </div>
             </div>
-            {{end}}
-            {{if hasError}}
-            <div class="notification is-danger is-light">
-                <button class="delete"></button>
-                {{error}}
-            </div>
-            {{end}}
-            {{template "_content" .}}
         </div>
     </div>
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>DataFrog</strong> by <a href="https://codekeepers.de">CodeKeepers</a>.
+                The source code is licensed by
+                <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.
+            </p>
+        </div>
+    </footer>
 </div>
-<footer class="footer">
-    <div class="content has-text-centered">
-        <p>
-            <strong>DataFrog</strong> by <a href="https://codekeepers.de">CodeKeepers</a>.
-            The source code is licensed by
-            <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.
-        </p>
-    </div>
-</footer>
 </body>
 </html>
