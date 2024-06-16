@@ -16,23 +16,23 @@ import (
 func TestStartRecording(t *testing.T) {
 	testname := "create-job"
 	testFilename := fmt.Sprintf("%s.json", testname)
-	config = df.Config{Filename: "/usr/local/var/mysql/MBP-von-Ralf.log"}
+	config = df.Config{}
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/tests/%s/recordings", testname), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	doneChannel := make(ChannelMap)
-	stoppedChannel := make(ChannelMap)
-	router := mux.NewRouter()
-	router.HandleFunc("/tests/{name}/recordings", StartRecording(doneChannel, stoppedChannel, mocks.LogFactory{})).Methods("POST")
-	router.ServeHTTP(rr, req)
+	done := make(ChannelMap)
+	stopped := make(ChannelMap)
+	r := mux.NewRouter()
+	r.HandleFunc("/tests/{name}/recordings", StartRecording(done, stopped, mocks.LogFactory{})).Methods("POST")
+	r.ServeHTTP(rr, req)
 
 	// stop recorded
-	close(doneChannel[testFilename])
+	close(done[testFilename])
 
 	// wait until recorded has shut itself down
-	<-stoppedChannel[testFilename]
+	<-stopped[testFilename]
 
 	assert.True(t, file.Exists(testFilename))
 	if err := os.Remove(testFilename); err != nil {
