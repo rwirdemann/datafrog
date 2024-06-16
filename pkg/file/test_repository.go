@@ -2,6 +2,7 @@ package file
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	log "github.com/sirupsen/logrus"
@@ -22,13 +23,24 @@ func (r TestRepository) All() ([]df.Testcase, error) {
 		if strings.HasSuffix(f.Name(), ".json") && !strings.HasPrefix(f.Name(), "config") {
 			tc, err := r.Get(f.Name())
 			if err != nil {
-				log.Errorf("TestRepository.Get failed: %v", err)
+				if errors.Is(err, InvalidJsonError{}) {
+					log.Errorf("testfile '%s' contains invalid json. deleting file.", f.Name())
+					_ = os.Remove(f.Name())
+				} else {
+					log.Errorf("TestRepository.Get failed: %v", err)
+				}
 			} else {
 				all = append(all, tc)
 			}
 		}
 	}
 	return all, nil
+}
+
+type InvalidJsonError struct{}
+
+func (e InvalidJsonError) Error() string {
+	return "json: invalid data"
 }
 
 func (r TestRepository) Get(filename string) (df.Testcase, error) {
@@ -44,11 +56,11 @@ func (r TestRepository) Get(filename string) (df.Testcase, error) {
 	}(jsonFile)
 	b, _ := io.ReadAll(jsonFile)
 	if len(b) == 0 {
-		return df.Testcase{}, fmt.Errorf("testfile '%s' contains no data", filename)
+		return df.Testcase{}, InvalidJsonError{}
 	}
 	var tc df.Testcase
 	if err := json.Unmarshal(b, &tc); err != nil {
-		return df.Testcase{}, err
+		return df.Testcase{}, InvalidJsonError{}
 	}
 	return tc, nil
 }
