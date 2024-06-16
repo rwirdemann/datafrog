@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/rwirdemann/datafrog/pkg/file"
 	"github.com/rwirdemann/datafrog/pkg/mocks"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -34,9 +33,20 @@ func TestStartRecording(t *testing.T) {
 	// wait until recorded has shut itself down
 	<-stopped[testFilename]
 
-	assert.True(t, file.Exists(testFilename))
+	assert.True(t, exists(testFilename))
 	if err := os.Remove(testFilename); err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, http.StatusAccepted, rr.Code)
+}
+
+func TestRejectDuplicatedTestname(t *testing.T) {
+
+}
+
+func exists(filename string) bool {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

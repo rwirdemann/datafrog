@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -24,27 +23,25 @@ var config df.Config
 type ChannelMap map[string]chan struct{}
 
 // RegisterHandler registers http handler to record and verify testcases.
-func RegisterHandler(c df.Config, router *mux.Router,
-	verificationDoneChannels ChannelMap,
-	verificationStoppedChannels ChannelMap,
-	recordingDoneChannels ChannelMap,
-	recordingStoppedChannels ChannelMap) {
+func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verificationStopped, recordingDone, recordingStopped ChannelMap,
+	testRepository df.TestRepository) {
 	config = c
 
 	// get all tests
-	router.HandleFunc("/tests", AllTests()).Methods("GET")
+	router.HandleFunc("/tests", AllTests(testRepository)).Methods("GET")
 
 	// create new test and start recording
-	router.HandleFunc("/tests/{name}/recordings", StartRecording(recordingDoneChannels, recordingStoppedChannels, mysql.LogFactory{})).Methods("POST")
+	router.HandleFunc("/tests/{name}/recordings",
+		StartRecording(recordingDone, recordingStopped, mysql.LogFactory{})).Methods("POST")
 
 	// stop recording
-	router.HandleFunc("/tests/{name}/recordings", StopRecording(recordingDoneChannels, recordingStoppedChannels)).Methods("DELETE")
+	router.HandleFunc("/tests/{name}/recordings", StopRecording(recordingDone, recordingStopped)).Methods("DELETE")
 
 	// delete test
 	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
 
 	// get test
-	router.HandleFunc("/tests/{name}", GetTest()).Methods("GET")
+	router.HandleFunc("/tests/{name}", GetTest(testRepository)).Methods("GET")
 
 	// get recording progress
 	router.HandleFunc("/tests/{name}/recordings/progress", GetRecordingProgress()).Methods("GET")
@@ -53,10 +50,10 @@ func RegisterHandler(c df.Config, router *mux.Router,
 	router.HandleFunc("/tests/{name}/verifications/progress", GetVerificationProgress()).Methods("GET")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/verifications", StartVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("PUT")
+	router.HandleFunc("/tests/{name}/verifications", StartVerify(verificationDone, verificationStopped)).Methods("PUT")
 
 	// stop verify
-	router.HandleFunc("/tests/{name}/verifications", StopVerify(verificationDoneChannels, verificationStoppedChannels)).Methods("DELETE")
+	router.HandleFunc("/tests/{name}/verifications", StopVerify(verificationDone, verificationStopped)).Methods("DELETE")
 }
 
 func GetRecordingProgress() http.HandlerFunc {
@@ -91,13 +88,13 @@ func GetVerificationProgress() http.HandlerFunc {
 	}
 }
 
-func GetTest() http.HandlerFunc {
+func GetTest(repository df.TestRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
-		tc, err := readTestcase(mux.Vars(r)["name"])
+		tc, err := repository.Get(mux.Vars(r)["name"])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -138,10 +135,7 @@ func DeleteTest() http.HandlerFunc {
 // (recordingDoneChannels, see StopRecording) and to wait for the recorder to
 // gracefully finish its recording loop (recordingStoppedChannels see
 // [app.Recorder]).
-func StartRecording(
-	recordingDoneChannels ChannelMap,
-	recordingStoppedChannels ChannelMap,
-	logFactory df.LogFactory) http.HandlerFunc {
+func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
@@ -157,9 +151,9 @@ func StartRecording(
 			return
 		}
 		recorder = record.NewRecorder(config, mysql.Tokenizer{}, dbLog, writer, t, testname, GoogleUUIDProvider{})
-		recordingDoneChannels[testname] = make(chan struct{})
-		recordingStoppedChannels[testname] = make(chan struct{})
-		go recorder.Start(recordingDoneChannels[testname], recordingStoppedChannels[testname])
+		done[testname] = make(chan struct{})
+		stopped[testname] = make(chan struct{})
+		go recorder.Start(done[testname], stopped[testname])
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusAccepted)
 	}
@@ -199,27 +193,17 @@ func StopRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels Ch
 	}
 }
 
-// AllTests returns a HTTP handler that reads all .json files (except
-// config.json) in the current directory and returns them as json-encoded HTTP
-// response.
-func AllTests() http.HandlerFunc {
+// AllTests returns all tests as json-encoded HTTP response.
+func AllTests(repository df.TestRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		all, err := repository.All()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		allTests := struct {
 			Tests []df.Testcase `json:"tests"`
-		}{}
-
-		testfiles, err := os.ReadDir(".")
-		for _, f := range testfiles {
-			if strings.HasSuffix(f.Name(), ".json") && !strings.HasPrefix(f.Name(), "config") {
-				tc, err := readTestcase(f.Name())
-				if err != nil {
-					log.Printf("error decoding testfile %s: %v", f.Name(), err)
-				} else {
-					allTests.Tests = append(allTests.Tests, tc)
-				}
-			}
-		}
-
+		}{Tests: all}
 		b, err := json.Marshal(allTests)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -228,28 +212,6 @@ func AllTests() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(b)
 	}
-}
-
-func readTestcase(filename string) (df.Testcase, error) {
-	jsonFile, err := os.Open(filename)
-	if err != nil {
-		return df.Testcase{}, err
-	}
-	defer func(jsonFile *os.File) {
-		err := jsonFile.Close()
-		if err != nil {
-			log.Printf("error closing file %s: %v", filename, err)
-		}
-	}(jsonFile)
-	b, _ := io.ReadAll(jsonFile)
-	if len(b) == 0 {
-		return df.Testcase{}, fmt.Errorf("testfile '%s' contains no data", filename)
-	}
-	var tc df.Testcase
-	if err := json.Unmarshal(b, &tc); err != nil {
-		return df.Testcase{}, err
-	}
-	return tc, nil
 }
 
 // StartVerify returns a http handler that starts a verification run of the test
@@ -351,13 +313,17 @@ func copFile(src string, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func(source *os.File) {
+		_ = source.Close()
+	}(source)
 
 	destination, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destination.Close()
+	defer func(destination *os.File) {
+		_ = destination.Close()
+	}(destination)
 	_, err = io.Copy(destination, source)
 	return err
 }

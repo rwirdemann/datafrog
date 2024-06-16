@@ -3,12 +3,12 @@ package driver
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"os"
 
 	"os/exec"
 	"strings"
 
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/rwirdemann/datafrog/pkg/file"
 )
 
 // PlaywrightRunner runs TypeScript based playwright tests via npx (wrapped in
@@ -47,7 +47,7 @@ func (r PlaywrightRunner) Run(testname string) {
 func (r PlaywrightRunner) Exists(testname string) bool {
 	fn := r.ToPlaywright(testname)
 	path := fmt.Sprintf("%s/%s/%s", r.config.Playwright.BaseDir, r.config.Playwright.TestDir, fn)
-	if !file.Exists(path) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	}
 	return true

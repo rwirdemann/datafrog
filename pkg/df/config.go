@@ -1,5 +1,5 @@
 // Package df provides usecase overlapping datatypes and functions, like
-// Expectation, Testcase or Tokenizer. Underlying desin guideline: if a type
+// Expectation, Testcase or Tokenizer. Underlying design guideline: if a type
 // belongs to an usecase it should live in the usecase package. If a type or
 // function is used by multiple usecase it should live in df.
 package df
@@ -7,7 +7,6 @@ package df
 import (
 	"encoding/json"
 	"errors"
-	"github.com/rwirdemann/datafrog/pkg/file"
 	"io"
 	"log"
 	"os"
@@ -46,10 +45,10 @@ type Config struct {
 // NewDefaultConfig creates a new Config instance by trying to find a file
 // config.json in the current or in the config subdirectory.
 func NewDefaultConfig() (Config, error) {
-	if file.Exists("config.json") {
+	if exists("config.json") {
 		return NewConfig("config.json"), nil
 	}
-	if file.Exists("config/config.json") {
+	if exists("config/config.json") {
 		return NewConfig("config/config.json"), nil
 	}
 
@@ -76,4 +75,11 @@ func NewConfig(filename string) Config {
 		log.Fatal(err)
 	}
 	return config
+}
+
+func exists(filename string) bool {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

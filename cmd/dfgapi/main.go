@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/pkg/api"
 	"github.com/rwirdemann/datafrog/pkg/df"
+	"github.com/rwirdemann/datafrog/pkg/file"
 	"log"
 	"net/http"
 )
@@ -20,9 +21,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	testRepository := file.TestRepository{}
 	api.RegisterHandler(config, router,
 		verificationDoneChannels, verificationStoppedChannels,
-		recordingDoneChannels, recordingStoppedChannels)
+		recordingDoneChannels, recordingStoppedChannels, testRepository)
 	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		tpl, _ := route.GetPathTemplate()
 		met, _ := route.GetMethods()
