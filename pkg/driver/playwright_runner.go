@@ -34,7 +34,7 @@ func (r PlaywrightRunner) Run(testname string) {
 	log.Printf("PlaywrightRunner: running test '%s' in '%s'", fn, r.config.Playwright.BaseDir)
 
 	// run playwright test
-	cmd := exec.Command("npx", "playwright", "test", fn)
+	cmd := exec.Command("npx", "playwright", "test", fn, "--project=chromium")
 	cmd.Dir = r.config.Playwright.BaseDir
 	if err := cmd.Run(); err != nil {
 		log.Errorf("error running command: %v", err)
