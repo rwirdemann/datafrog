@@ -83,7 +83,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				continue
 			}
 			if verifier.timer.MatchesRecordingPeriod(ts) {
-				matches, vPattern := df.MatchesPattern(verifier.config, v)
+				matches, vPattern := df.MatchesPattern(verifier.config.Patterns, v)
 				if !matches {
 					continue
 				}

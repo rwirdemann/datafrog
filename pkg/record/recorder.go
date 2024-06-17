@@ -81,7 +81,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 				continue
 			}
 			if r.timer.MatchesRecordingPeriod(ts) {
-				matches, pattern := df.MatchesPattern(r.config, line)
+				matches, pattern := df.MatchesPattern(r.config.Patterns, line)
 				if matches {
 					tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
 					e := df.Expectation{Uuid: r.uuidProvider.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}

@@ -23,8 +23,8 @@ func NewPattern(s string) Pattern {
 	}
 }
 
-func MatchesPattern(c Config, s string) (bool, string) {
-	for _, p := range c.Patterns {
+func MatchesPattern(patterns []string, s string) (bool, string) {
+	for _, p := range patterns {
 		if NewPattern(p).matches(s) {
 			return true, p
 		}

@@ -5,12 +5,7 @@ import (
 	"testing"
 )
 
-var config = Config{Patterns: []string{
-	"update job",
-	"insert into",
-	"delete",
-	"select job!publish_trials<1",
-}}
+var patterns = []string{"update job", "insert into", "delete", "select job!publish_trials<1"}
 
 func TestMatchesPattern(t *testing.T) {
 	tests := []struct {
@@ -25,7 +20,7 @@ func TestMatchesPattern(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			matches, pattern := MatchesPattern(config, test.s)
+			matches, pattern := MatchesPattern(patterns, test.s)
 			assert.Equal(t, test.expectedMatches, matches)
 			assert.Equal(t, test.expectedPattern, pattern)
 		})
