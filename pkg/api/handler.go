@@ -32,7 +32,7 @@ func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verifica
 
 	// create new test and start recording
 	router.HandleFunc("/tests/{name}/recordings",
-		StartRecording(recordingDone, recordingStopped, mysql.LogFactory{})).Methods("POST")
+		StartRecording(recordingDone, recordingStopped, mysql.LogFactory{}, testRepository)).Methods("POST")
 
 	// stop recording
 	router.HandleFunc("/tests/{name}/recordings", StopRecording(recordingDone, recordingStopped)).Methods("DELETE")
@@ -135,7 +135,7 @@ func DeleteTest() http.HandlerFunc {
 // (recordingDoneChannels, see StopRecording) and to wait for the recorder to
 // gracefully finish its recording loop (recordingStoppedChannels see
 // [app.Recorder]).
-func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory) http.HandlerFunc {
+func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
@@ -143,6 +143,11 @@ func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory) http.Han
 		}
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
+		if repository.Exists(testname) {
+			http.Error(w, fmt.Sprintf("test already '%s' exits", testname), http.StatusConflict)
+			return
+		}
+
 		dbLog := logFactory.Create(config.Filename)
 		t := &UTCTimer{}
 		writer, err := df.NewFileTestWriter(testname)

@@ -13,6 +13,13 @@ import (
 
 type TestRepository struct{}
 
+func (r TestRepository) Exists(filename string) bool {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 func (r TestRepository) All() ([]df.Testcase, error) {
 	var all []df.Testcase
 	dir, err := os.ReadDir(".")

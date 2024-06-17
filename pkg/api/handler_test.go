@@ -24,7 +24,9 @@ func TestStartRecording(t *testing.T) {
 	done := make(ChannelMap)
 	stopped := make(ChannelMap)
 	r := mux.NewRouter()
-	r.HandleFunc("/tests/{name}/recordings", StartRecording(done, stopped, mocks.LogFactory{})).Methods("POST")
+	repository := mocks.TestRepository{}
+	repository.Testcases = []df.Testcase{}
+	r.HandleFunc("/tests/{name}/recordings", StartRecording(done, stopped, mocks.LogFactory{}, repository)).Methods("POST")
 	r.ServeHTTP(rr, req)
 
 	// stop recorded

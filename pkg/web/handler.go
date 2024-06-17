@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/driver"
@@ -229,8 +230,18 @@ func StartRecording(runner driver.PlaywrightRunner) http.HandlerFunc {
 			simpleweb.RedirectE(w, request, "/", err)
 			return
 		}
-		if err := Post(fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname)); err != nil {
+		res, err := Post(fmt.Sprintf("%s/tests/%s/recordings", apiBaseURL, testname))
+		if err != nil {
 			simpleweb.RedirectE(w, request, "/", err)
+			return
+		}
+		statusOK := res.StatusCode >= 200 && res.StatusCode < 300
+		if !statusOK {
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(res.Body)
+			body, _ := io.ReadAll(res.Body)
+			simpleweb.RedirectE(w, request, "/", errors.New(string(body)))
 			return
 		}
 
@@ -278,7 +289,6 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 		http.Redirect(w, request, "/", http.StatusSeeOther)
 		return
 	}
-	simpleweb.Info(fmt.Sprintf("Test '%s' successfully deleted", testname))
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
