@@ -1,0 +1,59 @@
+{{define "_content"}}
+<table class="table">
+    <thead>
+    <tr>
+        <th colspan="2">
+            Name
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>
+            Database
+        </td>
+        <td>
+            Database
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Logfile:
+        </td>
+        <td>
+            {{.Config.Filename}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Logformat:
+        </td>
+        <td>
+            {{.Config.Logformat}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Patterns:
+        </td>
+        <td>
+            {{range .Config.Patterns}}
+            {{.}}<br/>
+            {{end}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Health:
+        </td>
+        <td>
+            {{if eq .Health true}}
+            <span style="color: green">OK</span>
+            {{else}}
+            <span style="color: red">Failed</span>
+            {{end}}
+        </td>
+    </tr>
+    </tbody>
+</table>
+{{end}}

@@ -41,6 +41,9 @@ func RegisterHandler(c df.Config) {
 	// settings
 	simpleweb.Register("/settings", SettingsHandler, "GET")
 
+	// channels
+	simpleweb.Register("/channels", ChannelsHandler, "GET")
+
 	// playwright
 	simpleweb.Register("/playwright", PlaywrightHandler, "GET")
 
@@ -105,6 +108,14 @@ func SutHandler(w http.ResponseWriter, _ *http.Request) {
 		Title  string
 		Health bool
 	}{Title: "SUT", Health: health})
+}
+
+func ChannelsHandler(w http.ResponseWriter, _ *http.Request) {
+	simpleweb.Render("templates/channels.html", w, struct {
+		Title  string
+		Config df.Config
+		Health bool
+	}{Title: "Settings", Config: config, Health: true})
 }
 
 func SettingsHandler(w http.ResponseWriter, _ *http.Request) {
