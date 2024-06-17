@@ -144,7 +144,7 @@ func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory, reposito
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
 		if repository.Exists(testname) {
-			http.Error(w, fmt.Sprintf("test already '%s' exits", testname), http.StatusConflict)
+			http.Error(w, fmt.Sprintf("test '%s' already exits", testname), http.StatusConflict)
 			return
 		}
 

@@ -1,0 +1,33 @@
+{{define "_content"}}
+<table class="table">
+    <thead>
+    <tr>
+        <th colspan="2">
+            SUT
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>
+            Base URL:
+        </td>
+        <td>
+            http://localhost:8080
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Health:
+        </td>
+        <td>
+            {{if eq .Health true}}
+                <span style="color: green">OK</span>
+            {{else}}
+                <span style="color: red">Failed</span>
+            {{end}}
+        </td>
+    </tr>
+    </tbody>
+</table>
+{{end}}

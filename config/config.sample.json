@@ -1,4 +1,7 @@
 {
+  "sut": {
+    "base_url": "http://localhost:8080"
+  },
   "filename": "/usr/local/var/mysql/MacBook-Pro-von-Ralf.log",
   "logformat": "mysql",
   "expectations": {

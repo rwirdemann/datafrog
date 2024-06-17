@@ -39,6 +39,9 @@ the following format:
 
 ```json
 {
+  "sut": {
+    "base_url": "http://localhost:8080"
+  },
   "filename": "/usr/local/var/mysql/development.log",
   "logformat": "mysql",
   "patterns": [

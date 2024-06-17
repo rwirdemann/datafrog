@@ -18,6 +18,9 @@ import (
 // and exclude rule thus only statements that contain `select job` but not
 // `publish_trials<1` are considered.
 type Config struct {
+	SUT struct {
+		BaseURL string `json:"base_url"` // base URL of SUT
+	} `json:"sut"`
 	Filename     string   `json:"filename"`  // full path of logfile to be used
 	Logformat    string   `json:"logformat"` // format of log file, actual mysql | postgresql
 	Patterns     []string `json:"patterns"`  // list of patterns to consider

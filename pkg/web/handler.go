@@ -35,6 +35,9 @@ func RegisterHandler(c df.Config) {
 	// home
 	simpleweb.Register("/", IndexHandler, "GET")
 
+	// sut
+	simpleweb.Register("/sut", SutHandler, "GET")
+
 	// settings
 	simpleweb.Register("/settings", SettingsHandler, "GET")
 
@@ -90,6 +93,18 @@ func IndexHandler(w http.ResponseWriter, _ *http.Request) {
 		Title string
 		Tests []df.Testcase
 	}{Title: "Tests", Tests: allTests.Tests})
+}
+
+func SutHandler(w http.ResponseWriter, _ *http.Request) {
+	health := false
+	res, err := http.Get(config.SUT.BaseURL)
+	if err == nil && res.StatusCode == http.StatusOK {
+		health = true
+	}
+	simpleweb.Render("templates/sut.html", w, struct {
+		Title  string
+		Health bool
+	}{Title: "SUT", Health: health})
 }
 
 func SettingsHandler(w http.ResponseWriter, _ *http.Request) {
