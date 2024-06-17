@@ -105,17 +105,39 @@ func SutHandler(w http.ResponseWriter, _ *http.Request) {
 		health = true
 	}
 	simpleweb.Render("templates/sut.html", w, struct {
-		Title  string
-		Health bool
-	}{Title: "SUT", Health: health})
+		Title     string
+		Health    bool
+		CheckedAt string
+	}{Title: "SUT", Health: health, CheckedAt: time.Now().Format(time.DateTime)})
 }
 
+type channelWithHealthCheck struct {
+	df.Channel
+	Health    bool
+	CheckedAt string
+}
+
+// ChannelsHandler runs a health check for each configured channel and renders
+// the list of health checked channels.
 func ChannelsHandler(w http.ResponseWriter, _ *http.Request) {
+	var channels []channelWithHealthCheck
+	for _, ch := range config.Channels {
+		health := false
+		res, err := http.Get(fmt.Sprintf("%s/channels/%s/health", apiBaseURL, ch.Name))
+		if err == nil && res.StatusCode == http.StatusOK {
+			health = true
+		}
+		channels = append(channels, channelWithHealthCheck{
+			Channel:   ch,
+			Health:    health,
+			CheckedAt: time.Now().Format(time.DateTime),
+		})
+	}
+
 	simpleweb.Render("templates/channels.html", w, struct {
-		Title  string
-		Config df.Config
-		Health bool
-	}{Title: "Settings", Config: config, Health: true})
+		Title    string
+		Channels []channelWithHealthCheck
+	}{Title: "Settings", Channels: channels})
 }
 
 func SettingsHandler(w http.ResponseWriter, _ *http.Request) {

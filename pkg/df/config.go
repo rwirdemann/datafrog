@@ -21,9 +21,8 @@ type Config struct {
 	SUT struct {
 		BaseURL string `json:"base_url"` // base URL of SUT
 	} `json:"sut"`
-	Filename     string   `json:"filename"`  // full path of logfile to be used
-	Logformat    string   `json:"logformat"` // format of log file, actual mysql | postgresql
-	Patterns     []string `json:"patterns"`  // list of patterns to consider
+	Channels     []Channel `json:"channels"` // list of monitored channels
+	Patterns     []string  `json:"patterns"` // list of patterns to consider
 	Expectations struct {
 		// report additional expectations that are not port of the initial
 		// recording run

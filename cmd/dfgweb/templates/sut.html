@@ -22,9 +22,9 @@
         </td>
         <td>
             {{if eq .Health true}}
-                <span style="color: green">OK</span>
+            <span style="color: green">OK (checked at: {{.CheckedAt}})</span>
             {{else}}
-                <span style="color: red">Failed</span>
+            <span style="color: red">Failed (checked at: {{.CheckedAt}})</span>
             {{end}}
         </td>
     </tr>

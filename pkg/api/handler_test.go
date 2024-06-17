@@ -20,7 +20,8 @@ func init() {
 	testFilename = fmt.Sprintf("%s.json", testname)
 	done = make(ChannelMap)
 	stopped = make(ChannelMap)
-	config = df.Config{}
+	c := df.Channel{}
+	config = df.Config{Channels: []df.Channel{c}}
 }
 
 func TestStartRecording(t *testing.T) {
@@ -60,7 +61,7 @@ func TestRejectDuplicatedTestname(t *testing.T) {
 	r.HandleFunc("/tests/{name}/recordings", StartRecording(done, stopped, mocks.LogFactory{}, repository)).Methods("POST")
 	r.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusConflict, rr.Code)
-	assert.Equal(t, "test already 'create-job.json' exits\n", rr.Body.String())
+	assert.Equal(t, "test 'create-job.json' already exists\n", rr.Body.String())
 }
 
 func exists(filename string) bool {

@@ -1,35 +1,28 @@
 {{define "_content"}}
+{{range .Channels}}
 <table class="table">
     <thead>
     <tr>
         <th colspan="2">
-            Name
+            Channel: {{.Name}}
         </th>
     </tr>
     </thead>
     <tbody>
     <tr>
         <td>
-            Database
+            Format:
         </td>
         <td>
-            Database
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Logfile:
-        </td>
-        <td>
-            {{.Config.Filename}}
+            {{.Format}}
         </td>
     </tr>
     <tr>
         <td>
-            Logformat:
+            Log:
         </td>
         <td>
-            {{.Config.Logformat}}
+            {{.Log}}
         </td>
     </tr>
     <tr>
@@ -37,7 +30,7 @@
             Patterns:
         </td>
         <td>
-            {{range .Config.Patterns}}
+            {{range .Patterns}}
             {{.}}<br/>
             {{end}}
         </td>
@@ -48,12 +41,13 @@
         </td>
         <td>
             {{if eq .Health true}}
-            <span style="color: green">OK</span>
+            <span style="color: green">OK (checked at: {{.CheckedAt}})</span>
             {{else}}
-            <span style="color: red">Failed</span>
+            <span style="color: red">Failed (checked at: {{.CheckedAt}})</span>
             {{end}}
         </td>
     </tr>
     </tbody>
 </table>
+{{end}}
 {{end}}

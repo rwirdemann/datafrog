@@ -42,18 +42,33 @@ the following format:
   "sut": {
     "base_url": "http://localhost:8080"
   },
-  "filename": "/usr/local/var/mysql/development.log",
-  "logformat": "mysql",
+  "channels": [
+    {
+      "name": "mysql",
+      "log": "/usr/local/var/mysql/MBP-von-Ralf.log",
+      "format": "mysql",
+      "patterns": [
+        "insert into job",
+        "update job",
+        "delete",
+        "select job!publish_trials<1"
+      ]
+    }
+  ],
+  "expectations": {
+    "report_additional": true
+  },
   "patterns": [
     "insert into job",
     "update job",
     "delete",
     "select job!publish_trials<1"
   ],
-  "expectations": {
-    "report_additional": true
-  },
   "ui_driver": "none",
+  "playwright": {
+    "base_dir": "$HOME/work/vscode/playwright-rt",
+    "test_dir": "tests"
+  },
   "web": {
     "port": 8081,
     "timeout": 120

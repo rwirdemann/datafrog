@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 )
 
 var verifier *verify.Verifier
@@ -54,6 +55,9 @@ func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verifica
 
 	// stop verify
 	router.HandleFunc("/tests/{name}/verifications", StopVerify(verificationDone, verificationStopped)).Methods("DELETE")
+
+	// channel health
+	router.HandleFunc("/channels/{name}/health", ChannelHealth(mysql.LogFactory{})).Methods("GET")
 }
 
 func GetRecordingProgress() http.HandlerFunc {
@@ -144,11 +148,11 @@ func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory, reposito
 
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
 		if repository.Exists(testname) {
-			http.Error(w, fmt.Sprintf("test '%s' already exits", testname), http.StatusConflict)
+			http.Error(w, fmt.Sprintf("test '%s' already exists", testname), http.StatusConflict)
 			return
 		}
 
-		dbLog := logFactory.Create(config.Filename)
+		dbLog := logFactory.Create(config.Channels[0].Log)
 		t := &UTCTimer{}
 		writer, err := df.NewFileTestWriter(testname)
 		if err != nil {
@@ -248,7 +252,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return
 		}
-		databaseLog := mysql.NewMYSQLLog(config.Filename)
+		databaseLog := mysql.NewMYSQLLog(config.Channels[0].Log)
 		t := &UTCTimer{}
 		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, tc, tw, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
@@ -299,6 +303,66 @@ func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels
 		verifier = nil
 		writer.WriteHeader(http.StatusNoContent)
 	}
+}
+
+// ChannelHealth checks the health of the channel "name" by tailing the
+// associated log file, triggering the SUT to force a log update and ensures that
+// the log file was updated.
+func ChannelHealth(lf df.LogFactory) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if len(mux.Vars(request)["name"]) == 0 {
+			http.Error(writer, "name is required", http.StatusBadRequest)
+			return
+		}
+
+		ch, ok := getChannel(mux.Vars(request)["name"])
+		if !ok {
+			http.Error(writer, "name is required", http.StatusBadRequest)
+			return
+		}
+
+		clog := lf.Create(ch.Log)
+
+		// jump to logfile end
+		err := clog.Tail()
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// trigger SUT and give it some time to update the channel log
+		_, err = http.Get(config.SUT.BaseURL)
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		time.Sleep(250 * time.Millisecond)
+
+		// create go routine to interrupt blocking the NextLine call after 200ms
+		c := make(chan struct{})
+		go func() {
+			time.Sleep(200 * time.Millisecond)
+			close(c)
+		}()
+
+		// read next line from updated log file
+		line, err := clog.NextLine(c)
+		if err != nil && line == "" {
+			writer.WriteHeader(http.StatusFailedDependency)
+			return
+		}
+		log.Printf("line: " + line)
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func getChannel(name string) (df.Channel, bool) {
+	for _, ch := range config.Channels {
+		if ch.Name == name {
+			return ch, true
+		}
+	}
+	return df.Channel{}, false
 }
 
 var mutex = &sync.Mutex{}
