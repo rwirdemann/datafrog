@@ -12,17 +12,23 @@ import (
 	"testing"
 )
 
-func TestStartRecording(t *testing.T) {
-	testname := "create-job"
-	testFilename := fmt.Sprintf("%s.json", testname)
+var testname, testFilename string
+var done, stopped ChannelMap
+
+func init() {
+	testname = "create-job"
+	testFilename = fmt.Sprintf("%s.json", testname)
+	done = make(ChannelMap)
+	stopped = make(ChannelMap)
 	config = df.Config{}
+}
+
+func TestStartRecording(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/tests/%s/recordings", testname), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	done := make(ChannelMap)
-	stopped := make(ChannelMap)
 	r := mux.NewRouter()
 	repository := mocks.TestRepository{}
 	repository.Testcases = []df.Testcase{}
@@ -43,7 +49,18 @@ func TestStartRecording(t *testing.T) {
 }
 
 func TestRejectDuplicatedTestname(t *testing.T) {
-
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/tests/%s/recordings", testname), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	r := mux.NewRouter()
+	repository := mocks.TestRepository{}
+	repository.Testcases = []df.Testcase{{Name: testFilename}}
+	r.HandleFunc("/tests/{name}/recordings", StartRecording(done, stopped, mocks.LogFactory{}, repository)).Methods("POST")
+	r.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusConflict, rr.Code)
+	assert.Equal(t, "test already 'create-job.json' exits\n", rr.Body.String())
 }
 
 func exists(filename string) bool {
