@@ -293,7 +293,7 @@ func TestVerify(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			c := df.Config{}
-			c.Patterns = tC.patterns
+			c.Channels = []df.Channel{{Patterns: tC.patterns}}
 			c.Expectations.ReportAdditional = tC.reportAdditionalExpectations
 			doneChannel := make(chan struct{})
 			stoppedChannel := make(chan struct{})
@@ -301,7 +301,7 @@ func TestVerify(t *testing.T) {
 			writer := &mocks.MemWriter{}
 			tc := df.Testcase{Expectations: tC.initialExpectations}
 			timer := mocks.Timer{}
-			verifier := NewVerifier(c, mysql.Tokenizer{}, databaseLog, tc, writer, timer, "")
+			verifier := NewVerifier(c, c.Channels[0], mysql.Tokenizer{}, databaseLog, tc, writer, timer, "")
 			go verifier.Start(doneChannel, stoppedChannel)
 			<-stoppedChannel // wait till verifier is done
 			for i, e := range verifier.Testcase().Expectations {
@@ -311,7 +311,7 @@ func TestVerify(t *testing.T) {
 				assert.Equal(t, updatedExpectation.Verified, e.Verified)
 			}
 
-			// check if additional expecations are expected and added
+			// check if additional expectations are expected and added
 			assert.Equal(t, tC.additionalExpectations, verifier.Testcase().AdditionalExpectations)
 
 			// check if the updated testcase was written back (without eventually added expectations)

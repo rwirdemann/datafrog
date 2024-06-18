@@ -238,6 +238,11 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			return
 		}
 
+		if len(config.Channels) == 0 {
+			http.Error(writer, "at least one channel needs to be configured", http.StatusFailedDependency)
+			return
+		}
+
 		// read the test from file
 		testname := mux.Vars(request)["name"]
 		expectations, err := os.ReadFile(testname)
@@ -260,7 +265,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 		}
 		databaseLog := mysql.NewMYSQLLog(config.Channels[0].Log)
 		t := &UTCTimer{}
-		verifier = verify.NewVerifier(config, mysql.Tokenizer{}, databaseLog, tc, tw, t, testname)
+		verifier = verify.NewVerifier(config, config.Channels[0], mysql.Tokenizer{}, databaseLog, tc, tw, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})
 		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])

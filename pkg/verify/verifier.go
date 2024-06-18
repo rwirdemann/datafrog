@@ -9,15 +9,16 @@ import (
 	"github.com/rwirdemann/datafrog/pkg/df"
 )
 
-// The Verifier verifies the expectations in expectationSource. It monitors the
-// log for these expectations and increases their verify count if matched. The
-// updated expectation list is written back to expectationSource after the
-// verification run is done.
+// The Verifier verifies the expectations of the given testcase. It monitors the
+// channels log for these expectations and increases their verify count if
+// matched. The updated expectation list is written back via the given writer
+// after the verification run is done.
 type Verifier struct {
 	config    df.Config
+	channel   df.Channel
 	tokenizer df.Tokenizer
 	log       df.Log
-	writer    df.TestWriter // to write the verfied and updated testscase
+	writer    df.TestWriter // to write the verified and updated testcase
 	testcase  df.Testcase
 	timer     df.Timer
 	name      string
@@ -25,7 +26,8 @@ type Verifier struct {
 
 // NewVerifier creates a new Verifier.
 func NewVerifier(
-	c df.Config,
+	config df.Config,
+	channel df.Channel,
 	tokenizer df.Tokenizer,
 	log df.Log,
 	tc df.Testcase,
@@ -33,7 +35,8 @@ func NewVerifier(
 	t df.Timer,
 	name string) *Verifier {
 	return &Verifier{
-		config:    c,
+		config:    config,
+		channel:   channel,
 		tokenizer: tokenizer,
 		log:       log,
 		writer:    w,
@@ -89,7 +92,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 				continue
 			}
 			if verifier.timer.MatchesRecordingPeriod(ts) {
-				matches, vPattern := df.MatchesPattern(verifier.config.Patterns, v)
+				matches, vPattern := df.MatchesPattern(verifier.channel.Patterns, v)
 				if !matches {
 					continue
 				}
@@ -100,7 +103,7 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 					// v matches pattern but no matching expectation was found
 					expectation := df.Expectation{
-						Tokens: verifier.tokenizer.Tokenize(v, verifier.config.Patterns), Pattern: vPattern,
+						Tokens: verifier.tokenizer.Tokenize(v, verifier.channel.Patterns), Pattern: vPattern,
 					}
 					log.Printf("additional expectation found: %s\n", expectation.Shorten(6))
 					verifier.testcase.AdditionalExpectations = append(verifier.testcase.AdditionalExpectations, expectation)
@@ -114,8 +117,8 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 }
 
 func (verifier *Verifier) write() {
-	// create a write copy of the testcase to make sure no addtional
-	// expectations are saved but kept for reporting reasons
+	// create a write copy of the testcase to make sure no additional expectations
+	// are saved but kept for reporting reasons
 	tc := verifier.testcase
 
 	// don't write additional expectations
@@ -141,14 +144,14 @@ func (verifier *Verifier) write() {
 }
 
 // verify tries to verify one of the testcases expectations. Returns true if an
-// expectation was verfied and false otherwise.
+// expectation was verified and false otherwise.
 func (verifier *Verifier) verify(v string, vPattern string) bool {
 	for i, e := range verifier.testcase.Expectations {
 		if e.Fulfilled || e.Pattern != vPattern {
 			continue // -> continue with next e
 		}
 
-		vTokens := verifier.tokenizer.Tokenize(v, verifier.config.Patterns)
+		vTokens := verifier.tokenizer.Tokenize(v, verifier.channel.Patterns)
 
 		// Handle already verified expectations (reference expectation)
 		if e.Verified > 0 && e.Equal(vTokens) {
