@@ -37,7 +37,7 @@ func TestPostgresTimestamp(t *testing.T) {
 }
 
 func readLine(t *testing.T, pl Log) string {
-	l, err := pl.NextLine(make(chan struct{}))
+	l, err := pl.NextLine(nil)
 	if err != nil {
 		t.Fatal(err)
 	}

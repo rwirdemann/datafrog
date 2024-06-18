@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"time"
@@ -70,10 +71,15 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 		log.Fatal(err)
 	}
 
+	// create a cancel context to interrupt blocking NextLine call when this function
+	// terminated
+	cancelContext, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	for {
 		select {
 		default:
-			v, err := verifier.log.NextLine(done)
+			v, err := verifier.log.NextLine(cancelContext)
 			if err != nil {
 				log.Fatal(err)
 			}

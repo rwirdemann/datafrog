@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -338,16 +339,13 @@ func ChannelHealth(lf df.LogFactory) http.HandlerFunc {
 		}
 		time.Sleep(250 * time.Millisecond)
 
-		// create go routine to interrupt blocking the NextLine call after 200ms
-		c := make(chan struct{})
-		go func() {
-			time.Sleep(200 * time.Millisecond)
-			close(c)
-		}()
+		// create timeout context to interrupt blocking NextLine call after 200ms
+		timeoutContext, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer cancel()
 
 		// read next line from updated log file
-		line, err := clog.NextLine(c)
-		if err != nil && line == "" {
+		line, err := clog.NextLine(timeoutContext)
+		if err != nil || line == "" {
 			writer.WriteHeader(http.StatusFailedDependency)
 			return
 		}

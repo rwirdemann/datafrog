@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/rwirdemann/datafrog/pkg/df"
@@ -58,7 +59,7 @@ func (m Log) Tail() error {
 	}
 }
 
-func (m Log) NextLine(chan struct{}) (string, error) {
+func (m Log) NextLine(context.Context) (string, error) {
 	for {
 		line, err := m.reader.ReadString('\n')
 		if err != nil {
