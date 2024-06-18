@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/rwirdemann/datafrog/pkg/driver"
-	"github.com/rwirdemann/simpleweb/pkg/simpleweb"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"sort"
 	"time"
+
+	"github.com/rwirdemann/datafrog/pkg/df"
+	"github.com/rwirdemann/datafrog/pkg/driver"
+	"github.com/rwirdemann/simpleweb/pkg/simpleweb"
+	log "github.com/sirupsen/logrus"
 )
 
 var client *http.Client
@@ -108,7 +109,8 @@ func SutHandler(w http.ResponseWriter, _ *http.Request) {
 		Title     string
 		Health    bool
 		CheckedAt string
-	}{Title: "SUT", Health: health, CheckedAt: time.Now().Format(time.DateTime)})
+		Config    df.Config
+	}{Title: "SUT", Health: health, CheckedAt: time.Now().Format(time.DateTime), Config: config})
 }
 
 type channelWithHealthCheck struct {

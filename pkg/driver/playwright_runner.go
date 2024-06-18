@@ -2,8 +2,9 @@ package driver
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"os/exec"
 	"strings"
@@ -66,7 +67,7 @@ func (r PlaywrightRunner) Record(testname string, done chan struct{}) {
 	fn := r.ToPlaywright(testname)
 	path := fmt.Sprintf("%s/%s/%s", r.config.Playwright.BaseDir, r.config.Playwright.TestDir, fn)
 	log.Printf("PlaywrightRunner: recording test '%s'", path)
-	cmd := exec.Command("npx", "playwright", "codegen", "localhost:8080", "-o", fmt.Sprintf("%s/%s", r.config.Playwright.TestDir, fn))
+	cmd := exec.Command("npx", "playwright", "codegen", r.config.SUT.BaseURL, "-o", fmt.Sprintf("%s/%s", r.config.Playwright.TestDir, fn))
 	cmd.Dir = r.config.Playwright.BaseDir
 	if err := cmd.Run(); err != nil {
 		log.Errorf("PlaywrightRunner: error running command: %v", err)
