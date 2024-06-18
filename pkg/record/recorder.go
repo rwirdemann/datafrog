@@ -7,11 +7,11 @@ import (
 	"log"
 )
 
-// A Recorder monitors a database log and records all statements that match one
-// of the patterns specified in config. The recorded output is written to
-// recording sink.
+// A Recorder monitors a channel log and records all statements that match one of
+// the patterns specified in the channels pattern list. The recorded output is
+// written to recording sink.
 type Recorder struct {
-	config       df.Config
+	channel      df.Channel
 	tokenizer    df.Tokenizer
 	log          df.Log
 	writer       df.TestWriter // destination of recorded testcase
@@ -22,12 +22,12 @@ type Recorder struct {
 }
 
 // NewRecorder creates a new Recorder.
-func NewRecorder(c df.Config, tokenizer df.Tokenizer,
+func NewRecorder(channel df.Channel, tokenizer df.Tokenizer,
 	log df.Log, w df.TestWriter, timer df.Timer, name string,
 	uuidProvider UUIDProvider) *Recorder {
 
 	return &Recorder{
-		config:       c,
+		channel:      channel,
 		tokenizer:    tokenizer,
 		log:          log,
 		writer:       w,
@@ -37,10 +37,10 @@ func NewRecorder(c df.Config, tokenizer df.Tokenizer,
 		testcase:     df.Testcase{Name: name}}
 }
 
-// Start starts the recording process as endless loop. Every log entry that
-// matches one of the patterns specified in config is written to the recording
-// sink. Only log entries that fall in the actual recording period are
-// considered.
+// Start starts the recording process of channel as endless loop. Every log entry
+// that matches one of the patterns specified in the channels pattern list is
+// written to the recording sink. Only log entries that fall in the actual
+// recording period are considered.
 func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	r.timer.Start()
 	log.Printf("Recording started at %v...", r.timer.GetStart())
@@ -87,9 +87,9 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 				continue
 			}
 			if r.timer.MatchesRecordingPeriod(ts) {
-				matches, pattern := df.MatchesPattern(r.config.Patterns, line)
+				matches, pattern := df.MatchesPattern(r.channel.Patterns, line)
 				if matches {
-					tokens := r.tokenizer.Tokenize(line, r.config.Patterns)
+					tokens := r.tokenizer.Tokenize(line, r.channel.Patterns)
 					e := df.Expectation{Uuid: r.uuidProvider.NewString(), Tokens: tokens, IgnoreDiffs: []int{}, Pattern: pattern}
 					r.testcase.Expectations = append(r.testcase.Expectations, e)
 					log.Printf("new expectation: %s\n", e.Shorten(8))

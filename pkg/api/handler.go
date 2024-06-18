@@ -147,6 +147,11 @@ func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory, reposito
 			return
 		}
 
+		if len(config.Channels) == 0 {
+			http.Error(w, "at least one channel needs to be configured", http.StatusFailedDependency)
+			return
+		}
+
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
 		if repository.Exists(testname) {
 			http.Error(w, fmt.Sprintf("test '%s' already exists", testname), http.StatusConflict)
@@ -160,7 +165,7 @@ func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory, reposito
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		recorder = record.NewRecorder(config, mysql.Tokenizer{}, dbLog, writer, t, testname, GoogleUUIDProvider{})
+		recorder = record.NewRecorder(config.Channels[0], mysql.Tokenizer{}, dbLog, writer, t, testname, GoogleUUIDProvider{})
 		done[testname] = make(chan struct{})
 		stopped[testname] = make(chan struct{})
 		go recorder.Start(done[testname], stopped[testname])

@@ -46,15 +46,13 @@ func TestRecord(t *testing.T) {
 		Expectations:  []df.Expectation{e1, e2},
 	}
 
-	c := df.Config{}
-	c.Patterns = []string{"insert", "select job!publish_trials<1"}
-
+	channel := df.Channel{Patterns: []string{"insert", "select job!publish_trials<1"}}
 	recordingDone := make(chan struct{})
 	recordingStopped := make(chan struct{})
 	databaseLog := mocks.NewMemSQLLog(logs, recordingDone)
 	writer := &mocks.MemWriter{}
 	timer := mocks.Timer{}
-	recorder := NewRecorder(c, mysql.Tokenizer{}, databaseLog, writer, timer, "create-job.json", mocks.StaticUUIDProvider{})
+	recorder := NewRecorder(channel, mysql.Tokenizer{}, databaseLog, writer, timer, "create-job.json", mocks.StaticUUIDProvider{})
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped
 	assert.Len(t, writer.Testcase.Expectations, 2)
