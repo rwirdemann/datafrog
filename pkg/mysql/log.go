@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	log "github.com/sirupsen/logrus"
@@ -57,8 +56,8 @@ func (m Log) Timestamp(s string) (time.Time, error) {
 
 // NextLine reads the next line terminated by the delimiter \n from the log
 // file. Waits until a new line becomes available. Returns with an empty line
-// and the context error when the context was canceled.
-func (m Log) NextLine(ctx context.Context) (string, error) {
+// and a nil error if the done channel was closed.
+func (m Log) NextLine(done chan struct{}) (string, error) {
 	for {
 		select {
 		default:
@@ -71,9 +70,9 @@ func (m Log) NextLine(ctx context.Context) (string, error) {
 				return "", err
 			}
 			return line, nil
-		case <-ctx.Done():
-			log.Printf("nextline: context canceled")
-			return "", ctx.Err()
+		case <-done:
+			log.Printf("nextline: done channel closed")
+			return "", nil
 		}
 	}
 }

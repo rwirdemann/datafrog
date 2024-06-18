@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"context"
 	"errors"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"time"
@@ -29,7 +28,7 @@ func (l *SQLLog) Timestamp(s string) (time.Time, error) {
 	return t, nil
 }
 
-func (l *SQLLog) NextLine(context.Context) (string, error) {
+func (l *SQLLog) NextLine(done chan struct{}) (string, error) {
 	if l.index >= len(l.logs) {
 		return "", nil
 	}

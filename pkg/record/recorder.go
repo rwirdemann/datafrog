@@ -1,7 +1,6 @@
 package record
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"log"
@@ -69,15 +68,10 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 		log.Fatal(err)
 	}
 
-	// create a cancel context to interrupt blocking NextLine call when this function
-	// terminated
-	cancelContext, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	for {
 		select {
 		default:
-			line, err := r.log.NextLine(cancelContext)
+			line, err := r.log.NextLine(done)
 			if err != nil {
 				log.Fatal(err)
 			}
