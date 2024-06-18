@@ -69,7 +69,7 @@ func (m Log) NextLine(done chan struct{}) (string, error) {
 			return "", err
 		}
 
-		matches, _ := df.MatchesPattern(m.config.Patterns, line)
+		matches, _ := df.MatchesPattern(m.config.Channels[0].Patterns, line)
 		if matches {
 			line = m.mergeNext(line)
 		}

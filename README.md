@@ -58,12 +58,6 @@ the following format:
   "expectations": {
     "report_additional": true
   },
-  "patterns": [
-    "insert into job",
-    "update job",
-    "delete",
-    "select job!publish_trials<1"
-  ],
   "ui_driver": "none",
   "playwright": {
     "base_dir": "$HOME/work/vscode/playwright-rt",

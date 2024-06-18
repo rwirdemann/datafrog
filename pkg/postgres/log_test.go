@@ -19,8 +19,7 @@ func TestRegex(t *testing.T) {
 }
 
 func TestReadLine(t *testing.T) {
-	c := df.Config{}
-	c.Patterns = []string{"insert"}
+	c := df.Config{Channels: []df.Channel{{Patterns: []string{"insert"}}}}
 	pl := NewPostgresLog("postgres.log", c)
 	defer pl.Close()
 	actual := readLine(t, pl)
