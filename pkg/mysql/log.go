@@ -44,6 +44,7 @@ func (m Log) Close() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("%s closed", m.logfile.Name())
 }
 
 func (m Log) Timestamp(s string) (time.Time, error) {

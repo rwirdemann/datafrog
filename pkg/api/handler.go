@@ -16,12 +16,24 @@ import (
 	"time"
 )
 
+// invalidRecordingStateError represents an unexpected error that informs clients
+// the APIs recording state didn't match the request's expectation. For instance,
+// when the client requests recording progress for a test that is currently not
+// beeing recorded.
+type invalidRecordingStateError struct {
+}
+
+func (i invalidRecordingStateError) Error() string {
+	return "invalid recording state"
+}
+
 var verifier *verify.Verifier
-var recorder *record.Recorder
 var config df.Config
 
 // ChannelMap represents a map of empty channels indexed by test names.
 type ChannelMap map[string]chan struct{}
+
+var runners = make(map[string]*record.Runner)
 
 // RegisterHandler registers http handler to record and verify testcases.
 func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verificationStopped, recordingDone, recordingStopped ChannelMap,
@@ -33,10 +45,10 @@ func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verifica
 
 	// create new test and start recording
 	router.HandleFunc("/tests/{name}/recordings",
-		StartRecording(recordingDone, recordingStopped, mysql.LogFactory{}, testRepository)).Methods("POST")
+		StartRecording(mysql.LogFactory{}, testRepository)).Methods("POST")
 
 	// stop recording
-	router.HandleFunc("/tests/{name}/recordings", StopRecording(recordingDone, recordingStopped)).Methods("DELETE")
+	router.HandleFunc("/tests/{name}/recordings", StopRecording()).Methods("DELETE")
 
 	// delete test
 	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
@@ -62,7 +74,14 @@ func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verifica
 
 func GetRecordingProgress() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tc := recorder.Testcase()
+		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
+		runner, ok := runners[testname]
+		if !ok {
+			http.Error(w, invalidRecordingStateError{}.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		tc := runner.Testcase()
 		b, err := json.Marshal(tc)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -133,13 +152,8 @@ func DeleteTest() http.HandlerFunc {
 	}
 }
 
-// StartRecording returns a http handler to start the recording of the test given
-// in the request params "name". Adds new channels to recordingDoneChannels and
-// recordingStoppedChannels. Both channels are used to stop the recording
-// (recordingDoneChannels, see StopRecording) and to wait for the recorder to
-// gracefully finish its recording loop (recordingStoppedChannels see
-// [app.Recorder]).
-func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
+// StartRecording starts recording of test given the request param "name".
+func StartRecording(logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
@@ -157,26 +171,22 @@ func StartRecording(done, stopped ChannelMap, logFactory df.LogFactory, reposito
 			return
 		}
 
-		dbLog := logFactory.Create(config.Channels[0].Log)
-		t := &UTCTimer{}
-		writer, err := df.NewFileTestWriter(testname)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		runners[testname] = record.NewRunner(testname, config.Channels[0], logFactory)
+
+		// Start creates a new go routine
+		if err := runners[testname].Start(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		recorder = record.NewRecorder(config.Channels[0], mysql.Tokenizer{}, dbLog, writer, t, testname, GoogleUUIDProvider{})
-		done[testname] = make(chan struct{})
-		stopped[testname] = make(chan struct{})
-		go recorder.Start(done[testname], stopped[testname])
+
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusAccepted)
 	}
 }
 
 // StopRecording returns a http handler to stop the recording of the test given
-// by the request param "name". Closes the associated channel that is monitored
-// by the underlying recording process.
-func StopRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels ChannelMap) http.HandlerFunc {
+// by the request param "name".
+func StopRecording() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -197,13 +207,13 @@ func StopRecording(recordingDoneChannels ChannelMap, recordingStoppedChannels Ch
 			return
 		}
 
-		// Notify recorder that recording is done
-		close(recordingDoneChannels[testname])
-		recordingDoneChannels[testname] = nil
-
-		// Wait until the recorder has gracefully stopped himself
-		<-recordingStoppedChannels[testname]
-		recordingStoppedChannels[testname] = nil
+		runner, ok := runners[testname]
+		if !ok {
+			http.Error(w, "test is not being recorded", http.StatusNotFound)
+			return
+		}
+		delete(runners, testname)
+		runner.Stop()
 	}
 }
 
@@ -263,7 +273,7 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			return
 		}
 		databaseLog := mysql.NewMYSQLLog(config.Channels[0].Log)
-		t := &UTCTimer{}
+		t := &df.UTCTimer{}
 		verifier = verify.NewVerifier(config, config.Channels[0], mysql.Tokenizer{}, databaseLog, tc, tw, t, testname)
 		verificationDoneChannels[testname] = make(chan struct{})
 		verificationStoppedChannels[testname] = make(chan struct{})

@@ -1,15 +1,17 @@
 package df
 
 import (
+	log "github.com/sirupsen/logrus"
 	"os"
 )
 
 type FileTestWriter struct {
-	file *os.File
+	file     *os.File
+	filename string
 }
 
 func NewFileTestWriter(filename string) (*FileTestWriter, error) {
-	ftw := &FileTestWriter{}
+	ftw := &FileTestWriter{filename: filename}
 	var err error
 	ftw.file, err = os.Create(filename)
 	if err != nil {
@@ -23,5 +25,9 @@ func (f FileTestWriter) Write(p []byte) (int, error) {
 }
 
 func (f FileTestWriter) Close() error {
-	return f.file.Close()
+	if err := f.file.Close(); err != nil {
+		return err
+	}
+	log.Printf("%s closed", f.filename)
+	return nil
 }

@@ -44,7 +44,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 	r.timer.Start()
 	log.Printf("Recording started at %v...", r.timer.GetStart())
 
-	// tell caller that verification has been finished
+	// tell caller that recording has been finished
 	defer close(stopped)
 
 	// called when done channel is closed
@@ -57,10 +57,6 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := r.writer.Close(); err != nil {
-			log.Fatal(err)
-		}
-		r.log.Close()
 	}()
 
 	// jump to log file end
@@ -75,7 +71,6 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 			if err != nil {
 				log.Fatal(err)
 			}
-
 			ts, err := r.log.Timestamp(line)
 			if err != nil {
 				continue
