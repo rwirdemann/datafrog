@@ -3,7 +3,7 @@ package record
 import (
 	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 // A Recorder monitors a channel log and records all statements that match one of

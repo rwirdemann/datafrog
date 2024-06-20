@@ -2,7 +2,7 @@ package verify
 
 import (
 	"encoding/json"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/rwirdemann/datafrog/pkg/df"

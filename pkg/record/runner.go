@@ -3,6 +3,7 @@ package record
 import (
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
+	log "github.com/sirupsen/logrus"
 )
 
 // Runner runs the recorder for the given channel.
@@ -43,9 +44,11 @@ func (r *Runner) Start() error {
 func (r *Runner) Stop() {
 	// tell recorder that recording has been finished
 	close(r.done)
+	log.Printf("rrunner: waiting for stopped channel to be closed")
 
 	// wait till recorder has been finished gracefully
 	<-r.stopped
+	log.Printf("rrunner: stopped channel closed")
 
 	// close log file and writer
 	r.channelLog.Close()

@@ -11,20 +11,20 @@ import (
 	"strings"
 )
 
-type TestRepository struct{}
+type JSONTestRepository struct{}
 
-func (r TestRepository) Exists(filename string) bool {
+func (r JSONTestRepository) Exists(filename string) bool {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-func (r TestRepository) All() ([]df.Testcase, error) {
+func (r JSONTestRepository) All() ([]df.Testcase, error) {
 	var all []df.Testcase
 	dir, err := os.ReadDir(".")
 	if err != nil {
-		return nil, fmt.Errorf("TestRepository.All failed: %w", err)
+		return nil, fmt.Errorf("JSONTestRepository.All failed: %w", err)
 	}
 	for _, f := range dir {
 		if strings.HasSuffix(f.Name(), ".json") && !strings.HasPrefix(f.Name(), "config") {
@@ -34,7 +34,7 @@ func (r TestRepository) All() ([]df.Testcase, error) {
 					log.Errorf("testfile '%s' contains invalid json. deleting file.", f.Name())
 					_ = os.Remove(f.Name())
 				} else {
-					log.Errorf("TestRepository.Get failed: %v", err)
+					log.Errorf("JSONTestRepository.Get failed: %v", err)
 				}
 			} else {
 				all = append(all, tc)
@@ -50,18 +50,22 @@ func (e InvalidJsonError) Error() string {
 	return "json: invalid data"
 }
 
-func (r TestRepository) Get(filename string) (df.Testcase, error) {
-	jsonFile, err := os.Open(filename)
+func (r JSONTestRepository) Get(testname string) (df.Testcase, error) {
+	fn := testname
+	if !strings.HasSuffix(testname, ".json") {
+		fn = fmt.Sprintf("%s.json", testname)
+	}
+	f, err := os.Open(fn)
 	if err != nil {
 		return df.Testcase{}, err
 	}
 	defer func(jsonFile *os.File) {
 		err := jsonFile.Close()
 		if err != nil {
-			log.Debugf("error closing file %s: %v", filename, err)
+			log.Debugf("JSONTestRepository: error closing file %s: %v", fn, err)
 		}
-	}(jsonFile)
-	b, _ := io.ReadAll(jsonFile)
+	}(f)
+	b, _ := io.ReadAll(f)
 	if len(b) == 0 {
 		return df.Testcase{}, InvalidJsonError{}
 	}

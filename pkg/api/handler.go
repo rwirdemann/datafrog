@@ -8,36 +8,31 @@ import (
 	"github.com/rwirdemann/datafrog/pkg/mysql"
 	"github.com/rwirdemann/datafrog/pkg/record"
 	"github.com/rwirdemann/datafrog/pkg/verify"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 )
 
-// invalidRecordingStateError represents an unexpected error that informs clients
+// invalidStateError represents an unexpected error that informs clients
 // the APIs recording state didn't match the request's expectation. For instance,
 // when the client requests recording progress for a test that is currently not
-// beeing recorded.
-type invalidRecordingStateError struct {
+// being recorded.
+type invalidStateError struct {
 }
 
-func (i invalidRecordingStateError) Error() string {
+func (i invalidStateError) Error() string {
 	return "invalid recording state"
 }
 
 var verifier *verify.Verifier
 var config df.Config
 
-// ChannelMap represents a map of empty channels indexed by test names.
-type ChannelMap map[string]chan struct{}
-
 var runners = make(map[string]*record.Runner)
+var verifyRunners = make(map[string]*verify.Runner)
 
 // RegisterHandler registers http handler to record and verify testcases.
-func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verificationStopped, recordingDone, recordingStopped ChannelMap,
-	testRepository df.TestRepository) {
+func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepository) {
 	config = c
 
 	// get all tests
@@ -63,10 +58,10 @@ func RegisterHandler(c df.Config, router *mux.Router, verificationDone, verifica
 	router.HandleFunc("/tests/{name}/verifications/progress", GetVerificationProgress()).Methods("GET")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/verifications", StartVerify(verificationDone, verificationStopped)).Methods("PUT")
+	router.HandleFunc("/tests/{name}/verifications", StartVerify(mysql.LogFactory{}, testRepository)).Methods("PUT")
 
 	// stop verify
-	router.HandleFunc("/tests/{name}/verifications", StopVerify(verificationDone, verificationStopped)).Methods("DELETE")
+	router.HandleFunc("/tests/{name}/verifications", StopVerify()).Methods("DELETE")
 
 	// channel health
 	router.HandleFunc("/channels/{name}/health", ChannelHealth(mysql.LogFactory{})).Methods("GET")
@@ -77,7 +72,7 @@ func GetRecordingProgress() http.HandlerFunc {
 		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
 		runner, ok := runners[testname]
 		if !ok {
-			http.Error(w, invalidRecordingStateError{}.Error(), http.StatusInternalServerError)
+			http.Error(w, invalidStateError{}.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -97,7 +92,13 @@ func GetRecordingProgress() http.HandlerFunc {
 
 func GetVerificationProgress() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tc := verifier.Testcase()
+		runner, ok := verifyRunners[mux.Vars(r)["name"]]
+		if !ok {
+			http.Error(w, invalidStateError{}.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		tc := runner.Testcase()
 		b, err := json.Marshal(tc)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -240,7 +241,7 @@ func AllTests(repository df.TestRepository) http.HandlerFunc {
 
 // StartVerify returns a http handler that starts a verification run of the test
 // given in the request param "name".
-func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap) http.HandlerFunc {
+func StartVerify(logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if len(mux.Vars(request)["name"]) == 0 {
 			http.Error(writer, "name is required", http.StatusBadRequest)
@@ -252,32 +253,15 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 			return
 		}
 
-		// read the test from file
 		testname := mux.Vars(request)["name"]
-		expectations, err := os.ReadFile(testname)
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusNotFound)
-			return
-		}
-		tc := df.Testcase{}
-		if err := json.Unmarshal(expectations, &tc); err != nil {
-			http.Error(writer, err.Error(), http.StatusNotFound)
+		verifyRunners[testname] = verify.NewRunner(testname, config.Channels[0], config, logFactory, repository)
+
+		// Start creates a new go routine
+		if err := verifyRunners[testname].Start(); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// create a writer to save the test results
-		var tw df.TestWriter
-		tw, err = df.NewFileTestWriter(fmt.Sprintf("%s.running", testname))
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusNotFound)
-			return
-		}
-		databaseLog := mysql.NewMYSQLLog(config.Channels[0].Log)
-		t := &df.UTCTimer{}
-		verifier = verify.NewVerifier(config, config.Channels[0], mysql.Tokenizer{}, databaseLog, tc, tw, t, testname)
-		verificationDoneChannels[testname] = make(chan struct{})
-		verificationStoppedChannels[testname] = make(chan struct{})
-		go verifier.Start(verificationDoneChannels[testname], verificationStoppedChannels[testname])
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		writer.WriteHeader(http.StatusAccepted)
 	}
@@ -285,42 +269,20 @@ func StartVerify(verificationDoneChannels ChannelMap, verificationStoppedChannel
 
 // StopVerify returns a http handler to stop the verification run of the test
 // given in the request param "name".
-func StopVerify(verificationDoneChannels ChannelMap, verificationStoppedChannels ChannelMap) http.HandlerFunc {
+func StopVerify() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("recovered:", r)
-				http.Error(writer, fmt.Sprintf("%v", r), http.StatusInternalServerError)
-				return
-			}
-		}()
-
 		testname := mux.Vars(request)["name"]
-
-		// closing done channel forces the verifier to save its testcase
-		log.Printf("api: closing done channel")
-		close(verificationDoneChannels[testname])
-
-		verificationDoneChannels[testname] = nil
-
-		// wait till verifier has finished its saving
-		log.Printf("api: waiting for stopped channel to be closed")
-		<-verificationStoppedChannels[testname]
-		log.Printf("api: stopped channel closed")
-
-		// copFile .running testfile to original file
-		if err := copFile(fmt.Sprintf("%s.running", testname), testname); err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+		runner, ok := verifyRunners[testname]
+		if !ok {
+			http.Error(writer, "test is not being verified", http.StatusNotFound)
+			return
+		}
+		delete(verifyRunners, testname)
+		if err := runner.Stop(); err != nil {
+			http.Error(writer, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		// delete .running file
-		if err := deleteFile(fmt.Sprintf("%s.running", testname)); err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		verificationStoppedChannels[testname] = nil
-		verifier = nil
 		writer.WriteHeader(http.StatusNoContent)
 	}
 }
@@ -383,36 +345,4 @@ func getChannel(name string) (df.Channel, bool) {
 		}
 	}
 	return df.Channel{}, false
-}
-
-var mutex = &sync.Mutex{}
-
-func deleteFile(testname string) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-	log.Printf("api: deleting test file %s", testname)
-	return os.Remove(testname)
-}
-
-func copFile(src string, dst string) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-	log.Printf("api: copying %s to %s", src, dst)
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer func(source *os.File) {
-		_ = source.Close()
-	}(source)
-
-	destination, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func(destination *os.File) {
-		_ = destination.Close()
-	}(destination)
-	_, err = io.Copy(destination, source)
-	return err
 }

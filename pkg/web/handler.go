@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/rwirdemann/datafrog/pkg/df"
@@ -60,14 +61,14 @@ func RegisterHandler(c df.Config) {
 	// delete test
 	simpleweb.Register("/delete", DeleteHandler, "GET")
 
-	// start test
-	simpleweb.Register("/run", StartHandler(driver.NewPlaywrightRunner(config)), "GET")
-
 	// Quit
 	simpleweb.Register("/stop", StopHandler, "GET")
 
 	// show test
 	simpleweb.Register("/show", ShowHandler, "GET")
+
+	// start verification
+	simpleweb.Register("/run", StartVerification(driver.NewPlaywrightRunner(config)), "GET")
 
 	// verification progress handler
 	simpleweb.Register("/progress-verification", ProgressVerificationHandler, "GET")
@@ -195,28 +196,6 @@ func getTestcase(url string) (df.Testcase, error) {
 	return tc, nil
 }
 
-// ProgressVerificationHandler renders the partial progress-verification.html
-// that shows the progress of the current verification run.
-func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
-	testname := r.URL.Query().Get("testname")
-	url := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, testname)
-	tc, err := getTestcase(url)
-	if err != nil {
-		return
-	}
-	fulfilled := len(tc.Fulfilled())
-	p, c := calcProgressAndCssClass(tc)
-	if err := simpleweb.RenderPartialE("templates/progress-verification.html", w, struct {
-		Progress     int
-		Testname     string
-		Color        string
-		Expectations int
-		Fulfilled    int
-	}{Progress: p, Testname: testname, Color: c, Expectations: len(tc.Expectations), Fulfilled: fulfilled}); err != nil {
-		log.Errorf("Error rendering partial %v", err)
-	}
-}
-
 func calcProgressAndCssClass(tc df.Testcase) (int, string) {
 	fulfilled := len(tc.Fulfilled())
 	p := float64(fulfilled) / float64(len(tc.Expectations)) * 100.0
@@ -342,9 +321,9 @@ func DeleteHandler(w http.ResponseWriter, request *http.Request) {
 	http.Redirect(w, request, fmt.Sprintf("/"), http.StatusSeeOther)
 }
 
-func StartHandler(runner driver.PlaywrightRunner) http.HandlerFunc {
+func StartVerification(runner driver.PlaywrightRunner) http.HandlerFunc {
 	return func(w http.ResponseWriter, request *http.Request) {
-		testname := request.URL.Query().Get("testname")
+		testname := trimSuffix(request.URL.Query().Get("testname"))
 
 		// start the test on the api site
 		url := fmt.Sprintf("%s/tests/%s/verifications", apiBaseURL, testname)
@@ -381,7 +360,8 @@ func StartHandler(runner driver.PlaywrightRunner) http.HandlerFunc {
 		}
 
 		// get test progress
-		progressUrl := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, request.FormValue("testname"))
+		testname = trimSuffix(request.FormValue("testname"))
+		progressUrl := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, testname)
 		tc, err := getTestcase(progressUrl)
 		if err != nil {
 			simpleweb.RedirectE(w, request, "/", err)
@@ -394,6 +374,32 @@ func StartHandler(runner driver.PlaywrightRunner) http.HandlerFunc {
 			Expectations int
 		}{Title: "Verify", Testname: tc.Name, Expectations: len(tc.Expectations)})
 	}
+}
+
+// ProgressVerificationHandler renders the partial progress-verification.html
+// that shows the progress of the current verification run.
+func ProgressVerificationHandler(w http.ResponseWriter, r *http.Request) {
+	testname := trimSuffix(r.URL.Query().Get("testname"))
+	url := fmt.Sprintf("%s/tests/%s/verifications/progress", apiBaseURL, testname)
+	tc, err := getTestcase(url)
+	if err != nil {
+		return
+	}
+	fulfilled := len(tc.Fulfilled())
+	p, c := calcProgressAndCssClass(tc)
+	if err := simpleweb.RenderPartialE("templates/progress-verification.html", w, struct {
+		Progress     int
+		Testname     string
+		Color        string
+		Expectations int
+		Fulfilled    int
+	}{Progress: p, Testname: testname, Color: c, Expectations: len(tc.Expectations), Fulfilled: fulfilled}); err != nil {
+		log.Errorf("Error rendering partial %v", err)
+	}
+}
+
+func trimSuffix(s string) string {
+	return strings.TrimSuffix(s, ".json")
 }
 
 func StopHandler(w http.ResponseWriter, request *http.Request) {

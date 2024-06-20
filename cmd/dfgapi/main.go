@@ -12,19 +12,12 @@ import (
 
 func main() {
 	router := mux.NewRouter()
-	verificationDoneChannels := make(api.ChannelMap)
-	verificationStoppedChannels := make(api.ChannelMap)
-	recordingDoneChannels := make(api.ChannelMap)
-	recordingStoppedChannels := make(api.ChannelMap)
-
 	config, err := df.NewDefaultConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
-	testRepository := file.TestRepository{}
-	api.RegisterHandler(config, router,
-		verificationDoneChannels, verificationStoppedChannels,
-		recordingDoneChannels, recordingStoppedChannels, testRepository)
+	testRepository := file.JSONTestRepository{}
+	api.RegisterHandler(config, router, testRepository)
 	err = router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		tpl, _ := route.GetPathTemplate()
 		met, _ := route.GetMethods()
