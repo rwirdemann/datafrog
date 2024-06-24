@@ -22,9 +22,9 @@ func (r *TestRepository) All() ([]df.Testcase, error) {
 	return r.Testcases, nil
 }
 
-func (r *TestRepository) Get(filename string) (df.Testcase, error) {
+func (r *TestRepository) Get(testname string) (df.Testcase, error) {
 	for _, tc := range r.Testcases {
-		if tc.Name == filename {
+		if tc.Name == testname {
 			return tc, nil
 		}
 	}
