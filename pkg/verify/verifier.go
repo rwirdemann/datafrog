@@ -1,7 +1,6 @@
 package verify
 
 import (
-	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"time"
 
@@ -13,35 +12,35 @@ import (
 // matched. The updated expectation list is written back via the given writer
 // after the verification run is done.
 type Verifier struct {
-	config    df.Config
-	channel   df.Channel
-	tokenizer df.Tokenizer
-	log       df.Log
-	writer    df.TestWriter // to write the verified and updated testcase
-	testcase  df.Testcase
-	timer     df.Timer
-	name      string
+	config     df.Config
+	channel    df.Channel
+	repository df.TestRepository
+	tokenizer  df.Tokenizer
+	log        df.Log
+	testcase   df.Testcase
+	timer      df.Timer
+	name       string
 }
 
 // NewVerifier creates a new Verifier.
 func NewVerifier(
 	config df.Config,
 	channel df.Channel,
+	repository df.TestRepository,
 	tokenizer df.Tokenizer,
 	log df.Log,
 	tc df.Testcase,
-	w df.TestWriter,
 	t df.Timer,
 	name string) *Verifier {
 	return &Verifier{
-		config:    config,
-		channel:   channel,
-		tokenizer: tokenizer,
-		log:       log,
-		writer:    w,
-		testcase:  tc,
-		timer:     t,
-		name:      name,
+		config:     config,
+		channel:    channel,
+		repository: repository,
+		tokenizer:  tokenizer,
+		log:        log,
+		testcase:   tc,
+		timer:      t,
+		name:       name,
 	}
 }
 func (verifier *Verifier) Testcase() df.Testcase {
@@ -65,7 +64,17 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 
 	// called when done channel is closed
 	defer func() {
-		verifier.write()
+		// create a write copy of the testcase to make sure no additional expectations
+		// are saved but kept for reporting reasons
+		tc := verifier.testcase
+
+		// don't write additional expectations
+		tc.AdditionalExpectations = nil
+
+		if err := verifier.repository.Write(tc.Name, tc); err != nil {
+			log.Fatal(err)
+		}
+		//verifier.write()
 	}()
 
 	// jump to log file end
@@ -108,33 +117,6 @@ func (verifier *Verifier) Start(done chan struct{}, stopped chan struct{}) {
 			return
 		}
 	}
-}
-
-func (verifier *Verifier) write() {
-	// create a write copy of the testcase to make sure no additional expectations
-	// are saved but kept for reporting reasons
-	tc := verifier.testcase
-
-	// don't write additional expectations
-	tc.AdditionalExpectations = nil
-
-	b, err := json.Marshal(tc)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if len(b) == 0 {
-		log.Fatal("testcase is empty. skip writing")
-	}
-
-	_, err = verifier.writer.Write(b)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := verifier.writer.Close(); err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("verifier: testcase successfully written back")
 }
 
 // verify tries to verify one of the testcases expectations. Returns true if an

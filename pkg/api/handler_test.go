@@ -49,9 +49,7 @@ func TestVerification(t *testing.T) {
 	runner, ok := verifyRunners[testname]
 	assert.True(t, ok)
 	err := runner.Stop()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 }
 
 func startRecording(t *testing.T, logFactory df.LogFactory, repository df.TestRepository) *httptest.ResponseRecorder {
@@ -73,7 +71,7 @@ func startVerification(t *testing.T, logFactory df.LogFactory, repository df.Tes
 	}
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
-	r.HandleFunc("/tests/{name}/verifications", StartVerify(logFactory, repository)).Methods("PUT")
+	r.HandleFunc("/tests/{name}/verifications", StartVerification(logFactory, repository)).Methods("PUT")
 	r.ServeHTTP(rr, req)
 	return rr
 }
