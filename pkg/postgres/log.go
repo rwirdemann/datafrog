@@ -4,27 +4,27 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/rwirdemann/datafrog/pkg/df"
 	"io"
 	"log"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/rwirdemann/datafrog/pkg/df"
 )
 
 type Log struct {
 	logfile *os.File
 	reader  *bufio.Reader
-	config  df.Config
 }
 
-func NewPostgresLog(logfileName string, config df.Config) Log {
+func NewPostgresLog(logfileName string) Log {
 	logfile, err := os.Open(logfileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return Log{logfile: logfile, reader: bufio.NewReader(logfile), config: config}
+	return Log{logfile: logfile, reader: bufio.NewReader(logfile)}
 }
 
 func (m Log) Close() {
@@ -60,21 +60,27 @@ func (m Log) Tail() error {
 
 func (m Log) NextLine(done chan struct{}) (string, error) {
 	for {
-		line, err := m.reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				time.Sleep(500 * time.Millisecond)
-				continue
+		select {
+		default:
+			line, err := m.reader.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				return "", err
 			}
-			return "", err
-		}
 
-		matches, _ := df.MatchesPattern(m.config.Channels[0].Patterns, line)
-		if matches {
-			line = m.mergeNext(line)
-		}
+			matches := strings.Contains(line, "$1")
+			if matches {
+				line = m.mergeNext(line)
+			}
 
-		return line, nil
+			return line, nil
+		case <-done:
+			log.Printf("nextline: done channel closed")
+			return "", nil
+		}
 	}
 }
 

@@ -1,4 +1,37 @@
-2024-04-19 10:12:16.889 CEST [89718] LOG:  execute <unnamed>: insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ($1, $2, $3, $4, $5, $6, $7)
-2024-04-19 10:12:16.889 CEST [89718] DETAIL:  parameters: $1 = 'World', $2 = '2024-04-19 10:12:12', $3 = '0', $4 = NULL, $5 = '', $6 = 'Hello', $7 = '1'
-2024-04-19 10:12:18.541 CEST [89718] LOG:  execute S_3: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ where (job0_.published_timestamp is null) and job0_.publish_at<$1 and job0_.publish_trials<$2
-2024-04-19 10:12:18.541 CEST [89718] DETAIL:  parameters: $1 = '2024-04-19 10:12:18.540628', $2 = '1'
+2024-06-24 15:23:14.143 UTC [29] LOG:  execute S_2: BEGIN
+2024-06-24 15:23:14.143 UTC [29] LOG:  execute S_3: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ where (job0_.published_timestamp is null) and job0_.publish_at<$1 and job0_.publish_trials<$2
+2024-06-24 15:23:14.143 UTC [29] DETAIL:  parameters: $1 = '2024-06-24 15:23:14.142185', $2 = '1'
+2024-06-24 15:23:14.144 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:15.211 UTC [29] LOG:  execute S_2: BEGIN
+2024-06-24 15:23:15.211 UTC [29] LOG:  execute <unnamed>: select nextval ('hibernate_sequence')
+2024-06-24 15:23:15.289 UTC [29] LOG:  execute <unnamed>: insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ($1, $2, $3, $4, $5, $6, $7)
+2024-06-24 15:23:15.289 UTC [29] DETAIL:  parameters: $1 = 'Manuel', $2 = '2024-06-24 14:33:49', $3 = '0', $4 = NULL, $5 = 'Test', $6 = 'Neuer', $7 = '1'
+2024-06-24 15:23:15.295 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:15.312 UTC [29] LOG:  execute <unnamed>: BEGIN READ ONLY
+2024-06-24 15:23:15.313 UTC [29] LOG:  execute <unnamed>: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ order by job0_.publish_at desc
+2024-06-24 15:23:15.316 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:16.143 UTC [29] LOG:  execute S_2: BEGIN
+2024-06-24 15:23:16.143 UTC [29] LOG:  execute S_3: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ where (job0_.published_timestamp is null) and job0_.publish_at<$1 and job0_.publish_trials<$2
+2024-06-24 15:23:16.143 UTC [29] DETAIL:  parameters: $1 = '2024-06-24 15:23:16.141941', $2 = '1'
+2024-06-24 15:23:17.897 UTC [29] LOG:  execute <unnamed>: update job set description=$1, publish_at=$2, publish_trials=$3, published_timestamp=$4, tags=$5, title=$6 where id=$7
+2024-06-24 15:23:17.897 UTC [29] DETAIL:  parameters: $1 = 'Manuel', $2 = '2024-06-24 14:33:49', $3 = '1', $4 = '2024-06-24 15:23:17.888446', $5 = 'Test', $6 = 'Neuer', $7 = '1'
+2024-06-24 15:23:17.898 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:18.143 UTC [29] LOG:  execute S_2: BEGIN
+2024-06-24 15:23:18.144 UTC [29] LOG:  execute S_3: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ where (job0_.published_timestamp is null) and job0_.publish_at<$1 and job0_.publish_trials<$2
+2024-06-24 15:23:18.144 UTC [29] DETAIL:  parameters: $1 = '2024-06-24 15:23:18.142611', $2 = '1'
+2024-06-24 15:23:18.145 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:20.142 UTC [29] LOG:  execute S_2: BEGIN
+2024-06-24 15:23:20.143 UTC [29] LOG:  execute S_3: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_ where (job0_.published_timestamp is null) and job0_.publish_at<$1 and job0_.publish_trials<$2
+2024-06-24 15:23:20.143 UTC [29] DETAIL:  parameters: $1 = '2024-06-24 15:23:20.141626', $2 = '1'
+2024-06-24 15:23:20.143 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:20.531 UTC [29] LOG:  execute <unnamed>: BEGIN READ ONLY
+2024-06-24 15:23:20.531 UTC [29] LOG:  execute <unnamed>: select job0_.id as id1_0_0_, job0_.description as descript2_0_0_, job0_.publish_at as publish_3_0_0_, job0_.publish_trials as publish_4_0_0_, job0_.published_timestamp as publishe5_0_0_, job0_.tags as tags6_0_0_, job0_.title as title7_0_0_ from job job0_ where job0_.id=$1
+2024-06-24 15:23:20.531 UTC [29] DETAIL:  parameters: $1 = '1'
+2024-06-24 15:23:20.537 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:20.546 UTC [29] LOG:  execute S_2: BEGIN
+2024-06-24 15:23:20.547 UTC [29] LOG:  execute <unnamed>: delete from job where id=$1
+2024-06-24 15:23:20.547 UTC [29] DETAIL:  parameters: $1 = '1'
+2024-06-24 15:23:20.548 UTC [29] LOG:  execute S_1: COMMIT
+2024-06-24 15:23:20.551 UTC [29] LOG:  execute <unnamed>: BEGIN READ ONLY
+2024-06-24 15:23:20.551 UTC [29] LOG:  execute <unnamed>: select job0_.id as id1_0_, job0_.description as descript2_0_, job0_.publish_at as publish_3_0_, job0_.publish_trials as publish_4_0_, job0_.published_timestamp as publishe5_0_, job0_.tags as tags6_0_, job0_.title as title7_0_ from job job0_
+2024-06-24 15:23:20.552 UTC [29] LOG:  execute S_1: COMMIT

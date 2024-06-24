@@ -3,14 +3,16 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/rwirdemann/datafrog/pkg/df"
-	"github.com/rwirdemann/datafrog/pkg/mysql"
-	"github.com/rwirdemann/datafrog/pkg/record"
-	"github.com/rwirdemann/datafrog/pkg/verify"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/rwirdemann/datafrog/pkg/df"
+	"github.com/rwirdemann/datafrog/pkg/mysql"
+	"github.com/rwirdemann/datafrog/pkg/postgres"
+	"github.com/rwirdemann/datafrog/pkg/record"
+	"github.com/rwirdemann/datafrog/pkg/verify"
 )
 
 // invalidStateError represents an unexpected error that informs clients
@@ -29,17 +31,25 @@ var config df.Config
 
 var runners = make(map[string]*record.Runner)
 var verifyRunners = make(map[string]*verify.Runner)
+var logFactory df.LogFactory
 
 // RegisterHandler registers http handler to record and verify testcases.
 func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepository) {
 	config = c
+
+	if config.Channels[0].Format == "mysql" {
+		logFactory = mysql.LogFactory{}
+	}
+	if config.Channels[0].Format == "postgres" {
+		logFactory = postgres.LogFactory{}
+	}
 
 	// get all tests
 	router.HandleFunc("/tests", AllTests(testRepository)).Methods("GET")
 
 	// create new test and start recording
 	router.HandleFunc("/tests/{name}/recordings",
-		StartRecording(mysql.LogFactory{}, testRepository)).Methods("POST")
+		StartRecording(logFactory, testRepository)).Methods("POST")
 
 	// stop recording
 	router.HandleFunc("/tests/{name}/recordings", StopRecording()).Methods("DELETE")
@@ -57,13 +67,13 @@ func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepo
 	router.HandleFunc("/tests/{name}/verifications/progress", GetVerificationProgress()).Methods("GET")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/verifications", StartVerify(mysql.LogFactory{}, testRepository)).Methods("PUT")
+	router.HandleFunc("/tests/{name}/verifications", StartVerify(logFactory, testRepository)).Methods("PUT")
 
 	// stop verify
 	router.HandleFunc("/tests/{name}/verifications", StopVerify()).Methods("DELETE")
 
 	// channel health
-	router.HandleFunc("/channels/{name}/health", ChannelHealth(mysql.LogFactory{})).Methods("GET")
+	router.HandleFunc("/channels/{name}/health", ChannelHealth(logFactory)).Methods("GET")
 }
 
 func GetRecordingProgress() http.HandlerFunc {
