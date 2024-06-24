@@ -42,6 +42,7 @@ func TestStartRecording(t *testing.T) {
 	r.HandleFunc("/tests/{name}/recordings", StartRecording(mocks.LogFactory{}, repository)).Methods("POST")
 	r.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusAccepted, rr.Code)
-	_, ok := runners[testname]
+	runner, ok := runners[testname]
 	assert.True(t, ok)
+	runner.Stop()
 }

@@ -168,7 +168,7 @@ func StartRecording(logFactory df.LogFactory, repository df.TestRepository) http
 			return
 		}
 
-		runners[testname] = record.NewRunner(testname, config.Channels[0], logFactory)
+		runners[testname] = record.NewRunner(testname, config.Channels[0], repository, logFactory)
 
 		// Start creates a new go routine
 		if err := runners[testname].Start(); err != nil {
