@@ -2,6 +2,7 @@ package record
 
 import (
 	"github.com/rwirdemann/datafrog/pkg/df"
+	"github.com/rwirdemann/datafrog/pkg/file"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
 	log "github.com/sirupsen/logrus"
 )
@@ -25,13 +26,8 @@ func NewRunner(testname string, channel df.Channel, logFactory df.LogFactory) *R
 
 // Start starts a new recorder as go routine.
 func (r *Runner) Start() error {
-	var err error
-	r.writer, err = df.NewFileTestWriter(r.testname)
-	if err != nil {
-		return err
-	}
-
-	r.recorder = NewRecorder(r.channel, mysql.Tokenizer{}, r.channelLog, r.writer, &df.UTCTimer{}, r.testname, df.GoogleUUIDProvider{})
+	repository := file.JSONTestRepository{}
+	r.recorder = NewRecorder(r.channel, mysql.Tokenizer{}, r.channelLog, &df.UTCTimer{}, r.testname, df.GoogleUUIDProvider{}, repository)
 	r.done = make(chan struct{})
 	r.stopped = make(chan struct{})
 	go r.recorder.Start(r.done, r.stopped)

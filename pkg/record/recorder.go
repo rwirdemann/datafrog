@@ -1,39 +1,39 @@
 package record
 
 import (
-	"encoding/json"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	log "github.com/sirupsen/logrus"
 )
 
 // A Recorder monitors a channel log and records all statements that match one of
 // the patterns specified in the channels pattern list. The recorded output is
-// written to recording sink.
+// written back TestRepository.
 type Recorder struct {
-	channel      df.Channel
-	tokenizer    df.Tokenizer
-	log          df.Log
-	writer       df.TestWriter // destination of recorded testcase
-	timer        df.Timer
-	name         string
-	uuidProvider UUIDProvider
-	testcase     df.Testcase
+	channel        df.Channel
+	tokenizer      df.Tokenizer
+	log            df.Log
+	timer          df.Timer
+	testname       string
+	uuidProvider   UUIDProvider
+	testcase       df.Testcase
+	testRepository df.TestRepository
 }
 
 // NewRecorder creates a new Recorder.
 func NewRecorder(channel df.Channel, tokenizer df.Tokenizer,
-	log df.Log, w df.TestWriter, timer df.Timer, name string,
-	uuidProvider UUIDProvider) *Recorder {
+	log df.Log, timer df.Timer, testname string,
+	uuidProvider UUIDProvider, repository df.TestRepository) *Recorder {
 
 	return &Recorder{
-		channel:      channel,
-		tokenizer:    tokenizer,
-		log:          log,
-		writer:       w,
-		timer:        timer,
-		name:         name,
-		uuidProvider: uuidProvider,
-		testcase:     df.Testcase{Name: name}}
+		channel:        channel,
+		tokenizer:      tokenizer,
+		log:            log,
+		timer:          timer,
+		testname:       testname,
+		uuidProvider:   uuidProvider,
+		testcase:       df.Testcase{Name: testname},
+		testRepository: repository,
+	}
 }
 
 // Start starts the recording process of channel as endless loop. Every log entry
@@ -49,12 +49,7 @@ func (r *Recorder) Start(done chan struct{}, stopped chan struct{}) {
 
 	// called when done channel is closed
 	defer func() {
-		b, err := json.Marshal(r.testcase)
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = r.writer.Write(b)
-		if err != nil {
+		if err := r.testRepository.Write(r.testname, r.testcase); err != nil {
 			log.Fatal(err)
 		}
 	}()

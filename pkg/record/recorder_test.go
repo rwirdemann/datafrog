@@ -40,7 +40,7 @@ func TestRecord(t *testing.T) {
 	}
 
 	expectedTestcase := df.Testcase{
-		Name:          "create-job.json",
+		Name:          "create-job",
 		Running:       false,
 		Verifications: 0,
 		Expectations:  []df.Expectation{e1, e2},
@@ -50,11 +50,13 @@ func TestRecord(t *testing.T) {
 	recordingDone := make(chan struct{})
 	recordingStopped := make(chan struct{})
 	databaseLog := mocks.NewMemSQLLog(logs, recordingDone)
-	writer := &mocks.MemWriter{}
 	timer := mocks.Timer{}
-	recorder := NewRecorder(channel, mysql.Tokenizer{}, databaseLog, writer, timer, "create-job.json", mocks.StaticUUIDProvider{})
+	repository := &mocks.TestRepository{}
+	recorder := NewRecorder(channel, mysql.Tokenizer{}, databaseLog, timer, "create-job", mocks.StaticUUIDProvider{}, repository)
 	go recorder.Start(recordingDone, recordingStopped)
 	<-recordingStopped
-	assert.Len(t, writer.Testcase.Expectations, 2)
-	assert.Equal(t, expectedTestcase, writer.Testcase)
+	actual, err := repository.Get("create-job")
+	assert.NoError(t, err)
+	assert.Len(t, actual.Expectations, 2)
+	assert.Equal(t, expectedTestcase, actual)
 }

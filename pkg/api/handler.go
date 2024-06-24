@@ -10,7 +10,6 @@ import (
 	"github.com/rwirdemann/datafrog/pkg/verify"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -46,7 +45,7 @@ func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepo
 	router.HandleFunc("/tests/{name}/recordings", StopRecording()).Methods("DELETE")
 
 	// delete test
-	router.HandleFunc("/tests/{name}", DeleteTest()).Methods("DELETE")
+	router.HandleFunc("/tests/{name}", DeleteTest(testRepository)).Methods("DELETE")
 
 	// get test
 	router.HandleFunc("/tests/{name}", GetTest(testRepository)).Methods("GET")
@@ -69,8 +68,7 @@ func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepo
 
 func GetRecordingProgress() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
-		runner, ok := runners[testname]
+		runner, ok := runners[mux.Vars(r)["name"]]
 		if !ok {
 			http.Error(w, invalidStateError{}.Error(), http.StatusInternalServerError)
 			return
@@ -138,15 +136,13 @@ func GetTest(repository df.TestRepository) http.HandlerFunc {
 
 // DeleteTest returns a http handler to delete the test given in the request
 // param "name".
-func DeleteTest() http.HandlerFunc {
+func DeleteTest(repository df.TestRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
-		testname := mux.Vars(r)["name"]
-		err := os.Remove(testname)
-		if err != nil {
+		if err := repository.Delete(mux.Vars(r)["name"]); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -166,7 +162,7 @@ func StartRecording(logFactory df.LogFactory, repository df.TestRepository) http
 			return
 		}
 
-		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
+		testname := mux.Vars(r)["name"]
 		if repository.Exists(testname) {
 			http.Error(w, fmt.Sprintf("test '%s' already exists", testname), http.StatusConflict)
 			return
@@ -202,12 +198,7 @@ func StopRecording() http.HandlerFunc {
 			return
 		}
 
-		testname := fmt.Sprintf("%s.json", mux.Vars(r)["name"])
-		if _, err := os.Stat(testname); os.IsNotExist(err) {
-			http.Error(w, "test does not exist", http.StatusNotFound)
-			return
-		}
-
+		testname := mux.Vars(r)["name"]
 		runner, ok := runners[testname]
 		if !ok {
 			http.Error(w, "test is not being recorded", http.StatusNotFound)
