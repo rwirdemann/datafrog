@@ -6,7 +6,7 @@
   },
   "channels": [
     {
-      "name": "mysql",
+      "name": "postgres",
       "log": "/Users/rwegner/RegressionTiger/jobdog-monolith/app/target/logs/postgresql-YYYY-MM-DD_hhmmss.log",
       "format": "postgres",
       "patterns": [

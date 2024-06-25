@@ -79,12 +79,12 @@ func NewConfig(filename string) Config {
 	}
 	if config.Channels[0].Format == "postgres" {
 		var logFilePath = config.Channels[0].Log
-
-		if strings.Contains(logFilePath, "YYYY-MM-DD-hhmmss.log") {
+		var dateString = "YYYY-MM-DD_hhmmss.log"
+		if strings.Contains(logFilePath, dateString) {
 
 			// Logfile name contains a timestamp: Find the newest one in containing folder
 			path := filepath.Dir(logFilePath)
-			var expectedFileNameStart string = logFilePath[len(path) : len(logFilePath)-21]
+			var expectedFileNameStart string = logFilePath[len(path)+1 : len(logFilePath)-len(dateString)]
 			entries, err := os.ReadDir(path)
 			if err == nil {
 				var newestTime int64 = 0
@@ -92,12 +92,12 @@ func NewConfig(filename string) Config {
 					// First check, if the name matches
 					if strings.Contains(file.Name(), expectedFileNameStart) {
 						// Now check, if it is the newest
-						fi, err := os.Stat(path + file.Name())
+						fi, err := os.Stat(path + "/" + file.Name())
 						if err == nil {
 							currTime := fi.ModTime().Unix()
 							if currTime > newestTime {
 								newestTime = currTime
-								logFilePath = path + file.Name()
+								logFilePath = path + "/" + file.Name()
 							}
 						}
 					}
