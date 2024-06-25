@@ -37,11 +37,13 @@ var logFactory df.LogFactory
 func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepository) {
 	config = c
 
-	if config.Channels[0].Format == "mysql" {
-		logFactory = mysql.LogFactory{}
-	}
-	if config.Channels[0].Format == "postgres" {
-		logFactory = postgres.LogFactory{}
+	if len(config.Channels) > 0 {
+		if config.Channels[0].Format == "mysql" {
+			logFactory = mysql.LogFactory{}
+		}
+		if config.Channels[0].Format == "postgres" {
+			logFactory = postgres.LogFactory{}
+		}
 	}
 
 	// get all tests
@@ -298,9 +300,14 @@ func ChannelHealth(lf df.LogFactory) http.HandlerFunc {
 			return
 		}
 
+		if len(config.Channels) == 0 {
+			http.Error(writer, "at least one channel needs to be configured", http.StatusFailedDependency)
+			return
+		}
+
 		ch, ok := getChannel(mux.Vars(request)["name"])
 		if !ok {
-			http.Error(writer, "name is required", http.StatusBadRequest)
+			http.Error(writer, "name is invalid", http.StatusBadRequest)
 			return
 		}
 
