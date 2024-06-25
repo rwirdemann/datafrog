@@ -67,7 +67,7 @@ func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepo
 	router.HandleFunc("/tests/{name}/verifications/progress", GetVerificationProgress()).Methods("GET")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/verifications", StartVerify(logFactory, testRepository)).Methods("PUT")
+	router.HandleFunc("/tests/{name}/verifications", StartVerification(logFactory, testRepository)).Methods("PUT")
 
 	// stop verify
 	router.HandleFunc("/tests/{name}/verifications", StopVerify()).Methods("DELETE")
@@ -240,9 +240,9 @@ func AllTests(repository df.TestRepository) http.HandlerFunc {
 	}
 }
 
-// StartVerify returns a http handler that starts a verification run of the test
+// StartVerification returns a http handler that starts a verification run of the test
 // given in the request param "name".
-func StartVerify(logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
+func StartVerification(logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if len(mux.Vars(request)["name"]) == 0 {
 			http.Error(writer, "name is required", http.StatusBadRequest)

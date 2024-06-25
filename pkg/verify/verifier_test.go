@@ -298,10 +298,10 @@ func TestVerify(t *testing.T) {
 			doneChannel := make(chan struct{})
 			stoppedChannel := make(chan struct{})
 			databaseLog := mocks.NewMemSQLLog(tC.logs, doneChannel)
-			writer := &mocks.MemWriter{}
-			tc := df.Testcase{Expectations: tC.initialExpectations}
+			tc := df.Testcase{Name: "create-job", Expectations: tC.initialExpectations}
+			repository := &mocks.TestRepository{}
 			timer := mocks.Timer{}
-			verifier := NewVerifier(c, c.Channels[0], mysql.Tokenizer{}, databaseLog, tc, writer, timer, "")
+			verifier := NewVerifier(c, c.Channels[0], repository, mysql.Tokenizer{}, databaseLog, tc, timer, "")
 			go verifier.Start(doneChannel, stoppedChannel)
 			<-stoppedChannel // wait till verifier is done
 			for i, e := range verifier.Testcase().Expectations {
@@ -315,8 +315,10 @@ func TestVerify(t *testing.T) {
 			assert.Equal(t, tC.additionalExpectations, verifier.Testcase().AdditionalExpectations)
 
 			// check if the updated testcase was written back (without eventually added expectations)
-			assert.Equal(t, writer.Testcase.Verifications, 1)
-			assert.Nil(t, writer.Testcase.AdditionalExpectations)
+			actual, err := repository.Get("create-job")
+			assert.NoError(t, err)
+			assert.Equal(t, 1, actual.Verifications)
+			assert.Nil(t, actual.AdditionalExpectations)
 		})
 	}
 }
