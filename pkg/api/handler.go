@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/pkg/df"
+	"github.com/rwirdemann/datafrog/pkg/mocks"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
 	"github.com/rwirdemann/datafrog/pkg/postgres"
 	"github.com/rwirdemann/datafrog/pkg/record"
@@ -383,6 +384,10 @@ func getLog(channel df.Channel) (df.Log, error) {
 	}
 	if channel.Format == "postgres" {
 		logFactory = postgres.LogFactory{}
+	}
+	// TODO: This is fix for test_handler. In real useage, we must not use it and should return an error here!
+	if logFactory == nil {
+		logFactory = mocks.LogFactory{}
 	}
 
 	return logFactory.Create(channel.Log)

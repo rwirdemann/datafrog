@@ -19,17 +19,15 @@ func init() {
 }
 
 func TestStartRecordingNoChannels(t *testing.T) {
-	logFactory := mocks.LogFactory{}
 	repository := &mocks.TestRepository{}
-	rr := startRecording(t, logFactory, repository)
+	rr := startRecording(t, repository)
 	assert.Equal(t, http.StatusFailedDependency, rr.Code)
 }
 
 func TestRecording(t *testing.T) {
 	config.Channels = append(config.Channels, df.Channel{})
-	logFactory := mocks.LogFactory{}
 	repository := &mocks.TestRepository{}
-	rr := startRecording(t, logFactory, repository)
+	rr := startRecording(t, repository)
 	assert.Equal(t, http.StatusAccepted, rr.Code)
 	runner, ok := runners[testname]
 	assert.True(t, ok)
@@ -43,9 +41,8 @@ func TestRecording(t *testing.T) {
 
 func TestVerification(t *testing.T) {
 	config.Channels = append(config.Channels, df.Channel{})
-	logFactory := mocks.LogFactory{}
 	repository := &mocks.TestRepository{Testcases: []df.Testcase{{Name: testname}}}
-	rr := startVerification(t, logFactory, repository)
+	rr := startVerification(t, repository)
 	assert.Equal(t, http.StatusAccepted, rr.Code)
 	runner, ok := verifyRunners[testname]
 	assert.True(t, ok)
@@ -53,7 +50,7 @@ func TestVerification(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func startRecording(t *testing.T, logFactory df.LogFactory, repository df.TestRepository) *httptest.ResponseRecorder {
+func startRecording(t *testing.T, repository df.TestRepository) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/tests/%s/recordings", testname), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +62,7 @@ func startRecording(t *testing.T, logFactory df.LogFactory, repository df.TestRe
 	return rr
 }
 
-func startVerification(t *testing.T, logFactory df.LogFactory, repository df.TestRepository) *httptest.ResponseRecorder {
+func startVerification(t *testing.T, repository df.TestRepository) *httptest.ResponseRecorder {
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("/tests/%s/verifications", testname), nil)
 	if err != nil {
 		t.Fatal(err)
