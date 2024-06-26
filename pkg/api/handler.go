@@ -30,27 +30,17 @@ var config df.Config
 
 var runners = make(map[string]*record.Runner)
 var verifyRunners = make(map[string]*verify.Runner)
-var logFactory df.LogFactory
 
 // RegisterHandler registers http handler to record and verify testcases.
 func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepository) {
 	config = c
-
-	if len(config.Channels) > 0 {
-		if config.Channels[0].Format == "mysql" {
-			logFactory = mysql.LogFactory{}
-		}
-		if config.Channels[0].Format == "postgres" {
-			logFactory = postgres.LogFactory{}
-		}
-	}
 
 	// get all tests
 	router.HandleFunc("/tests", AllTests(testRepository)).Methods("GET")
 
 	// create new test and start recording
 	router.HandleFunc("/tests/{name}/recordings",
-		StartRecording(logFactory, testRepository)).Methods("POST")
+		StartRecording(testRepository)).Methods("POST")
 
 	// stop recording
 	router.HandleFunc("/tests/{name}/recordings", StopRecording()).Methods("DELETE")
@@ -68,13 +58,13 @@ func RegisterHandler(c df.Config, router *mux.Router, testRepository df.TestRepo
 	router.HandleFunc("/tests/{name}/verifications/progress", GetVerificationProgress()).Methods("GET")
 
 	// start verify
-	router.HandleFunc("/tests/{name}/verifications", StartVerification(logFactory, testRepository)).Methods("PUT")
+	router.HandleFunc("/tests/{name}/verifications", StartVerification(testRepository)).Methods("PUT")
 
 	// stop verify
 	router.HandleFunc("/tests/{name}/verifications", StopVerify()).Methods("DELETE")
 
 	// channel health
-	router.HandleFunc("/channels/{name}/health", ChannelHealth(logFactory)).Methods("GET")
+	router.HandleFunc("/channels/{name}/health", ChannelHealth()).Methods("GET")
 }
 
 func GetRecordingProgress() http.HandlerFunc {
@@ -161,7 +151,7 @@ func DeleteTest(repository df.TestRepository) http.HandlerFunc {
 }
 
 // StartRecording starts recording of test given the request param "name".
-func StartRecording(logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
+func StartRecording(repository df.TestRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(mux.Vars(r)["name"]) == 0 {
 			http.Error(w, "name is required", http.StatusBadRequest)
@@ -179,12 +169,20 @@ func StartRecording(logFactory df.LogFactory, repository df.TestRepository) http
 			return
 		}
 
-		channelLog, err := logFactory.Create(config.Channels[0].Log)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Logfile '%s' does not exist", config.Channels[0].Log), http.StatusFailedDependency)
+		channelName := config.Channels[0].Name // TODO: Get name from request
+		channel, ok := getChannel(channelName)
+		if !ok {
+			http.Error(w, fmt.Sprintf("channel '%s' does not exisit", channelName), http.StatusConflict)
 			return
 		}
-		runners[testname] = record.NewRunner(testname, config.Channels[0], repository, channelLog)
+
+		channelLog, err := getLog(channel)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Logfile '%s' does not exist", channel.Log), http.StatusFailedDependency)
+			return
+		}
+
+		runners[testname] = record.NewRunner(testname, channel, repository, channelLog)
 
 		// Start creates a new go routine
 		if err := runners[testname].Start(); err != nil {
@@ -248,7 +246,7 @@ func AllTests(repository df.TestRepository) http.HandlerFunc {
 
 // StartVerification returns a http handler that starts a verification run of the test
 // given in the request param "name".
-func StartVerification(logFactory df.LogFactory, repository df.TestRepository) http.HandlerFunc {
+func StartVerification(repository df.TestRepository) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if len(mux.Vars(request)["name"]) == 0 {
 			http.Error(writer, "name is required", http.StatusBadRequest)
@@ -261,12 +259,21 @@ func StartVerification(logFactory df.LogFactory, repository df.TestRepository) h
 		}
 
 		testname := mux.Vars(request)["name"]
-		channelLog, err := logFactory.Create(config.Channels[0].Log)
-		if err != nil {
-			http.Error(writer, fmt.Sprintf("Logfile '%s' does not exist", config.Channels[0].Log), http.StatusFailedDependency)
+
+		channelName := config.Channels[0].Name // TODO: Get name from request
+		channel, ok := getChannel(channelName)
+		if !ok {
+			http.Error(writer, fmt.Sprintf("channel '%s' does not exisit", channelName), http.StatusConflict)
 			return
 		}
-		verifyRunners[testname] = verify.NewRunner(testname, config.Channels[0], config, channelLog, repository)
+
+		channelLog, err := getLog(channel)
+		if err != nil {
+			http.Error(writer, fmt.Sprintf("Logfile '%s' does not exist", channel.Log), http.StatusFailedDependency)
+			return
+		}
+
+		verifyRunners[testname] = verify.NewRunner(testname, channel, config, channelLog, repository)
 
 		// Start creates a new go routine
 		if err := verifyRunners[testname].Start(); err != nil {
@@ -302,7 +309,7 @@ func StopVerify() http.HandlerFunc {
 // ChannelHealth checks the health of the channel "name" by tailing the
 // associated log file, triggering the SUT to force a log update and ensures that
 // the log file was updated.
-func ChannelHealth(logFactory df.LogFactory) http.HandlerFunc {
+func ChannelHealth() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if len(mux.Vars(request)["name"]) == 0 {
 			http.Error(writer, "name is required", http.StatusBadRequest)
@@ -314,20 +321,21 @@ func ChannelHealth(logFactory df.LogFactory) http.HandlerFunc {
 			return
 		}
 
-		ch, ok := getChannel(mux.Vars(request)["name"])
+		channelName := mux.Vars(request)["name"]
+		channel, ok := getChannel(channelName)
 		if !ok {
-			http.Error(writer, "name is invalid", http.StatusBadRequest)
+			http.Error(writer, fmt.Sprintf("channel '%s' does not exisit", channelName), http.StatusConflict)
 			return
 		}
 
-		clog, errLog := logFactory.Create(ch.Log)
+		channelLog, errLog := getLog(channel)
 		if errLog != nil {
-			writer.WriteHeader(http.StatusInternalServerError)
+			http.Error(writer, fmt.Sprintf("Logfile '%s' does not exist", channel.Log), http.StatusConflict)
 			return
 		}
 
 		// jump to logfile end
-		err := clog.Tail()
+		err := channelLog.Tail()
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
@@ -349,7 +357,7 @@ func ChannelHealth(logFactory df.LogFactory) http.HandlerFunc {
 		}()
 
 		// read next line from updated log file
-		line, err := clog.NextLine(c)
+		line, err := channelLog.NextLine(c)
 		if err != nil || line == "" {
 			writer.WriteHeader(http.StatusFailedDependency)
 			return
@@ -366,4 +374,16 @@ func getChannel(name string) (df.Channel, bool) {
 		}
 	}
 	return df.Channel{}, false
+}
+
+func getLog(channel df.Channel) (df.Log, error) {
+	var logFactory df.LogFactory
+	if channel.Format == "mysql" {
+		logFactory = mysql.LogFactory{}
+	}
+	if channel.Format == "postgres" {
+		logFactory = postgres.LogFactory{}
+	}
+
+	return logFactory.Create(channel.Log)
 }

@@ -2,13 +2,14 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/gorilla/mux"
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/mocks"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 var testname string
@@ -59,7 +60,7 @@ func startRecording(t *testing.T, logFactory df.LogFactory, repository df.TestRe
 	}
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
-	r.HandleFunc("/tests/{name}/recordings", StartRecording(logFactory, repository)).Methods("POST")
+	r.HandleFunc("/tests/{name}/recordings", StartRecording(repository)).Methods("POST")
 	r.ServeHTTP(rr, req)
 	return rr
 }
@@ -71,7 +72,7 @@ func startVerification(t *testing.T, logFactory df.LogFactory, repository df.Tes
 	}
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
-	r.HandleFunc("/tests/{name}/verifications", StartVerification(logFactory, repository)).Methods("PUT")
+	r.HandleFunc("/tests/{name}/verifications", StartVerification(repository)).Methods("PUT")
 	r.ServeHTTP(rr, req)
 	return rr
 }
