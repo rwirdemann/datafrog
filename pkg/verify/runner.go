@@ -20,8 +20,8 @@ type Runner struct {
 
 // NewRunner creates a new runner for verifying interactions of the given
 // channel.
-func NewRunner(testname string, channel df.Channel, config df.Config, logFactory df.LogFactory, repository df.TestRepository) *Runner {
-	return &Runner{testname: testname, channel: channel, config: config, channelLog: logFactory.Create(channel.Log), repository: repository}
+func NewRunner(testname string, channel df.Channel, config df.Config, log df.Log, repository df.TestRepository) *Runner {
+	return &Runner{testname: testname, channel: channel, config: config, channelLog: log, repository: repository}
 }
 
 // Start starts a new verifier as go routine.

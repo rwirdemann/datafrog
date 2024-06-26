@@ -13,12 +13,12 @@ import (
 type LogFactory struct {
 }
 
-func (f LogFactory) Create(filename string) df.Log {
+func (f LogFactory) Create(filename string) (df.Log, error) {
 	logFilePath, err := resolveDate(filename)
 	if err != nil {
 		log.Fatalf("LogFactory: Could not resolve Log-File %s: %s", filename, err)
 	}
-	return NewPostgresLog(logFilePath)
+	return NewPostgresLog(logFilePath), err
 }
 
 func resolveDate(filename string) (string, error) {

@@ -3,11 +3,12 @@ package mysql
 import (
 	"bufio"
 	"errors"
-	"github.com/rwirdemann/datafrog/pkg/df"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"time"
+
+	"github.com/rwirdemann/datafrog/pkg/df"
+	log "github.com/sirupsen/logrus"
 )
 
 type Log struct {
@@ -15,12 +16,12 @@ type Log struct {
 	reader  *bufio.Reader
 }
 
-func NewMYSQLLog(logfileName string) Log {
+func NewMYSQLLog(logfileName string) (Log, error) {
 	logfile, err := os.Open(logfileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return Log{logfile: logfile, reader: bufio.NewReader(logfile)}
+	return Log{logfile: logfile, reader: bufio.NewReader(logfile)}, err
 }
 
 // Tail sets the read cursor of the log file to its end.

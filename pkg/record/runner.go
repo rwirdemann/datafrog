@@ -19,8 +19,8 @@ type Runner struct {
 
 // NewRunner creates a new runner for recording interactions of the given
 // channel.
-func NewRunner(testname string, channel df.Channel, repository df.TestRepository, logFactory df.LogFactory) *Runner {
-	return &Runner{testname: testname, channel: channel, repository: repository, channelLog: logFactory.Create(channel.Log)}
+func NewRunner(testname string, channel df.Channel, repository df.TestRepository, log df.Log) *Runner {
+	return &Runner{testname: testname, channel: channel, repository: repository, channelLog: log}
 }
 
 // Start starts a new recorder as go routine.

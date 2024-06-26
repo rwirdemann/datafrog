@@ -26,7 +26,6 @@ func (i invalidStateError) Error() string {
 	return "invalid recording state"
 }
 
-var verifier *verify.Verifier
 var config df.Config
 
 var runners = make(map[string]*record.Runner)
@@ -180,7 +179,12 @@ func StartRecording(logFactory df.LogFactory, repository df.TestRepository) http
 			return
 		}
 
-		runners[testname] = record.NewRunner(testname, config.Channels[0], repository, logFactory)
+		channelLog, err := logFactory.Create(config.Channels[0].Log)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Logfile '%s' does not exist", config.Channels[0].Log), http.StatusFailedDependency)
+			return
+		}
+		runners[testname] = record.NewRunner(testname, config.Channels[0], repository, channelLog)
 
 		// Start creates a new go routine
 		if err := runners[testname].Start(); err != nil {
@@ -257,7 +261,12 @@ func StartVerification(logFactory df.LogFactory, repository df.TestRepository) h
 		}
 
 		testname := mux.Vars(request)["name"]
-		verifyRunners[testname] = verify.NewRunner(testname, config.Channels[0], config, logFactory, repository)
+		channelLog, err := logFactory.Create(config.Channels[0].Log)
+		if err != nil {
+			http.Error(writer, fmt.Sprintf("Logfile '%s' does not exist", config.Channels[0].Log), http.StatusFailedDependency)
+			return
+		}
+		verifyRunners[testname] = verify.NewRunner(testname, config.Channels[0], config, channelLog, repository)
 
 		// Start creates a new go routine
 		if err := verifyRunners[testname].Start(); err != nil {
@@ -293,7 +302,7 @@ func StopVerify() http.HandlerFunc {
 // ChannelHealth checks the health of the channel "name" by tailing the
 // associated log file, triggering the SUT to force a log update and ensures that
 // the log file was updated.
-func ChannelHealth(lf df.LogFactory) http.HandlerFunc {
+func ChannelHealth(logFactory df.LogFactory) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if len(mux.Vars(request)["name"]) == 0 {
 			http.Error(writer, "name is required", http.StatusBadRequest)
@@ -311,7 +320,11 @@ func ChannelHealth(lf df.LogFactory) http.HandlerFunc {
 			return
 		}
 
-		clog := lf.Create(ch.Log)
+		clog, errLog := logFactory.Create(ch.Log)
+		if errLog != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		// jump to logfile end
 		err := clog.Tail()
