@@ -3,6 +3,7 @@ package verify
 import (
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
+	"github.com/rwirdemann/datafrog/pkg/postgres"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,8 +31,15 @@ func (r *Runner) Start() error {
 	if err != nil {
 		return nil
 	}
+	var tokenizer df.Tokenizer
+	if r.channel.Format == "mysql" {
+		tokenizer = mysql.Tokenizer{}
+	}
+	if r.channel.Format == "postgres" {
+		tokenizer = postgres.Tokenizer{}
+	}
 
-	r.verifier = NewVerifier(r.config, r.channel, r.repository, mysql.Tokenizer{}, r.channelLog, tc, &df.UTCTimer{}, r.testname)
+	r.verifier = NewVerifier(r.config, r.channel, r.repository, tokenizer, r.channelLog, tc, &df.UTCTimer{}, r.testname)
 	r.done = make(chan struct{})
 	r.stopped = make(chan struct{})
 	go r.verifier.Start(r.done, r.stopped)

@@ -3,6 +3,7 @@ package record
 import (
 	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/rwirdemann/datafrog/pkg/mysql"
+	"github.com/rwirdemann/datafrog/pkg/postgres"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,7 +26,14 @@ func NewRunner(testname string, channel df.Channel, repository df.TestRepository
 
 // Start starts a new recorder as go routine.
 func (r *Runner) Start() error {
-	r.recorder = NewRecorder(r.channel, mysql.Tokenizer{}, r.channelLog, &df.UTCTimer{}, r.testname, df.GoogleUUIDProvider{}, r.repository)
+	var tokenizer df.Tokenizer
+	if r.channel.Format == "mysql" {
+		tokenizer = mysql.Tokenizer{}
+	}
+	if r.channel.Format == "postgres" {
+		tokenizer = postgres.Tokenizer{}
+	}
+	r.recorder = NewRecorder(r.channel, tokenizer, r.channelLog, &df.UTCTimer{}, r.testname, df.GoogleUUIDProvider{}, r.repository)
 	r.done = make(chan struct{})
 	r.stopped = make(chan struct{})
 	go r.recorder.Start(r.done, r.stopped)
