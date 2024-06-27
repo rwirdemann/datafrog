@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rwirdemann/datafrog/pkg/df"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,8 +18,7 @@ func TestRegex(t *testing.T) {
 }
 
 func TestReadLine(t *testing.T) {
-	c := df.Config{Channels: []df.Channel{{Patterns: []string{"insert"}}}}
-	pl := NewPostgresLog("postgres.log", c)
+	pl := NewPostgresLog("postgres.log")
 	defer pl.Close()
 	actual := readLine(t, pl)
 	expected := "2024-04-19 10:12:16.889 CEST [89718] LOG:  execute <unnamed>: insert into job (description, publish_at, publish_trials, published_timestamp, tags, title, id) values ('World', '2024-04-19 10:12:12', '0', NULL, '', 'Hello', '1')\n"

@@ -75,6 +75,7 @@ func NewConfig(filename string) Config {
 	if err := json.Unmarshal(byteValue, &config); err != nil {
 		log.Fatal(err)
 	}
+
 	return config
 }
 

@@ -1,5 +1,5 @@
 package df
 
 type LogFactory interface {
-	Create(filename string) Log
+	Create(filename string) (Log, error)
 }
