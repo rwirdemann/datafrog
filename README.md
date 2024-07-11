@@ -3,7 +3,7 @@
 A simple API to record and verify statement logged by external systems, e.g.
 databases.
 
-The current version was tested with MySQL on MacOS.
+The current version was tested with MySQL on MacOS and Ubuntu.
 
 ## Motivation
 
