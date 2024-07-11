@@ -7,7 +7,7 @@ The current version was tested with MySQL on MacOS.
 
 ## Motivation
 
-The basic idea of `dfg` is to record and replay usecase scenarios in order to
+The basic idea of datafrog is to record and replay usecase scenarios in order to
 ensure that its repeated execution triggers the same database calls. One of the
 challenges of this approach is dynamic data recognition like id's or date
 fields. Consider the following example:
