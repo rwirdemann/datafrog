@@ -5,7 +5,7 @@ go 1.21.6
 require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
-	github.com/rwirdemann/simpleweb v0.0.0-20240612085705-92e249a34422
+	github.com/rwirdemann/simpleweb v0.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 )
